@@ -13,24 +13,20 @@
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Sarabun', sans-serif; }
         
-        /* สกอร์บาร์ */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* โหลดเดอร์ */
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* จัดให้เนื้อหาหลักเลื่อนได้ ไม่โดนตัด */
         .content-scroll {
             height: calc(100vh - 80px);
             overflow-y: auto;
             overflow-x: hidden;
         }
 
-        /* สำหรับ PIN Input */
         .pin-input {
             letter-spacing: 0.5em;
             font-size: 2.5rem;
@@ -43,8 +39,6 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden relative">
-
-    <!-- 🔒 หน้าจอใส่รหัส PIN (ซ้อนทับทุกอย่าง) -->
     <div id="pinOverlay" class="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
             <div class="mb-8">
@@ -65,7 +59,6 @@
         </div>
     </div>
 
-    <!-- Sidebar -->
     <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-20">
         <div class="p-6 border-b border-slate-100 flex items-center space-x-3 flex-shrink-0">
             <div class="bg-rose-800 p-2 rounded-lg">
@@ -73,13 +66,11 @@
             </div>
             <h1 class="text-xl font-bold text-slate-800">ระบบจัดการรถ</h1>
         </div>
-        <!-- เมนูหลักแบบ Tree View -->
         <nav class="flex-1 p-4 overflow-y-auto" id="nav-menu">
-            <!-- สร้างผ่าน JS อัตโนมัติ -->
+            <!-- เมนูสร้างผ่าน JavaScript -->
         </nav>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 h-screen">
         <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm">
             <h2 class="text-2xl font-bold text-slate-800 flex items-center">
@@ -144,14 +135,14 @@
     </div>
 
     <script>
-        // 👇👇👇 นำ URL ของ Google Apps Script มาใส่ตรงนี้ 👇👇👇
+        // 👇👇👇 URL ของ Google Apps Script 👇👇👇
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw9_j5MUH3MrBf1WvJ7vEJGsBTXtiAJSsRuXZ28TzSTMueV2L90WUjRlyut5Ii6vgVUlw/exec";
 
         // ==========================================
-        // 🔒 ตั้งค่ารหัสผ่าน PIN ที่นี่
+        // 🔒 รหัสผ่าน (PIN)
         // ==========================================
-        const LOGIN_PIN = "8899";  // รหัสเข้าเว็บไซต์
-        const ACTION_PIN = "2233"; // รหัสสำหรับแก้ไข/ลบ
+        const LOGIN_PIN = "8899";
+        const ACTION_PIN = "2233";
         // ==========================================
 
         let state = {
@@ -160,9 +151,10 @@
             filterYear: null,
             filterMonth: null,
             filterPeriod: null,
+            // ปิดโฟลเดอร์เดือนไว้ เปิดเฉพาะโฟลเดอร์ปี
             expandedTree: { 
-                'flatbed_y2569': true, 'flatbed_y2569m4': true, 'flatbed_y2569m5': true, 'flatbed_y2569m6': true,
-                'semidump_y2569': true, 'semidump_y2569m5': true, 'semidump_y2569m6': true 
+                'flatbed_y2569': true, 
+                'semidump_y2569': true 
             },
             trips: [],
             refuels: [],
@@ -170,7 +162,8 @@
             jobs: [],
             editMode: false,
             formData: {},
-            charts: {}
+            charts: {},
+            jobSortMode: 'recent' // 'recent' or 'alpha'
         };
 
         const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -228,7 +221,6 @@
             return y + '-' + m + '-' + d;
         };
 
-        // ฟังก์ชันช่วยแปลงวันที่เพื่อใช้จัดเรียงลำดับ
         const parseDateForSort = (dStr) => {
             if (!dStr) return 0;
             const str = String(dStr);
@@ -247,7 +239,6 @@
             return 0;
         };
 
-        // --- ระบบความปลอดภัย PIN ---
         window.pendingActionFunc = null;
 
         window.showPinModal = (type) => {
@@ -293,7 +284,8 @@
                             window.pendingActionFunc = null;
                         }
                     } else {
-                        alert("รหัส PIN ไม่ถูกต้อง!");
+                        // Toast notification for wrong PIN
+                        showToast("รหัส PIN ไม่ถูกต้อง!", "error");
                         input.value = "";
                         input.focus();
                     }
@@ -312,9 +304,25 @@
             showPinModal('action');
         };
 
-        // --- ระบบ UI & Tree Navigation แยกหมวดหมู่ ---
         window.toggleTree = (key) => {
-            state.expandedTree[key] = !state.expandedTree[key];
+            const isMonth = key.match(/m\d+$/);
+            
+            if (isMonth) {
+                // ถ้าคลิกเดือน ให้ปิดเดือนอื่นให้หมดก่อนเปิด
+                if (!state.expandedTree[key]) {
+                    Object.keys(state.expandedTree).forEach(k => {
+                        if (k.match(/m\d+$/)) {
+                            state.expandedTree[k] = false;
+                        }
+                    });
+                    state.expandedTree[key] = true;
+                } else {
+                    state.expandedTree[key] = false;
+                }
+            } else {
+                state.expandedTree[key] = !state.expandedTree[key];
+            }
+            
             renderNav();
         };
 
@@ -371,7 +379,7 @@
                     ];
                 } else {
                     treeYears = [
-                        { year: 2569, startMonth: 4, endMonth: 12 }, // เพิ่มเดือนเมษายน (เดือน 4) ของรถพื้นเรียบ
+                        { year: 2569, startMonth: 4, endMonth: 12 },
                         { year: 2570, startMonth: 1, endMonth: 12 }
                     ];
                 }
@@ -401,8 +409,6 @@
                             `;
                             if (isMOpen) {
                                 html += `<div class="ml-4 border-l-2 border-slate-200 pl-4 mt-1 py-1 space-y-4 relative">`;
-
-                                // Period 1
                                 const p1TripsActive = state.activeCategory === cat.id && state.activeTab === 'trips' && state.filterYear === y.year && state.filterMonth === m && state.filterPeriod === 1;
                                 const p1RefuelsActive = state.activeCategory === cat.id && state.activeTab === 'refuels' && state.filterYear === y.year && state.filterMonth === m && state.filterPeriod === 1;
                                 html += `
@@ -417,8 +423,6 @@
                                         </button>
                                     </div>
                                 `;
-
-                                // Period 2
                                 const p2TripsActive = state.activeCategory === cat.id && state.activeTab === 'trips' && state.filterYear === y.year && state.filterMonth === m && state.filterPeriod === 2;
                                 const p2RefuelsActive = state.activeCategory === cat.id && state.activeTab === 'refuels' && state.filterYear === y.year && state.filterMonth === m && state.filterPeriod === 2;
                                 html += `
@@ -506,8 +510,6 @@
                             const m = parseInt(parts[1], 10);
                             let y = parseInt(parts[2], 10);
                             
-                            // ปรับแก้กรณี Google Sheets ส่งข้อมูลกลับมาเป็นปี ค.ศ. (เช่น 2026) 
-                            // ให้แปลงกลับเป็น พ.ศ. เสมอก่อนเข้าเงื่อนไข
                             if (y < 2500) y += 543;
 
                             const p = d <= 15 ? 1 : 2;
@@ -609,7 +611,6 @@
                 return;
             }
 
-            // เรียงลำดับข้อมูลตามวันที่ (จากเก่าไปใหม่)
             data.sort((a, b) => parseDateForSort(a.date) - parseDateForSort(b.date));
 
             let grandTotalDist = 0, grandTotalRevenue = 0, grandTotalFuel = 0, grandTotalProfit = 0, grandTotalWeight = 0;
@@ -734,7 +735,8 @@
                             ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-rose-800 font-bold">${t.weight ? t.weight + ' ตัน' : '-'}</td>` : ''}
                             <td class="p-4 text-right tabular-nums font-medium text-slate-800">${formatCurrency(t.revenue)}</td>
                             <td class="p-4 text-right tabular-nums text-orange-500">${formatCurrency(t.fuelCost)}</td>
-                            <td class="p-4 text-right tabular-nums font-bold text-green-600">${formatCurrency(t.profit)}</td>
+                            <td class="p-4 text-right tabular-nums text-sky-600 font-medium">${formatCurrency(t.driverFee || 0)}</td>
+                            <td class="p-4 text-right tabular-nums font-bold ${Number(t.profit) >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(t.profit)}</td>
                             <td class="p-4 text-center space-x-2">
                                 <button onclick="requestActionPin('openEditModal(\\'${t.id}\\', \\'trips\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                                 <button onclick="requestActionPin('deleteData(\\'${t.id}\\', \\'deleteTrip\\', \\'trip\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
@@ -750,21 +752,19 @@
                         ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-rose-900">${formatNumber(sumWeight).replace(/\.00$/, '')} ตัน</td>` : ''}
                         <td class="p-4 text-right tabular-nums text-rose-900">${formatCurrency(sumRevenue)}</td>
                         <td class="p-4 text-right tabular-nums text-orange-600">${formatCurrency(sumFuel)}</td>
-                        <td class="p-4 text-right tabular-nums text-green-600">${formatCurrency(sumProfit)}</td>
+                        <td class="p-4 text-right tabular-nums text-sky-700">${formatCurrency(sumDriverFee)}</td>
+                        <td class="p-4 text-right tabular-nums ${sumProfit >= 0 ? 'text-green-700' : 'text-red-700'}">${formatCurrency(sumProfit)}</td>
                         <td class="p-4"></td>
                     </tr>
                 `;
 
                 let driverFeeDetailsHtml = '';
-                const hasDriverFee = Object.values(driverFeeSummary).some(d => d.totalFee > 0);
-                if (hasDriverFee) {
+                const hasTrips = Object.keys(driverFeeSummary).length > 0;
+                if (hasTrips) {
                     let detailsList = Object.entries(driverFeeSummary).map(([route, data]) => {
-                        if(data.totalFee > 0) {
-                            return `<div class="text-slate-900 font-bold ml-6 text-base md:text-lg">
-                                ${route} <span class="text-rose-800">${data.count}</span> เที่ยว = <span class="text-rose-800">${formatNumber(data.totalFee).replace(/\.00$/, '')}</span> บาท
-                            </div>`;
-                        }
-                        return '';
+                        return `<div class="text-slate-900 font-bold ml-6 text-base md:text-lg">
+                            ${route} <span class="text-rose-800">${data.count}</span> เที่ยว = <span class="text-rose-800">${formatNumber(data.totalFee).replace(/\.00$/, '')}</span> บาท
+                        </div>`;
                     }).join('');
 
                     driverFeeDetailsHtml = `
@@ -793,17 +793,18 @@
                         </div>
                         ${driverFeeDetailsHtml}
                         <div class="overflow-x-auto">
-                            <table class="w-full ${state.activeCategory === 'semidump' ? 'min-w-[900px]' : 'min-w-[800px]'} text-left border-collapse whitespace-nowrap table-fixed">
+                            <table class="w-full ${state.activeCategory === 'semidump' ? 'min-w-[1000px]' : 'min-w-[900px]'} text-left border-collapse whitespace-nowrap table-fixed">
                                 <thead>
                                     <tr class="bg-white text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                         <th class="p-4 font-semibold w-28">วันที่</th>
                                         <th class="p-4 font-semibold w-40">ต้นทาง</th>
                                         <th class="p-4 font-semibold w-40">ปลายทาง</th>
-                                        <th class="p-4 font-semibold text-right w-28">ระยะทาง</th>
+                                        <th class="p-4 font-semibold text-right w-24">ระยะทาง</th>
                                         ${state.activeCategory === 'semidump' ? '<th class="p-4 font-semibold text-right text-rose-800 w-28">น้ำหนัก(ตัน)</th>' : ''}
-                                        <th class="p-4 font-semibold text-right w-32">ค่าเที่ยว</th>
-                                        <th class="p-4 font-semibold text-right w-32">ค่าน้ำมัน</th>
-                                        <th class="p-4 font-semibold text-right text-green-600 w-32">กำไร</th>
+                                        <th class="p-4 font-semibold text-right w-32">ยอดรับ(บ.)</th>
+                                        <th class="p-4 font-semibold text-right w-32">ค่าน้ำมัน(บ.)</th>
+                                        <th class="p-4 font-semibold text-right text-sky-700 w-32">ค่าคนขับ(บ.)</th>
+                                        <th class="p-4 font-semibold text-right text-green-600 w-32">กำไร(บ.)</th>
                                         <th class="p-4 font-semibold text-center w-24">จัดการ</th>
                                     </tr>
                                 </thead>
@@ -829,7 +830,6 @@
             `;
             let rows = '';
             filteredJobs.forEach(j => {
-                // เพิ่มการคำนวณค่าน้ำมันอัตโนมัติสำหรับแสดงผลในตาราง ถ้ายอดเดิมเป็น 0
                 let displayFuelCost = Number(j.fuelCost || 0);
                 if (displayFuelCost === 0 && j.dist) {
                     let rate = Number(j.fuelRate) > 0 ? Number(j.fuelRate) : 2.5;
@@ -844,7 +844,7 @@
                         <td class="p-4 text-right tabular-nums text-slate-600">${j.dist} กม.</td>
                         <td class="p-4 text-right tabular-nums font-bold text-rose-800">${formatCurrency(j.revenue)}</td>
                         <td class="p-4 text-right tabular-nums text-orange-600">${formatCurrency(displayFuelCost)}</td>
-                        <td class="p-4 text-right tabular-nums text-slate-600">${formatCurrency(j.driverFee || 0)}</td>
+                        <td class="p-4 text-right tabular-nums font-bold text-sky-700">${formatCurrency(j.driverFee || 0)}</td>
                         <td class="p-4 text-center space-x-2">
                             <button onclick="requestActionPin('openEditModal(\\'${j.id}\\', \\'jobs\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                             <button onclick="requestActionPin('deleteData(\\'${j.id}\\', \\'deleteJob\\', \\'job\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
@@ -863,9 +863,9 @@
                                     <th class="p-4 font-semibold w-40">ต้นทาง</th>
                                     <th class="p-4 font-semibold w-40">ปลายทาง</th>
                                     <th class="p-4 font-semibold text-right w-24">ระยะทาง</th>
-                                    <th class="p-4 font-semibold text-right w-32">เรทค่าเที่ยว</th>
+                                    <th class="p-4 font-semibold text-right w-32">เรทค่าเที่ยว(ยอดรับ)</th>
                                     <th class="p-4 font-semibold text-right w-24">ค่าน้ำมัน</th>
-                                    <th class="p-4 font-semibold text-right w-24">ค่าเที่ยวคนขับ</th>
+                                    <th class="p-4 font-semibold text-right text-sky-700 w-32">ค่าเที่ยวคนขับ</th>
                                     <th class="p-4 font-semibold text-center w-24">จัดการ</th>
                                 </tr>
                             </thead>
@@ -884,7 +884,6 @@
                 return;
             }
 
-            // เรียงลำดับข้อมูลตามวันที่ (จากเก่าไปใหม่)
             data.sort((a, b) => parseDateForSort(a.date) - parseDateForSort(b.date));
 
             let grandTotalLiters = 0; let grandTotalCost = 0;
@@ -1040,7 +1039,46 @@
             });
         }
 
-        // --- ระบบ Form Modal ---
+        window.toggleJobSort = () => {
+            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
+            
+            const sel = document.getElementById('job_select');
+            if(sel) {
+                // จำค่าเดิมที่เลือกไว้ก่อนสลับการจัดเรียง
+                const currentValue = sel.value;
+                
+                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
+                
+                if(state.jobSortMode === 'alpha') {
+                    // เรียงตามตัวอักษร ก-ฮ โดยรวมชื่อต้นทางและปลายทาง
+                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+                } // ถ้าเป็น recent จะใช้ลำดับเดิมจากฐานข้อมูล (ล่าสุดอยู่บน)
+                
+                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
+                filteredJobs.forEach(j => {
+                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
+                });
+                
+                sel.innerHTML = html;
+                
+                // คืนค่าที่เลือกไว้ให้เหมือนเดิม
+                if (currentValue) sel.value = currentValue;
+
+                // อัปเดตหน้าตาปุ่ม
+                const btn = document.getElementById('btn-job-sort');
+                if(btn) {
+                    if(state.jobSortMode === 'recent') {
+                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
+                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
+                    } else {
+                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
+                        btn.className = "text-rose-700 bg-rose-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-rose-200 transition-colors";
+                    }
+                    lucide.createIcons();
+                }
+            }
+        };
+
         function openFormModal(isEdit = false) {
             state.editMode = isEdit;
             const modal = document.getElementById('main-modal');
@@ -1086,15 +1124,29 @@
                 `;
 
                 if (state.activeTab === 'trips') {
+                    if (!state.jobSortMode) state.jobSortMode = 'recent';
+                    let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
+                    
+                    if(state.jobSortMode === 'alpha') {
+                        filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+                    }
+
                     let jobOptions = '';
-                    const filteredJobs = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
                     filteredJobs.forEach(j => {
                         jobOptions += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
                     });
 
+                    let sortBtnHtml = state.jobSortMode === 'recent' 
+                        ? `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors"><i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด</button>`
+                        : `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-rose-700 bg-rose-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-rose-200 transition-colors"><i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ</button>`;
+
+
                     html += `
                         <div class="col-span-2 mt-4">
-                            <label class="block text-sm font-medium text-slate-700 mb-1">📍 เลือกเส้นทางมาตรฐาน (ดึงข้อมูลค่าเที่ยว/ค่าน้ำมันอัตโนมัติ)</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-center">
+                                <span>📍 เลือกเส้นทางมาตรฐาน (ดึงข้อมูลค่าเที่ยว/ค่าน้ำมันอัตโนมัติ)</span>
+                                ${sortBtnHtml}
+                            </label>
                             <select id="job_select" onchange="applyJobSelection()" class="w-full border border-rose-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 bg-rose-50 text-rose-900 font-semibold shadow-sm">
                                 <option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>
                                 ${jobOptions}
@@ -1124,7 +1176,7 @@
                                 <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-rose-800" placeholder="กรอกเองหรือคำนวณ" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">ค่าเที่ยว (ยอดรับ)</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เรทค่าเที่ยว (ยอดรับ)</label>
                                 <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
                             </div>
                         </div>
@@ -1140,11 +1192,20 @@
                                 <input required type="number" step="0.01" id="f_weight" value="${state.formData.weight !== undefined ? state.formData.weight : ''}" class="w-full border border-rose-300 bg-rose-50/50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 font-bold text-rose-900" placeholder="ระบุน้ำหนักเป็นตัน เช่น 30.5" />
                             </div>
                         </div>
-                        <!-- ซ่อนฟิลด์เหล่านี้ในหน้า UI ของรถเซมิดั๊ม แต่ระบบยังต้องใช้ค่าเพื่อคำนวณกำไร -->
+                        <!-- ซ่อนอัตราสิ้นเปลืองและราคาน้ำมัน เพื่อไม่ให้ฟอร์มยาวเกินไปสำหรับรถดั๊ม -->
                         <input type="hidden" id="f_fuelRate" value="${defFuelRate}" />
                         <input type="hidden" id="f_currentFuelPrice" value="${defFuelPrice}" />
-                        <input type="hidden" id="f_fuelCost" value="${defFuelCost}" />
-                        <input type="hidden" id="f_driverFee" value="${defDriverFee}" />
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ค่าน้ำมัน (จ่าย) <span class="text-xs text-slate-400 font-normal ml-1">ประเมิน</span></label>
+                                <input required type="number" step="0.01" id="f_fuelCost" value="${defFuelCost}" class="w-full border border-orange-300 bg-orange-50/50 text-orange-800 font-medium rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">ค่าเที่ยวคนขับ</label>
+                                <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                            </div>
+                        </div>
                         ` : `
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
@@ -1197,13 +1258,28 @@
                                 <i data-lucide="map" class="w-3 h-3 mr-1"></i>หาพิกัดจากแผนที่
                             </button>
                         </label>
-                            <div class="flex space-x-2 items-center">
-                                <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ต้นทาง" />
-                                <span class="text-slate-400 font-bold">→</span>
-                                <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ปลายทาง" />
-                            </div>
+                        <div class="flex space-x-2 items-center">
+                            <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ต้นทาง" />
+                            <span class="text-slate-400 font-bold">→</span>
+                            <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ปลายทาง" />
                         </div>
-                        <div class="grid grid-cols-2 gap-4 mt-4">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-center">
+                                <span>ระยะทาง (กม.)</span>
+                                <button type="button" onclick="autoCalcDistance()" id="btn-calc-dist" class="text-rose-800 hover:text-rose-900 text-xs font-bold flex items-center">
+                                    <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>คำนวณ
+                                </button>
+                            </label>
+                            <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 120" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">เรทค่าเที่ยว (ยอดรับ)</label>
+                            <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 6600" />
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">อัตราสิ้นเปลือง (กม./ลิตร)</label>
                             <input required type="number" step="0.01" id="f_fuelRate" value="${defFuelRate}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-800 outline-none" placeholder="เช่น 2.5" />
@@ -1255,7 +1331,6 @@
             document.getElementById('btn-cancel-form').onclick = () => modal.classList.add('hidden');
             form.onsubmit = submitData;
             
-            // ใช้ setTimeout เพื่อให้แน่ใจว่าฟอร์มเรนเดอร์ใน DOM เรียบร้อยก่อนสั่งคำนวณอัตโนมัติ
             setTimeout(() => {
                 if(state.activeTab === 'refuels') calcTotalRefuel(); 
                 if(state.activeTab === 'jobs' || state.activeTab === 'trips') calcFuelCost(); 
@@ -1340,7 +1415,10 @@
             const ori = document.getElementById('f_origin').value;
             const dest = document.getElementById('f_dest').value;
             const btn = document.getElementById('btn-calc-dist');
-            if(!ori || !dest) return alert('กรุณากรอกต้นทางและปลายทางก่อนครับ');
+            if(!ori || !dest) {
+                showToast('กรุณากรอกต้นทางและปลายทางก่อนครับ', 'error');
+                return;
+            }
 
             btn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 mr-1 spinner"></i>กำลังคำนวณ...';
             lucide.createIcons();
@@ -1363,7 +1441,7 @@
                     calcFuelCost(); 
                 } else throw new Error("คำนวณไม่ได้");
             } catch (e) {
-                alert("เกิดข้อผิดพลาด: " + e.message);
+                showToast("เกิดข้อผิดพลาด: " + e.message, 'error');
             } finally {
                 btn.innerHTML = '<i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>คำนวณอัตโนมัติ';
                 lucide.createIcons();
@@ -1374,7 +1452,9 @@
             e.preventDefault();
             const btn = document.getElementById('btn-submit-form');
             btn.disabled = true;
-            btn.innerText = 'กำลังบันทึก...';
+            const originalClasses = btn.className;
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
+            lucide.createIcons();
 
             let newData = { 
                 id: state.editMode ? state.formData.id : Date.now(),
@@ -1385,7 +1465,6 @@
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
                 newData.date = formatToThaiShort(getVal('f_date'));
                 
-                // ดึงค่าจากช่องทะเบียนรถ แล้วตัดเอาเฉพาะส่วนทะเบียน (ซ่อนชื่อคนขับก่อนส่งเข้าฐานข้อมูล)
                 let rawPlate = getVal('f_plate') || '';
                 if (rawPlate.includes(' (')) {
                     rawPlate = rawPlate.split(' (')[0].trim();
@@ -1444,38 +1523,112 @@
                 } catch(e) {}
             }
 
-            document.getElementById('main-modal').classList.add('hidden');
-            renderNav();
-            renderContent();
-            btn.disabled = false;
-        }
+            // เพิ่มลูกเล่น: หน่วงเวลาและเปลี่ยนปุ่มเป็นสีเขียวแจ้งว่าสำเร็จก่อนปิด
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
+            btn.classList.remove('bg-rose-800', 'hover:bg-rose-900');
+            btn.classList.add('bg-green-600', 'hover:bg-green-700');
+            lucide.createIcons();
 
-        window.deleteData = async (id, actionStr, sheetType) => {
-            if (!confirm("คุณต้องการลบข้อมูลแถวนี้ใช่หรือไม่?")) return;
-            
-            document.getElementById('loading-spinner').classList.remove('hidden');
-            try {
-                await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
-                });
-                
-                if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id !== id);
-                else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id !== id);
-                else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id !== id);
-                else if (actionStr.includes('Job')) state.jobs = state.jobs.filter(i => i.id !== id);
-
+            setTimeout(() => {
+                document.getElementById('main-modal').classList.add('hidden');
                 renderNav();
                 renderContent();
-                alert("ลบข้อมูลสำเร็จ!");
-            } catch (e) {
-                console.error(e);
-                alert("เกิดข้อผิดพลาดในการลบข้อมูล");
-            } finally {
-                document.getElementById('loading-spinner').classList.add('hidden');
-            }
+                
+                // คืนค่าปุ่มกลับเป็นเหมือนเดิมสำหรับรอบหน้า
+                btn.disabled = false;
+                btn.className = originalClasses;
+                btn.innerText = 'บันทึกข้อมูล';
+                
+                showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+            }, 800); // หน่วงเวลา 0.8 วินาทีให้ผู้ใช้มองทัน
+        }
+
+        // Custom Confirm Modal Logic
+        window.customConfirm = (message, onConfirm) => {
+            const overlay = document.createElement('div');
+            overlay.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4";
+            overlay.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
+                    <div class="w-12 h-12 bg-rose-100 text-rose-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
+                    <p class="text-slate-500 mb-6 text-sm">${message}</p>
+                    <div class="flex space-x-3">
+                        <button id="cancel-btn" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors">ยกเลิก</button>
+                        <button id="confirm-btn" class="flex-1 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-medium rounded-lg transition-colors shadow-sm">ลบข้อมูล</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            lucide.createIcons();
+
+            document.getElementById('cancel-btn').onclick = () => overlay.remove();
+            document.getElementById('confirm-btn').onclick = function() {
+                const btn = this;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>รอสักครู่...';
+                lucide.createIcons();
+                
+                // หน่วงเวลาเล็กน้อยให้ดูเนียนตาตอนกดลบ
+                setTimeout(() => {
+                    overlay.remove();
+                    onConfirm();
+                }, 600);
+            };
+        };
+
+        // Toast Notification System
+        window.showToast = (message, type = "success") => {
+            const toast = document.createElement('div');
+            const isError = type === "error";
+            toast.className = `fixed top-6 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
+            
+            toast.innerHTML = `
+                <i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 10);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
+
+        window.deleteData = (id, actionStr, sheetType) => {
+            customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", async () => {
+                document.getElementById('loading-spinner').classList.remove('hidden');
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
+                    });
+                    
+                    if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id !== id);
+                    else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id !== id);
+                    else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id !== id);
+                    else if (actionStr.includes('Job')) state.jobs = state.jobs.filter(i => i.id !== id);
+
+                    renderNav();
+                    renderContent();
+                    showToast("ลบข้อมูลสำเร็จ!");
+                } catch (e) {
+                    console.error(e);
+                    showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "error");
+                } finally {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            });
         };
 
         window.openMapModal = () => {
@@ -1541,6 +1694,16 @@
                 document.getElementById('f_dest').value = event.data.dest;
                 calcFuelCost();
                 closeMapModal();
+                
+                // ลูกเล่น: ทำให้ช่องที่ถูกดึงข้อมูลมาจากแผนที่เรืองแสงสีเขียวแปปนึงเพื่อให้รู้ว่าข้อมูลมาแล้ว
+                ['f_dist', 'f_origin', 'f_dest', 'f_fuelCost'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.style.transition = 'all 0.5s ease';
+                        el.classList.add('ring-2', 'ring-green-500', 'bg-green-50');
+                        setTimeout(() => el.classList.remove('ring-2', 'ring-green-500', 'bg-green-50'), 1500);
+                    }
+                });
             }
         });
 
@@ -1550,7 +1713,6 @@
 
             try {
                 document.getElementById('loading-spinner').classList.remove('hidden');
-                // เพิ่ม timestamp ต่อท้าย URL ป้องกันปัญหา Browser Cache จำข้อมูลเก่า
                 const res = await fetch(GAS_WEB_APP_URL + "?t=" + new Date().getTime());
                 const data = await res.json();
                 if(data.status === 'success') {
