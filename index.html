@@ -1,3 +1,7 @@
+
+
+Fleet management maintenance tires · HTML
+Syntax highlighting has been disabled due to code size.
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -6,6 +10,28 @@
     <title>ระบบจัดการรถ (Fleet Management)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50:  '#eef3f8',
+                            100: '#d9e4f0',
+                            200: '#b3c9e0',
+                            300: '#8dadd1',
+                            400: '#6892c1',
+                            500: '#4a76a8',
+                            600: '#395d85',
+                            700: '#2c4868',
+                            800: '#1e3350',
+                            900: '#142338'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -42,7 +68,7 @@
     <div id="pinOverlay" class="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
             <div class="mb-8">
-                <div class="w-16 h-16 bg-rose-100 text-rose-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-navy-100 text-navy-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="lock" class="w-8 h-8"></i>
                 </div>
                 <h2 id="pinTitle" class="text-2xl font-bold text-slate-800">กรุณากรอกรหัส PIN</h2>
@@ -50,7 +76,7 @@
             </div>
             <div class="mb-6">
                 <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4"
-                       class="pin-input w-full text-center font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl py-4 focus:ring-2 focus:ring-rose-800 focus:border-rose-800 outline-none transition-all"
+                       class="pin-input w-full text-center font-bold text-slate-800 bg-slate-50 border-2 border-slate-200 rounded-xl py-4 focus:ring-2 focus:ring-navy-800 focus:border-navy-800 outline-none transition-all"
                        placeholder="กรอกรหัส 4 หลัก" oninput="handlePinInput(this.value)">
             </div>
             <button id="pinCancelBtn" onclick="cancelActionPin()" class="hidden w-full py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600 transition-colors mt-2">
@@ -59,12 +85,20 @@
         </div>
     </div>
 
-    <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-20">
-        <div class="p-6 border-b border-slate-100 flex items-center space-x-3 flex-shrink-0">
-            <div class="bg-rose-800 p-2 rounded-lg">
-                <i data-lucide="layout-panel-left" class="h-6 w-6 text-white"></i>
+    <!-- ฉากหลังมืดตอนเปิดเมนูบนมือถือ/แท็บเล็ต -->
+    <div id="sidebar-backdrop" onclick="closeMobileNav()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
+
+    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:transition-none">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="bg-navy-800 p-2 rounded-lg">
+                    <i data-lucide="layout-panel-left" class="h-6 w-6 text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800">ระบบจัดการรถ</h1>
             </div>
-            <h1 class="text-xl font-bold text-slate-800">ระบบจัดการรถ</h1>
+            <button onclick="closeMobileNav()" class="lg:hidden text-slate-400 hover:text-slate-600 p-1">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
         </div>
         <nav class="flex-1 p-4 overflow-y-auto" id="nav-menu">
             <!-- เมนูสร้างผ่าน JavaScript -->
@@ -72,27 +106,32 @@
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 h-screen">
-        <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm">
-            <h2 class="text-2xl font-bold text-slate-800 flex items-center">
-                <span id="page-title">ภาพรวมผลประกอบการ</span>
-                <span id="page-subtitle" class="ml-2 text-rose-800 text-lg font-medium hidden"></span>
-            </h2>
-            <div class="flex space-x-3">
-                <button onclick="initApp()" class="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm font-medium">
-                    <i data-lucide="refresh-cw" class="h-4 w-4 text-slate-500"></i>
-                    <span>รีเฟรชข้อมูล</span>
+        <header class="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <button onclick="openMobileNav()" class="lg:hidden flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
+                    <i data-lucide="menu" class="h-6 w-6"></i>
                 </button>
-                <button id="btn-add-new" class="hidden items-center space-x-2 px-4 py-2 bg-rose-800 text-white rounded-lg hover:bg-rose-900 transition-colors shadow-sm font-medium">
+                <h2 class="text-lg md:text-2xl font-bold text-slate-800 flex items-center min-w-0 truncate">
+                    <span id="page-title" class="truncate">ภาพรวมผลประกอบการ</span>
+                    <span id="page-subtitle" class="ml-2 text-navy-800 text-sm md:text-lg font-medium hidden flex-shrink-0"></span>
+                </h2>
+            </div>
+            <div class="flex space-x-2 md:space-x-3 flex-shrink-0">
+                <button onclick="initApp()" class="flex items-center space-x-2 px-3 md:px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm font-medium">
+                    <i data-lucide="refresh-cw" class="h-4 w-4 text-slate-500"></i>
+                    <span class="hidden sm:inline">รีเฟรชข้อมูล</span>
+                </button>
+                <button id="btn-add-new" class="hidden items-center space-x-2 px-3 md:px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 transition-colors shadow-sm font-medium">
                     <i data-lucide="plus-circle" class="h-4 w-4"></i>
-                    <span>เพิ่มข้อมูลใหม่</span>
+                    <span class="hidden sm:inline">เพิ่มข้อมูลใหม่</span>
                 </button>
             </div>
         </header>
 
         <div class="content-scroll relative" id="main-content">
-            <div class="p-8">
+            <div class="p-4 md:p-8">
                 <div id="loading-spinner" class="absolute inset-0 bg-slate-50/80 z-50 flex flex-col items-center justify-center hidden">
-                    <div class="spinner rounded-full h-12 w-12 border-b-2 border-rose-800 mb-4"></div>
+                    <div class="spinner rounded-full h-12 w-12 border-b-2 border-navy-800 mb-4"></div>
                     <p class="text-slate-500 font-medium">กำลังโหลดข้อมูลจากฐานข้อมูล...</p>
                 </div>
                 <div id="tab-content" class="w-full"></div>
@@ -118,7 +157,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm">
                 <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="map" class="h-5 w-5 mr-2 text-rose-800"></i>
+                    <i data-lucide="map" class="h-5 w-5 mr-2 text-navy-800"></i>
                     ค้นหาสถานที่และคำนวณระยะทางจริง
                 </h3>
                 <button id="btn-close-map" class="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 p-1.5 rounded-full">
@@ -149,7 +188,7 @@
 
     <script>
         // 👇👇👇 URL ของ Google Apps Script 👇👇👇
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzBWAPukrvPEO6xcot-0VTDKwUloMZZuuj_cNILW5M1FsEzZlC1r0JXtWu1tDrSn4AOSg/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzAOwEdEcG_s72csboUcywx0Gy-cUPNQ8BOD1VSzyx5UwuWl7Ez1fKKPyKn_YhHaqJipw/exec";
 
         // ==========================================
         // 🔒 รหัสผ่าน (PIN)
@@ -321,6 +360,22 @@
             showPinModal('action');
         };
 
+        // ==========================================================
+        // 📱 เมนูด้านข้างแบบเปิด-ปิดได้บนมือถือ/แท็บเล็ต (off-canvas drawer)
+        // ==========================================================
+        window.openMobileNav = () => {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.remove('hidden');
+        };
+        window.closeMobileNav = () => {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.add('hidden');
+        };
+        // ปิดเมนูอัตโนมัติเฉพาะตอนหน้าจอเล็กกว่า desktop (md breakpoint = 768px)
+        function closeMobileNavIfSmallScreen() {
+            if (window.innerWidth < 1024) closeMobileNav();
+        }
+
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
             
@@ -351,6 +406,7 @@
             state.filterPeriod = null;
             renderNav();
             renderContent();
+            closeMobileNavIfSmallScreen();
         };
 
         window.changeTabPeriod = (category, tabId, year, month, period) => {
@@ -361,6 +417,7 @@
             state.filterPeriod = period;
             renderNav();
             renderContent();
+            closeMobileNavIfSmallScreen();
         };
 
         const categories = [
@@ -511,6 +568,140 @@
             return alerts;
         }
 
+        // ---- สรุปสถานะรถทั้งกองแบบ "เขียว/เหลือง/แดง" ต่อคัน (ใช้กับการ์ด Hero) ----
+        // ปกติ = ไม่มีรายการเกินกำหนด/ใกล้ถึงรอบเลย, ใกล้ถึงรอบ = มีรายการ soon อย่างน้อย 1, เกินกำหนด = มี overdue อย่างน้อย 1
+        function getFleetStatusCounts(categoryFilter) {
+            const vehicles = categoryFilter ? state.vehicles.filter(v => (v.category || 'flatbed') === categoryFilter) : state.vehicles;
+            const counts = { ok: 0, soon: 0, overdue: 0 };
+            vehicles.forEach(v => {
+                const summary = getVehicleMaintenanceSummary(v.plate);
+                if (summary.some(s => s.status === 'overdue')) counts.overdue++;
+                else if (summary.some(s => s.status === 'soon')) counts.soon++;
+                else counts.ok++;
+            });
+            return counts;
+        }
+
+        // ---- ฟีดกิจกรรมซ่อมบำรุงล่าสุด (ผสมงานที่ทำเสร็จแล้ว + รายการที่รอดำเนินการ) ----
+        function getRecentMaintenanceActivity(categoryFilter, limit) {
+            const vehicles = new Set((categoryFilter ? state.vehicles.filter(v => (v.category || 'flatbed') === categoryFilter) : state.vehicles).map(v => v.plate));
+            const done = state.maintenanceLogs
+                .filter(m => vehicles.has(m.plate))
+                .sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date))
+                .slice(0, limit)
+                .map(m => ({ plate: m.plate, label: (maintenanceTypeMap[m.category] || { label: m.category }).label, statusLabel: 'เสร็จแล้ว', done: true, sortKey: parseDateForSort(m.date) }));
+            const pending = getFleetMaintenanceAlerts()
+                .filter(a => (!categoryFilter || (a.vehicle.category || 'flatbed') === categoryFilter) && a.status !== 'unknown')
+                .slice(0, limit)
+                .map(a => ({ plate: a.plate, label: a.type.label, statusLabel: a.status === 'overdue' ? 'เกินกำหนด' : 'รอดำเนินการ', done: false, urgent: a.status === 'overdue', sortKey: Infinity }));
+            return [...pending, ...done].slice(0, limit);
+        }
+
+        // ---- เที่ยวรถล่าสุด (วันนี้ก่อน ถ้าไม่มีค่อยใช้เที่ยวล่าสุดแทน) ----
+        function getTodayOrRecentTrips(categoryFilter, limit) {
+            const pool = categoryFilter ? state.trips.filter(t => (t.category || 'flatbed') === categoryFilter) : state.trips;
+            const todayThai = formatToThaiShort(getToday());
+            const todayTrips = pool.filter(t => formatDisplayDate(t.date) === formatDisplayDate(todayThai));
+            const source = todayTrips.length > 0 ? todayTrips : [...pool].sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date));
+            return { isToday: todayTrips.length > 0, trips: source.slice(0, limit) };
+        }
+
+        // ==========================================================
+        // 🎨 Hero banner ด้านบนของหน้าภาพรวม — สรุปสถานะรถ/ซ่อมบำรุง/เที่ยววิ่งแบบเห็นภาพไว
+        // ==========================================================
+        function buildHeroBanner() {
+            const catName = state.activeCategory === 'flatbed' ? 'รถพื้นเรียบ' : 'รถเซมิดั๊ม';
+            const statusCounts = getFleetStatusCounts(state.activeCategory);
+            const activity = getRecentMaintenanceActivity(state.activeCategory, 4);
+            const { isToday, trips: heroTrips } = getTodayOrRecentTrips(state.activeCategory, 4);
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'สวัสดีตอนเช้า' : hour < 17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+            const dotColors = ['#1e3350', '#4a76a8', '#fbbf24', '#8dadd1'];
+
+            return `
+                <div class="relative rounded-3xl overflow-hidden mb-8 shadow-lg border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-navy-50">
+                    <!-- แผงเหลี่ยมสีกรมท่า ตกแต่งด้านหลังคล้ายอาคารในภาพอ้างอิง -->
+                    <div class="absolute inset-y-0 right-0 w-full md:w-[42%] pointer-events-none" style="background: linear-gradient(155deg, #22405f 0%, #1e3350 45%, #142338 100%); clip-path: polygon(28% 0, 100% 0, 100% 100%, 0% 100%);"></div>
+                    <svg class="absolute inset-y-0 right-0 w-full md:w-[42%] h-full opacity-[0.08] pointer-events-none" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+                        <g stroke="#ffffff" stroke-width="2" fill="none">
+                            <line x1="140" y1="0" x2="140" y2="300" /><line x1="200" y1="0" x2="200" y2="300" />
+                            <line x1="260" y1="0" x2="260" y2="300" /><line x1="320" y1="0" x2="320" y2="300" />
+                            <line x1="90" y1="60" x2="400" y2="60" /><line x1="60" y1="150" x2="400" y2="150" /><line x1="30" y1="230" x2="400" y2="230" />
+                        </g>
+                    </svg>
+
+                    <div class="relative z-10 p-6 md:p-10">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-8">
+                            <div class="flex-1 max-w-lg">
+                                <div class="flex items-center gap-3 mb-5">
+                                    <div class="w-12 h-12 rounded-2xl bg-navy-800 flex items-center justify-center shadow-md flex-shrink-0">
+                                        <i data-lucide="truck" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div class="leading-tight">
+                                        <p class="text-navy-900 font-extrabold text-base tracking-wide">FLEET PORTAL</p>
+                                        <p class="text-navy-500 text-[10px] font-bold tracking-[0.25em] uppercase">${catName}</p>
+                                    </div>
+                                </div>
+                                <h2 class="text-navy-900 text-2xl md:text-[26px] font-bold mb-2">${greeting} ยินดีต้อนรับสู่ระบบจัดการรถ</h2>
+                                <p class="text-slate-500 text-sm">ภาพรวมสถานะยานพาหนะ งานซ่อมบำรุง และเที่ยววิ่งงาน${isToday ? 'ของวันนี้' : 'ล่าสุด'} ในที่เดียว</p>
+                            </div>
+                            <div class="hidden md:flex items-center justify-center flex-shrink-0 pr-2 lg:pr-6">
+                                <div class="w-24 h-24 rounded-full border-2 border-white/25 flex items-center justify-center">
+                                    <div class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                                        <i data-lucide="truck" class="w-9 h-9 text-white"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl p-5 shadow-sm">
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                                    <p class="text-slate-800 font-bold text-sm">สถานะยานพาหนะ</p>
+                                </div>
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center justify-between text-sm"><span class="flex items-center text-slate-500"><span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>ปกติ</span><span class="font-bold text-slate-800">${statusCounts.ok}</span></div>
+                                    <div class="flex items-center justify-between text-sm"><span class="flex items-center text-slate-500"><span class="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>ใกล้ถึงรอบ</span><span class="font-bold text-slate-800">${statusCounts.soon}</span></div>
+                                    <div class="flex items-center justify-between text-sm"><span class="flex items-center text-slate-500"><span class="w-2 h-2 rounded-full bg-rose-500 mr-2"></span>เกินกำหนด</span><span class="font-bold text-slate-800">${statusCounts.overdue}</span></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl p-5 shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0"><i data-lucide="wrench" class="w-5 h-5 text-navy-800"></i></div><p class="text-slate-800 font-bold text-sm">ประวัติซ่อมบำรุงล่าสุด</p></div>
+                                    <button onclick="changeTab('${state.activeCategory}','maintenance'); renderNav(); renderContent();" class="text-slate-400 hover:text-navy-800 transition-colors"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                                </div>
+                                <div class="space-y-2.5">
+                                    ${activity.length === 0 ? `<p class="text-slate-400 text-xs">ยังไม่มีข้อมูล</p>` : activity.map(a => `
+                                        <div class="flex items-center justify-between text-xs gap-2">
+                                            <span class="text-slate-600 truncate">${a.plate}: ${a.label}</span>
+                                            <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${a.done ? 'bg-emerald-100 text-emerald-700' : a.urgent ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}">${a.statusLabel}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div class="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl p-5 shadow-sm">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0"><i data-lucide="map-pin" class="w-5 h-5 text-navy-800"></i></div><p class="text-slate-800 font-bold text-sm">${isToday ? 'เที่ยวรถวันนี้' : 'เที่ยวรถล่าสุด'}</p></div>
+                                    <button onclick="changeTab('${state.activeCategory}','trips'); renderNav(); renderContent();" class="text-slate-400 hover:text-navy-800 transition-colors"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                                </div>
+                                <div class="space-y-2.5">
+                                    ${heroTrips.length === 0 ? `<p class="text-slate-400 text-xs">ยังไม่มีข้อมูลการวิ่งงาน</p>` : heroTrips.map((t, i) => `
+                                        <div class="flex items-center text-xs gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:${dotColors[i % dotColors.length]}"></span>
+                                            <span class="text-slate-600 truncate">${t.plate}: ${t.origin} → ${t.dest}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         // ---- ข้อความคำแนะนำสไตล์ช่างศูนย์ ----
         function getAdvisorMessage(statusItem) {
             const { type, status, kmSince, kmToGo, daysSince } = statusItem;
@@ -568,15 +759,15 @@
             categories.forEach(cat => {
                 html += `<div class="mb-10">`;
                 html += `
-                    <h3 class="px-2 text-[17px] font-extrabold text-rose-900 mb-4 flex items-center">
-                        <div class="bg-rose-100 p-1.5 rounded-lg mr-2"><i data-lucide="${cat.icon}" class="w-5 h-5 text-rose-800"></i></div>
+                    <h3 class="px-2 text-[17px] font-extrabold text-navy-900 mb-4 flex items-center">
+                        <div class="bg-navy-100 p-1.5 rounded-lg mr-2 flex-shrink-0"><i data-lucide="${cat.icon}" class="w-5 h-5 text-navy-800"></i></div>
                         ${cat.label}
                     </h3>
                 `;
                 
                 const isOv = state.activeCategory === cat.id && state.activeTab === 'overview';
                 html += `
-                    <button onclick="changeTab('${cat.id}', 'overview')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all mb-4 ${isOv ? 'bg-rose-50 text-rose-900 font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+                    <button onclick="changeTab('${cat.id}', 'overview')" class="w-full flex items-center space-x-3 ${isOv ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all mb-4">
                         <i data-lucide="layout-dashboard" class="h-5 w-5"></i><span>ภาพรวม (Dashboard)</span>
                     </button>
                 `;
@@ -612,7 +803,7 @@
                             const isMOpen = state.expandedTree[mKey];
                             html += `
                                 <div>
-                                    <button onclick="toggleTree('${mKey}')" class="flex items-center w-full text-left font-semibold text-slate-600 px-2 py-1.5 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors text-[14px]">
+                                    <button onclick="toggleTree('${mKey}')" class="flex items-center w-full text-left font-semibold text-slate-600 px-2 py-1.5 hover:text-navy-800 hover:bg-navy-50 rounded-lg transition-colors text-[14px]">
                                         <i data-lucide="${isMOpen ? 'chevron-down' : 'chevron-right'}" class="w-4 h-4 mr-2 text-slate-400"></i>
                                         ${monthNames[m-1]}
                                     </button>
@@ -625,10 +816,10 @@
                                     <div class="relative">
                                         <div class="absolute -left-4 top-2.5 w-4 border-t-2 border-slate-200"></div>
                                         <div class="text-[13px] font-bold text-slate-500 mb-1 ml-1">1-15 ${monthNames[m-1]}</div>
-                                        <button onclick="changeTabPeriod('${cat.id}', 'trips', ${y.year}, ${m}, 1)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg mb-0.5 text-[13px] transition-colors ${p1TripsActive ? 'bg-rose-50 text-rose-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                                        <button onclick="changeTabPeriod('${cat.id}', 'trips', ${y.year}, ${m}, 1)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg mb-0.5 text-[13px] transition-colors ${p1TripsActive ? 'bg-navy-50 text-navy-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
                                             <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-2"></i>รายการวิ่งงาน
                                         </button>
-                                        <button onclick="changeTabPeriod('${cat.id}', 'refuels', ${y.year}, ${m}, 1)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg text-[13px] transition-colors ${p1RefuelsActive ? 'bg-rose-50 text-rose-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                                        <button onclick="changeTabPeriod('${cat.id}', 'refuels', ${y.year}, ${m}, 1)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg text-[13px] transition-colors ${p1RefuelsActive ? 'bg-navy-50 text-navy-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
                                             <i data-lucide="droplet" class="w-3.5 h-3.5 mr-2"></i>รายการเติมน้ำมัน
                                         </button>
                                     </div>
@@ -639,10 +830,10 @@
                                     <div class="relative">
                                         <div class="absolute -left-4 top-2.5 w-4 border-t-2 border-slate-200"></div>
                                         <div class="text-[13px] font-bold text-slate-500 mb-1 ml-1">16-สิ้นเดือน ${monthNames[m-1]}</div>
-                                        <button onclick="changeTabPeriod('${cat.id}', 'trips', ${y.year}, ${m}, 2)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg mb-0.5 text-[13px] transition-colors ${p2TripsActive ? 'bg-rose-50 text-rose-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                                        <button onclick="changeTabPeriod('${cat.id}', 'trips', ${y.year}, ${m}, 2)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg mb-0.5 text-[13px] transition-colors ${p2TripsActive ? 'bg-navy-50 text-navy-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
                                             <i data-lucide="map-pin" class="w-3.5 h-3.5 mr-2"></i>รายการวิ่งงาน
                                         </button>
-                                        <button onclick="changeTabPeriod('${cat.id}', 'refuels', ${y.year}, ${m}, 2)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg text-[13px] transition-colors ${p2RefuelsActive ? 'bg-rose-50 text-rose-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
+                                        <button onclick="changeTabPeriod('${cat.id}', 'refuels', ${y.year}, ${m}, 2)" class="flex items-center w-full text-left px-3 py-1.5 rounded-lg text-[13px] transition-colors ${p2RefuelsActive ? 'bg-navy-50 text-navy-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}">
                                             <i data-lucide="droplet" class="w-3.5 h-3.5 mr-2"></i>รายการเติมน้ำมัน
                                         </button>
                                     </div>
@@ -664,17 +855,17 @@
                 const catAlertCount = getFleetMaintenanceAlerts().filter(a => (a.vehicle.category || 'flatbed') === cat.id && a.status !== 'unknown').length;
                 html += `
                     <div class="border-t border-slate-100 pt-4 space-y-1">
-                        <button onclick="changeTab('${cat.id}', 'jobs')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isJobs ? 'bg-rose-50 text-rose-900 font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+                        <button onclick="changeTab('${cat.id}', 'jobs')" class="w-full flex items-center space-x-3 ${isJobs ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
                             <i data-lucide="map" class="h-5 w-5"></i><span>เส้นทางและเรทราคา</span>
                         </button>
-                        <button onclick="changeTab('${cat.id}', 'vehicles')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isVehicles ? 'bg-rose-50 text-rose-900 font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+                        <button onclick="changeTab('${cat.id}', 'vehicles')" class="w-full flex items-center space-x-3 ${isVehicles ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
                             <i data-lucide="users" class="h-5 w-5"></i><span>ข้อมูลรถและคนขับ</span>
                         </button>
-                        <button onclick="changeTab('${cat.id}', 'maintenance')" class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${isMaint ? 'bg-rose-50 text-rose-900 font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+                        <button onclick="changeTab('${cat.id}', 'maintenance')" class="w-full flex items-center justify-between ${isMaint ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
                             <span class="flex items-center space-x-3"><i data-lucide="wrench" class="h-5 w-5"></i><span>ซ่อมบำรุงรักษา</span></span>
                             ${catAlertCount > 0 ? `<span class="bg-rose-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">${catAlertCount}</span>` : ''}
                         </button>
-                        <button onclick="changeTab('${cat.id}', 'tires')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${isTires ? 'bg-rose-50 text-rose-900 font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-100'}">
+                        <button onclick="changeTab('${cat.id}', 'tires')" class="w-full flex items-center space-x-3 ${isTires ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
                             <i data-lucide="circle-dot" class="h-5 w-5"></i><span>ระบบยางรถ (22 ล้อ)</span>
                         </button>
                     </div>
@@ -694,7 +885,7 @@
                 'maintenance': `ซ่อมบำรุงรักษา & แจ้งเตือน`,
                 'tires': `ระบบยางรถ 22 ตำแหน่ง`
             };
-            document.getElementById('page-title').innerHTML = `${titleObj[state.activeTab]} <span class="text-rose-800 text-lg font-bold ml-3 bg-rose-50 border border-rose-200 px-3 py-1 rounded-lg">${catName}</span>`;
+            document.getElementById('page-title').innerHTML = `${titleObj[state.activeTab]} <span class="text-navy-800 text-lg font-bold ml-3 bg-navy-50 border border-navy-200 px-3 py-1 rounded-lg">${catName}</span>`;
             
             const btnAdd = document.getElementById('btn-add-new');
             const tabsWithAdd = ['trips', 'refuels', 'jobs', 'vehicles', 'maintenance'];
@@ -803,12 +994,10 @@
                 const formattedDate = formatDisplayDate(trip.date);
                 const parts = String(formattedDate).split('/');
                 if (parts.length === 3) {
-                    const day = parseInt(parts[0], 10);
                     const monthStr = monthNames[parseInt(parts[1], 10) - 1] || parts[1];
                     const year = parts[2];
-                    const periodLabel = day <= 15 ? 'วันที่ 1-15' : 'วันที่ 16-สิ้นเดือน';
-                    const key = `${monthStr} ${year} (${periodLabel})`;
-                    const order = parseInt(year) * 100 + parseInt(parts[1]) * 10 + (day <= 15 ? 1 : 2); 
+                    const key = `${monthStr} ${year}`;
+                    const order = parseInt(year) * 100 + parseInt(parts[1]);
 
                     if (!dataMap[key]) dataMap[key] = { name: key, กำไร: 0, ยอดรับ: 0, ค่าน้ำมัน: 0, order };
                     dataMap[key].กำไร += Number(trip.profit || 0);
@@ -825,45 +1014,46 @@
 
             let html = `
                 <div class="space-y-6">
+                    ${buildHeroBanner()}
                     <div class="grid grid-cols-1 md:grid-cols-2 ${state.activeCategory === 'semidump' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-6">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-green-100 p-4 rounded-xl text-green-600"><i data-lucide="dollar-sign" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">กำไรสุทธิรวม</p><p class="text-2xl font-bold text-slate-800">${formatCurrency(totalProfit)}</p></div>
+                            <div class="bg-green-100 p-4 rounded-xl text-green-600 flex-shrink-0"><i data-lucide="dollar-sign" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">กำไรสุทธิรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalProfit)}</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-rose-100 p-4 rounded-xl text-rose-800"><i data-lucide="truck" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">ยอดรับสุทธิรวม</p><p class="text-2xl font-bold text-slate-800">${formatCurrency(totalRevenue)}</p></div>
+                            <div class="bg-navy-100 p-4 rounded-xl text-navy-800 flex-shrink-0"><i data-lucide="truck" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ยอดรับสุทธิรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalRevenue)}</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-orange-100 p-4 rounded-xl text-orange-600"><i data-lucide="droplet" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">ยอดจ่ายค่าน้ำมันรวม</p><p class="text-2xl font-bold text-slate-800">${formatCurrency(totalRefuelAmount)}</p></div>
+                            <div class="bg-orange-100 p-4 rounded-xl text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ยอดจ่ายค่าน้ำมันรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalRefuelAmount)}</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-purple-100 p-4 rounded-xl text-purple-600"><i data-lucide="map-pin" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">จำนวนเที่ยววิ่ง</p><p class="text-2xl font-bold text-slate-800">${tripsCount} <span class="text-base font-normal">เที่ยว</span></p></div>
+                            <div class="bg-purple-100 p-4 rounded-xl text-purple-600 flex-shrink-0"><i data-lucide="map-pin" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">จำนวนเที่ยววิ่ง</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${tripsCount} <span class="text-base font-normal">เที่ยว</span></p></div>
                         </div>
                         ${state.activeCategory === 'semidump' ? `
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-amber-100 p-4 rounded-xl text-amber-600"><i data-lucide="package" class="w-8 h-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">น้ำหนักบรรทุกรวม</p><p class="text-2xl font-bold text-slate-800">${formatNumber(totalWeight).replace(/\.00$/, '')} <span class="text-base font-normal">ตัน</span></p></div>
+                            <div class="bg-amber-100 p-4 rounded-xl text-amber-600 flex-shrink-0"><i data-lucide="package" class="w-8 h-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">น้ำหนักบรรทุกรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatNumber(totalWeight).replace(/\.00$/, '')} <span class="text-base font-normal">ตัน</span></p></div>
                         </div>
                         ` : ''}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-red-100 p-4 rounded-xl text-red-600"><i data-lucide="wrench" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-slate-800">${formatCurrency(totalMaintCost)}</p></div>
+                            <div class="bg-red-100 p-4 rounded-xl text-red-600 flex-shrink-0"><i data-lucide="wrench" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalMaintCost)}</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
-                            <div class="bg-teal-100 p-4 rounded-xl text-teal-700"><i data-lucide="shield-check" class="h-8 w-8"></i></div>
-                            <div><p class="text-sm text-slate-500 font-medium">กำไรสุทธิหลังหักค่าซ่อมบำรุง</p><p class="text-2xl font-bold ${netAfterMaint >= 0 ? 'text-slate-800' : 'text-red-600'}">${formatCurrency(netAfterMaint)}</p></div>
+                            <div class="bg-teal-100 p-4 rounded-xl text-teal-700 flex-shrink-0"><i data-lucide="shield-check" class="h-8 w-8"></i></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">กำไรสุทธิหลังหักค่าซ่อมบำรุง</p><p class="text-2xl font-bold ${netAfterMaint >= 0 ? 'text-slate-800' : 'text-red-600'} break-words w-full">${formatCurrency(netAfterMaint)}</p></div>
                         </div>
                     </div>
 
                     ${catAlerts.length > 0 ? `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-rose-100">
-                        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center"><i data-lucide="bell-ring" class="h-5 w-5 mr-2 text-rose-800"></i>แจ้งเตือนซ่อมบำรุง</h3>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-navy-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center"><i data-lucide="bell-ring" class="h-5 w-5 mr-2 text-navy-800"></i>แจ้งเตือนซ่อมบำรุง</h3>
                         <p class="text-xs text-slate-400 mb-4">ป้องกันรถเสียกลางทาง = ป้องกันรายได้และค่าปรับที่หายไปจากงานที่ทำไม่ได้</p>
                         <div class="space-y-2">
                         ${catAlerts.slice(0, 5).map(a => `
@@ -880,11 +1070,11 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center"><i data-lucide="calendar" class="h-5 w-5 mr-2 text-rose-800"></i>กำไรรายปี</h3>
+                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center"><i data-lucide="calendar" class="h-5 w-5 mr-2 text-navy-800"></i>กำไรรายเดือน</h3>
                             <div class="h-80 w-full"><canvas id="chartBar"></canvas></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center"><i data-lucide="dollar-sign" class="h-5 w-5 mr-2 text-rose-800"></i>แนวโน้มยอดรับเทียบกับกำไร</h3>
+                            <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center"><i data-lucide="dollar-sign" class="h-5 w-5 mr-2 text-navy-800"></i>แนวโน้มยอดรับเทียบกับกำไร</h3>
                             <div class="h-80 w-full"><canvas id="chartLine"></canvas></div>
                         </div>
                     </div>
@@ -913,30 +1103,30 @@
             let html = `
                 <div class="grid grid-cols-2 ${state.activeCategory === 'semidump' ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-purple-100 p-1.5 rounded-lg text-purple-600"><i data-lucide="map-pin" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">จำนวนเที่ยวรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${data.length} <span class="text-sm font-normal text-slate-500">เที่ยว</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-purple-100 p-1.5 rounded-lg text-purple-600 flex-shrink-0"><i data-lucide="map-pin" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">จำนวนเที่ยวรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${data.length} <span class="text-sm font-normal text-slate-500">เที่ยว</span></p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600"><i data-lucide="route" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ระยะทางรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${formatNumber(grandTotalDist).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">กม.</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600 flex-shrink-0"><i data-lucide="route" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ระยะทางรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalDist).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">กม.</span></p>
                     </div>
                     ${state.activeCategory === 'semidump' ? `
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-amber-100 p-1.5 rounded-lg text-amber-600"><i data-lucide="package" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">น้ำหนักรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${formatNumber(grandTotalWeight).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ตัน</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-amber-100 p-1.5 rounded-lg text-amber-600 flex-shrink-0"><i data-lucide="package" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">น้ำหนักรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalWeight).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ตัน</span></p>
                     </div>
                     ` : ''}
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-rose-100 p-1.5 rounded-lg text-rose-800"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดรับรวม</p></div>
-                        <p class="text-xl font-bold text-rose-900">${formatCurrency(grandTotalRevenue)}</p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดรับรวม</p></div>
+                        <p class="text-xl font-bold text-navy-900 break-words w-full">${formatCurrency(grandTotalRevenue)}</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ค่าน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-orange-600">${formatCurrency(grandTotalFuel)}</p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ค่าน้ำมันรวม</p></div>
+                        <p class="text-xl font-bold text-orange-600 break-words w-full">${formatCurrency(grandTotalFuel)}</p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-green-100 p-1.5 rounded-lg text-green-600"><i data-lucide="trending-up" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">กำไรสุทธิรวม</p></div>
-                        <p class="text-xl font-bold text-green-600">${formatCurrency(grandTotalProfit)}</p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-green-100 p-1.5 rounded-lg text-green-600 flex-shrink-0"><i data-lucide="trending-up" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">กำไรสุทธิรวม</p></div>
+                        <p class="text-xl font-bold text-green-600 break-words w-full">${formatCurrency(grandTotalProfit)}</p>
                     </div>
                 </div>
                 <div class="space-y-6">
@@ -962,13 +1152,13 @@
                             <td class="p-3 text-slate-800 font-medium pl-6">${route.origin}</td>
                             <td class="p-3 text-slate-800 font-medium">${route.dest}</td>
                             <td class="p-3 text-center text-slate-600">${route.tripCount} เที่ยว</td>
-                            <td class="p-3 text-right font-bold text-rose-800 pr-6">${formatNumber(route.totalWeight).replace(/\.00$/, '')} ตัน</td>
+                            <td class="p-3 text-right font-bold text-navy-800 pr-6">${formatNumber(route.totalWeight).replace(/\.00$/, '')} ตัน</td>
                         </tr>
                     `;
                 });
 
                 html += `
-                    <div class="bg-gradient-to-r from-amber-50/50 to-rose-50/30 rounded-2xl shadow-sm border border-amber-200/60 overflow-hidden mb-6">
+                    <div class="bg-gradient-to-r from-amber-50/50 to-navy-50/30 rounded-2xl shadow-sm border border-amber-200/60 overflow-hidden mb-6">
                         <div class="bg-amber-100/50 px-6 py-3 border-b border-amber-200/60 flex items-center space-x-3">
                             <div class="bg-amber-200 p-1.5 rounded-lg"><i data-lucide="map" class="w-5 h-5 text-amber-800"></i></div>
                             <h3 class="text-md font-bold text-amber-900">สรุปน้ำหนักรวมแยกตามเส้นทาง (งาน)</h3>
@@ -980,7 +1170,7 @@
                                         <th class="p-3 font-semibold pl-6">ต้นทาง</th>
                                         <th class="p-3 font-semibold">ปลายทาง</th>
                                         <th class="p-3 font-semibold text-center w-32">จำนวนเที่ยว</th>
-                                        <th class="p-3 font-semibold text-right w-40 pr-6 text-rose-800">น้ำหนักรวม (ตัน)</th>
+                                        <th class="p-3 font-semibold text-right w-40 pr-6 text-navy-800">น้ำหนักรวม (ตัน)</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-amber-100/50">${routeRows}</tbody>
@@ -1022,13 +1212,13 @@
                             <td class="p-4 text-slate-600">${t.origin}</td>
                             <td class="p-4 text-slate-600">${t.dest}</td>
                             <td class="p-4 text-right tabular-nums text-slate-600">${t.dist} กม.</td>
-                            ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-rose-800 font-bold">${t.weight ? t.weight + ' ตัน' : '-'}</td>` : ''}
+                            ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-navy-800 font-bold">${t.weight ? t.weight + ' ตัน' : '-'}</td>` : ''}
                             <td class="p-4 text-right tabular-nums font-medium text-slate-800">${formatCurrency(t.revenue)}</td>
                             <td class="p-4 text-right tabular-nums text-orange-500">${formatCurrency(t.fuelCost)}</td>
                             <td class="p-4 text-right tabular-nums text-sky-600 font-medium">${formatCurrency(t.driverFee || 0)}</td>
                             <td class="p-4 text-right tabular-nums font-bold ${Number(t.profit) >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(t.profit)}</td>
                             <td class="p-4 text-center space-x-2">
-                                <button onclick="requestActionPin('openEditModal(\\'${t.id}\\', \\'trips\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                                <button onclick="requestActionPin('openEditModal(\\'${t.id}\\', \\'trips\\')')" class="text-slate-400 hover:text-navy-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                                 <button onclick="requestActionPin('deleteData(\\'${t.id}\\', \\'deleteTrip\\', \\'trip\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </td>
                         </tr>
@@ -1036,11 +1226,11 @@
                 });
 
                 const summaryRow = `
-                    <tr class="bg-rose-50/60 font-bold border-t-2 border-rose-200">
+                    <tr class="bg-navy-50/60 font-bold border-t-2 border-navy-200">
                         <td colspan="3" class="p-4 text-right text-slate-700">รวมทั้งหมด:</td>
                         <td class="p-4 text-right tabular-nums text-slate-800">${formatNumber(sumDist).replace(/\.00$/, '')} กม.</td>
-                        ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-rose-900">${formatNumber(sumWeight).replace(/\.00$/, '')} ตัน</td>` : ''}
-                        <td class="p-4 text-right tabular-nums text-rose-900">${formatCurrency(sumRevenue)}</td>
+                        ${state.activeCategory === 'semidump' ? `<td class="p-4 text-right tabular-nums text-navy-900">${formatNumber(sumWeight).replace(/\.00$/, '')} ตัน</td>` : ''}
+                        <td class="p-4 text-right tabular-nums text-navy-900">${formatCurrency(sumRevenue)}</td>
                         <td class="p-4 text-right tabular-nums text-orange-600">${formatCurrency(sumFuel)}</td>
                         <td class="p-4 text-right tabular-nums text-sky-700">${formatCurrency(sumDriverFee)}</td>
                         <td class="p-4 text-right tabular-nums ${sumProfit >= 0 ? 'text-green-700' : 'text-red-700'}">${formatCurrency(sumProfit)}</td>
@@ -1053,7 +1243,7 @@
                 if (hasTrips) {
                     let detailsList = Object.entries(driverFeeSummary).map(([route, data]) => {
                         return `<div class="text-slate-900 font-bold ml-6 text-base md:text-lg">
-                            ${route} <span class="text-rose-800">${data.count}</span> เที่ยว = <span class="text-rose-800">${formatNumber(data.totalFee).replace(/\.00$/, '')}</span> บาท
+                            ${route} <span class="text-navy-800">${data.count}</span> เที่ยว = <span class="text-navy-800">${formatNumber(data.totalFee).replace(/\.00$/, '')}</span> บาท
                         </div>`;
                     }).join('');
 
@@ -1069,16 +1259,16 @@
 
                 html += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                        <div class="bg-rose-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
                             <div class="flex items-center space-x-3">
-                                <div class="bg-rose-100 p-1.5 rounded-lg"><i data-lucide="truck" class="w-5 h-5 text-rose-800"></i></div>
-                                <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-rose-900">${plate}</span></h3>
+                                <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                                <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
                                 <span class="text-sm font-medium text-slate-500 ml-2">
-                                    (${trips.length} เที่ยว ${state.activeCategory === 'semidump' ? ` | น้ำหนักรวม <span class="font-bold text-rose-900">${formatNumber(sumWeight).replace(/\.00$/, '')}</span> ตัน` : ''})
+                                    (${trips.length} เที่ยว ${state.activeCategory === 'semidump' ? ` | น้ำหนักรวม <span class="font-bold text-navy-900">${formatNumber(sumWeight).replace(/\.00$/, '')}</span> ตัน` : ''})
                                 </span>
                             </div>
-                            <div class="text-sm font-bold text-rose-800 bg-rose-100/80 px-4 py-1.5 rounded-full border border-rose-200 shadow-sm flex items-center">
-                                <i data-lucide="wallet" class="w-4 h-4 mr-2 text-rose-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-rose-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
+                            <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
+                                <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
                             </div>
                         </div>
                         ${driverFeeDetailsHtml}
@@ -1090,7 +1280,7 @@
                                         <th class="p-4 font-semibold w-40">ต้นทาง</th>
                                         <th class="p-4 font-semibold w-40">ปลายทาง</th>
                                         <th class="p-4 font-semibold text-right w-24">ระยะทาง</th>
-                                        ${state.activeCategory === 'semidump' ? '<th class="p-4 font-semibold text-right text-rose-800 w-28">น้ำหนัก(ตัน)</th>' : ''}
+                                        ${state.activeCategory === 'semidump' ? '<th class="p-4 font-semibold text-right text-navy-800 w-28">น้ำหนัก(ตัน)</th>' : ''}
                                         <th class="p-4 font-semibold text-right w-32">ยอดรับ(บ.)</th>
                                         <th class="p-4 font-semibold text-right w-32">ค่าน้ำมัน(บ.)</th>
                                         <th class="p-4 font-semibold text-right text-sky-700 w-32">ค่าคนขับ(บ.)</th>
@@ -1113,8 +1303,8 @@
             let html = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-rose-100 p-1.5 rounded-lg text-rose-800"><i data-lucide="map" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">เส้นทางมาตรฐานรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${filteredJobs.length} <span class="text-sm font-normal text-slate-500">เส้นทาง</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="map" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">เส้นทางมาตรฐานรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${filteredJobs.length} <span class="text-sm font-normal text-slate-500">เส้นทาง</span></p>
                     </div>
                 </div>
             `;
@@ -1132,11 +1322,11 @@
                         <td class="p-4 font-medium text-slate-800">${j.origin}</td>
                         <td class="p-4 font-medium text-slate-800">${j.dest}</td>
                         <td class="p-4 text-right tabular-nums text-slate-600">${j.dist} กม.</td>
-                        <td class="p-4 text-right tabular-nums font-bold text-rose-800">${formatCurrency(j.revenue)}</td>
+                        <td class="p-4 text-right tabular-nums font-bold text-navy-800">${formatCurrency(j.revenue)}</td>
                         <td class="p-4 text-right tabular-nums text-orange-600">${formatCurrency(displayFuelCost)}</td>
                         <td class="p-4 text-right tabular-nums font-bold text-sky-700">${formatCurrency(j.driverFee || 0)}</td>
                         <td class="p-4 text-center space-x-2">
-                            <button onclick="requestActionPin('openEditModal(\\'${j.id}\\', \\'jobs\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            <button onclick="requestActionPin('openEditModal(\\'${j.id}\\', \\'jobs\\')')" class="text-slate-400 hover:text-navy-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                             <button onclick="requestActionPin('deleteData(\\'${j.id}\\', \\'deleteJob\\', \\'job\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
@@ -1182,16 +1372,16 @@
             let html = `
                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รายการเติมน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${data.length} <span class="text-sm font-normal text-slate-500">รายการ</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รายการเติมน้ำมันรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${data.length} <span class="text-sm font-normal text-slate-500">รายการ</span></p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-rose-100 p-1.5 rounded-lg text-rose-800"><i data-lucide="database" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ปริมาณน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${formatNumber(grandTotalLiters).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ลิตร</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="database" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ปริมาณน้ำมันรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalLiters).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ลิตร</span></p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดเงินรวม</p></div>
-                        <p class="text-xl font-bold text-orange-600">${formatCurrency(grandTotalCost)}</p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดเงินรวม</p></div>
+                        <p class="text-xl font-bold text-orange-600 break-words w-full">${formatCurrency(grandTotalCost)}</p>
                     </div>
                 </div>
                 <div class="space-y-6">
@@ -1215,7 +1405,7 @@
                             <td class="p-4 text-right tabular-nums text-slate-600">${r.liters} ลิตร</td>
                             <td class="p-4 text-right tabular-nums font-bold text-orange-600">${formatCurrency(r.total)}</td>
                             <td class="p-4 text-center space-x-2">
-                                <button onclick="requestActionPin('openEditModal(\\'${r.id}\\', \\'refuels\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                                <button onclick="requestActionPin('openEditModal(\\'${r.id}\\', \\'refuels\\')')" class="text-slate-400 hover:text-navy-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                                 <button onclick="requestActionPin('deleteData(\\'${r.id}\\', \\'deleteRefuel\\', \\'refuel\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </td>
                         </tr>
@@ -1233,9 +1423,9 @@
 
                 html += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                        <div class="bg-rose-50/50 px-6 py-4 border-b border-slate-200 flex items-center space-x-3">
-                            <div class="bg-rose-100 p-1.5 rounded-lg"><i data-lucide="truck" class="w-5 h-5 text-rose-800"></i></div>
-                            <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-rose-900">${plate}</span></h3>
+                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex items-center space-x-3">
+                            <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                            <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
                             <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
                         </div>
                         <div class="overflow-x-auto">
@@ -1264,8 +1454,8 @@
             let html = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600"><i data-lucide="users" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รถและคนขับรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800">${filteredVehicles.length} <span class="text-sm font-normal text-slate-500">คัน</span></p>
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600 flex-shrink-0"><i data-lucide="users" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รถและคนขับรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 break-words w-full">${filteredVehicles.length} <span class="text-sm font-normal text-slate-500">คัน</span></p>
                     </div>
                 </div>
             `;
@@ -1275,7 +1465,7 @@
                 const odo = getEstimatedOdometer(v.plate);
                 rows += `
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-4 font-medium text-rose-800"><span class="bg-rose-50 px-3 py-1.5 rounded-md border border-rose-100">${v.plate}</span></td>
+                        <td class="p-4 font-medium text-navy-800"><span class="bg-navy-50 px-3 py-1.5 rounded-md border border-navy-100">${v.plate}</span></td>
                         <td class="p-4 text-slate-800 font-medium">${v.driver}</td>
                         <td class="p-4 text-slate-600">${v.type || '-'}</td>
                         <td class="p-4 text-slate-600">${v.model || '-'} ${v.year ? `<span class="text-xs text-slate-400">(ปี ${v.year})</span>` : ''}</td>
@@ -1287,7 +1477,7 @@
                             </button>
                         </td>
                         <td class="p-4 text-center space-x-2">
-                            <button onclick="requestActionPin('openEditModal(\\'${v.id}\\', \\'vehicles\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                            <button onclick="requestActionPin('openEditModal(\\'${v.id}\\', \\'vehicles\\')')" class="text-slate-400 hover:text-navy-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                             <button onclick="requestActionPin('deleteData(\\'${v.id}\\', \\'deleteVehicle\\', \\'vehicle\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>
@@ -1343,9 +1533,9 @@
                 else if (unknownCount > 0) badgeHtml = `<span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full flex items-center whitespace-nowrap"><i data-lucide="file-question" class="w-3 h-3 mr-1"></i>ไร้ประวัติ ${unknownCount}</span>`;
 
                 html += `
-                    <button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="text-left bg-white p-5 rounded-2xl shadow-sm border ${isActive ? 'border-rose-400 ring-2 ring-rose-200' : 'border-slate-200'} hover:border-rose-300 transition-all">
+                    <button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="text-left bg-white p-5 rounded-2xl shadow-sm border ${isActive ? 'border-navy-400 ring-2 ring-navy-200' : 'border-slate-200'} hover:border-navy-300 transition-all">
                         <div class="flex items-center justify-between mb-3 gap-2">
-                            <span class="font-bold text-rose-900 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100">${v.plate}</span>
+                            <span class="font-bold text-navy-900 bg-navy-50 px-2.5 py-1 rounded-lg border border-navy-100">${v.plate}</span>
                             ${badgeHtml}
                         </div>
                         <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
@@ -1361,7 +1551,7 @@
                 if (catAlerts.length > 0) {
                     html += `
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center"><i data-lucide="bell-ring" class="h-5 w-5 mr-2 text-rose-800"></i>รายการที่ควรติดตาม <span class="text-sm font-normal text-slate-400 ml-2">(คลิกการ์ดรถด้านบนเพื่อดูรายละเอียด/บันทึก)</span></h3>
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center"><i data-lucide="bell-ring" class="h-5 w-5 mr-2 text-navy-800"></i>รายการที่ควรติดตาม <span class="text-sm font-normal text-slate-400 ml-2">(คลิกการ์ดรถด้านบนเพื่อดูรายละเอียด/บันทึก)</span></h3>
                             <div class="space-y-2">
                             ${catAlerts.slice(0, 10).map(a => `
                                 <div class="flex items-center justify-between p-3 rounded-xl ${a.status === 'overdue' ? 'bg-rose-50' : a.status === 'soon' ? 'bg-amber-50' : 'bg-slate-50'}">
@@ -1394,16 +1584,16 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center space-x-4">
-                            <button onclick="state.activeVehiclePlate=null; renderContent();" class="text-slate-400 hover:text-rose-700 p-2 rounded-full hover:bg-rose-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
-                            <div class="bg-rose-800 text-white w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"><i data-lucide="truck" class="w-7 h-7"></i></div>
+                            <button onclick="state.activeVehiclePlate=null; renderContent();" class="text-slate-400 hover:text-navy-700 p-2 rounded-full hover:bg-navy-50"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                            <div class="bg-navy-800 text-white w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"><i data-lucide="truck" class="w-7 h-7"></i></div>
                             <div>
                                 <h3 class="text-xl font-bold text-slate-800">${detailVehicle.plate} <span class="text-slate-400 font-normal text-base">${detailVehicle.model || ''} ${detailVehicle.year ? '(ปี ' + detailVehicle.year + ')' : ''}</span></h3>
                                 <p class="text-sm text-slate-500">คนขับ: ${detailVehicle.driver || '-'}</p>
                             </div>
                         </div>
                         <div class="flex space-x-6">
-                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">เลขไมล์ปัจจุบัน (ประเมิน)</p><p class="text-2xl font-bold text-slate-800">${formatNumber(getEstimatedOdometer(detailVehicle.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal">กม.</span></p></div>
-                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-orange-600">${formatCurrency(totalCost)}</p></div>
+                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">เลขไมล์ปัจจุบัน (ประเมิน)</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatNumber(getEstimatedOdometer(detailVehicle.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal">กม.</span></p></div>
+                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-orange-600 break-words w-full">${formatCurrency(totalCost)}</p></div>
                         </div>
                     </div>
                 </div>
@@ -1422,7 +1612,7 @@
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-rose-50/50 px-6 py-4 border-b border-slate-200"><h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3></div>
+                    <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200"><h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3></div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
                             <thead>
@@ -1441,7 +1631,7 @@
                                     <td class="p-4 text-right tabular-nums font-bold text-orange-600">${formatCurrency(m.cost)}</td>
                                     <td class="p-4 text-slate-500">${m.technician || '-'}</td>
                                     <td class="p-4 text-center space-x-2">
-                                        <button onclick="requestActionPin('openEditModal(\\'${m.id}\\', \\'maintenanceLogs\\')')" class="text-slate-400 hover:text-rose-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                                        <button onclick="requestActionPin('openEditModal(\\'${m.id}\\', \\'maintenanceLogs\\')')" class="text-slate-400 hover:text-navy-700 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
                                         <button onclick="requestActionPin('deleteData(\\'${m.id}\\', \\'deleteMaintenance\\', \\'maintenance\\')')" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                     </td>
                                 </tr>
@@ -1496,7 +1686,7 @@
             let html = `<div class="flex flex-wrap gap-2 mb-6">`;
             filteredVehicles.forEach(v => {
                 const active = v.plate === plate;
-                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors ${active ? 'bg-rose-800 text-white border-rose-800' : 'bg-white text-slate-600 border-slate-200 hover:border-rose-300'}">${v.plate}</button>`;
+                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors ${active ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">${v.plate}</button>`;
             });
             html += `</div>`;
 
@@ -1514,21 +1704,21 @@
 
             html += `
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ปกติ</p><p class="text-xl font-bold text-emerald-600">${goodCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรสลับยาง</p><p class="text-xl font-bold text-amber-600">${monitorCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">จับตาความสึก</p><p class="text-xl font-bold text-orange-600">${warnCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรเปลี่ยน</p><p class="text-xl font-bold text-rose-600">${overdueCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ยังไม่บันทึก</p><p class="text-xl font-bold text-slate-400">${emptyCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ปกติ</p><p class="text-xl font-bold text-emerald-600 break-words w-full">${goodCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรสลับยาง</p><p class="text-xl font-bold text-amber-600 break-words w-full">${monitorCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">จับตาความสึก</p><p class="text-xl font-bold text-orange-600 break-words w-full">${warnCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรเปลี่ยน</p><p class="text-xl font-bold text-rose-600 break-words w-full">${overdueCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ยังไม่บันทึก</p><p class="text-xl font-bold text-slate-400 break-words w-full">${emptyCount}</p></div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center">
-                        <h3 class="text-lg font-bold text-slate-800 mb-1 self-start flex items-center"><i data-lucide="circle-dot" class="h-5 w-5 mr-2 text-rose-800"></i>ผังตำแหน่งยาง — ${plate}</h3>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1 self-start flex items-center"><i data-lucide="circle-dot" class="h-5 w-5 mr-2 text-navy-800"></i>ผังตำแหน่งยาง — ${plate}</h3>
                         <p class="text-xs text-slate-400 mb-2 self-start">คลิกที่ล้อเพื่อดู/บันทึกรายละเอียดยางแต่ละเส้น (22 ตำแหน่ง: หัวลาก 10 + หางพ่วง 12)</p>
                         ${buildWheelSvg(plate)}
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center"><i data-lucide="list" class="h-5 w-5 mr-2 text-rose-800"></i>คำอธิบายสัญลักษณ์</h3>
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center"><i data-lucide="list" class="h-5 w-5 mr-2 text-navy-800"></i>คำอธิบายสัญลักษณ์</h3>
                         <div class="space-y-3 text-sm">
                             <div class="flex items-center space-x-3"><span class="w-4 h-4 rounded-full bg-slate-800 border-2 border-emerald-500 flex-shrink-0"></span><span>ปกติ — วิ่งมาไม่เกิน ${formatNumber(TIRE_ROTATE_KM).replace(/\.00$/, '')} กม.</span></div>
                             <div class="flex items-center space-x-3"><span class="w-4 h-4 rounded-full bg-slate-800 border-2 border-amber-500 flex-shrink-0"></span><span>ควรสลับ/ตรวจดอกยาง — เกิน ${formatNumber(TIRE_ROTATE_KM).replace(/\.00$/, '')} กม.</span></div>
@@ -1597,11 +1787,24 @@
             document.getElementById('tire-modal').classList.add('hidden');
         };
 
-        function sendGasAction(action, data) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return;
+        async function sendGasAction(action, data) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return false;
             try {
-                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action, data }), mode: 'no-cors' }).catch(() => {});
-            } catch (e) {}
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, data })
+                });
+                const result = await res.json();
+                if (result.status !== 'success') {
+                    showToast('บันทึกไม่สำเร็จ: ' + (result.message || 'เกิดข้อผิดพลาดที่ฝั่งเซิร์ฟเวอร์'), 'error');
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.error('sendGasAction error', e);
+                showToast('เชื่อมต่อฐานข้อมูลไม่สำเร็จ (' + e.message + ') — ข้อมูลอาจไม่ถูกบันทึกจริง กด "รีเฟรชข้อมูล" เพื่อตรวจสอบ', 'error');
+                return false;
+            }
         }
 
         window.renderTireModalBody = (formMode) => {
@@ -1622,29 +1825,29 @@
                         ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
-                            <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น Bridgestone R150" />
+                            <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
-                            <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 1224XXXX" />
+                            <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
-                                <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
-                                <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
-                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
+                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
                         </div>
                         <div class="flex space-x-3 pt-2">
                             <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2 bg-rose-800 text-white rounded-lg hover:bg-rose-900 font-medium">บันทึก</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
                         </div>
                     </form>
                 `;
@@ -1677,7 +1880,7 @@
                     </div>
                     <div class="flex space-x-2 mb-3">
                         <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
-                        <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="flex-1 px-3 py-2 bg-rose-100 hover:bg-rose-200 rounded-lg text-sm font-bold text-rose-800 flex items-center justify-center"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนยางใหม่</button>
+                        <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="flex-1 px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนยางใหม่</button>
                     </div>
                     <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด</button>
                 `;
@@ -1686,7 +1889,7 @@
                     <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2">
                         <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
                         <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
-                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-rose-800 text-white rounded-lg text-sm font-bold hover:bg-rose-900">+ บันทึกยางเส้นนี้</button>
+                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900">+ บันทึกยางเส้นนี้</button>
                     </div>
                 `;
             }
@@ -1776,7 +1979,7 @@
             const ctxLine = document.getElementById('chartLine').getContext('2d');
             state.charts.line = new Chart(ctxLine, {
                 type: 'line',
-                data: { labels: labels, datasets: [ { label: 'ยอดรับ', data: revenue, borderColor: '#9f1239', backgroundColor: '#9f1239', tension: 0.3, borderWidth: 3 }, { label: 'กำไร', data: profit, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.3, borderWidth: 3 } ] },
+                data: { labels: labels, datasets: [ { label: 'ยอดรับ', data: revenue, borderColor: '#1e3350', backgroundColor: '#1e3350', tension: 0.3, borderWidth: 3 }, { label: 'กำไร', data: profit, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.3, borderWidth: 3 } ] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
             });
         }
@@ -1814,7 +2017,7 @@
                         btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
                     } else {
                         btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
-                        btn.className = "text-rose-700 bg-rose-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-rose-200 transition-colors";
+                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
                     }
                     lucide.createIcons();
                 }
@@ -1850,14 +2053,14 @@
                 const defDriverFee = state.formData.driverFee !== undefined ? state.formData.driverFee : '';
 
                 html += `
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">วันที่</label>
-                            <input required type="date" id="f_date" value="${defaultDate}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                            <input required type="date" id="f_date" value="${defaultDate}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
-                            <input required type="text" id="f_plate" list="plate_list" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 bg-white" placeholder="เลือกหรือพิมพ์ทะเบียนรถ" autocomplete="off" />
+                            <input required type="text" id="f_plate" list="plate_list" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-white" placeholder="เลือกหรือพิมพ์ทะเบียนรถ" autocomplete="off" />
                             <datalist id="plate_list">
                                 ${plateOptions}
                             </datalist>
@@ -1880,7 +2083,7 @@
 
                     let sortBtnHtml = state.jobSortMode === 'recent' 
                         ? `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors"><i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด</button>`
-                        : `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-rose-700 bg-rose-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-rose-200 transition-colors"><i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ</button>`;
+                        : `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors"><i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ</button>`;
 
 
                     html += `
@@ -1889,7 +2092,7 @@
                                 <span>📍 เลือกเส้นทางมาตรฐาน (ดึงข้อมูลค่าเที่ยว/ค่าน้ำมันอัตโนมัติ)</span>
                                 ${sortBtnHtml}
                             </label>
-                            <select id="job_select" onchange="applyJobSelection()" class="w-full border border-rose-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 bg-rose-50 text-rose-900 font-semibold shadow-sm">
+                            <select id="job_select" onchange="applyJobSelection()" class="w-full border border-navy-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-navy-50 text-navy-900 font-semibold shadow-sm">
                                 <option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>
                                 ${jobOptions}
                             </select>
@@ -1897,29 +2100,29 @@
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between items-center">
                                 <span>เส้นทางวิ่งงาน</span>
-                                <button type="button" onclick="openMapModal()" class="text-rose-800 bg-rose-50 px-3 py-1.5 rounded-full text-xs font-bold flex items-center hover:bg-rose-100">
+                                <button type="button" onclick="openMapModal()" class="text-navy-800 bg-navy-50 px-3 py-1.5 rounded-full text-xs font-bold flex items-center hover:bg-navy-100">
                                     <i data-lucide="map" class="w-3 h-3 mr-1"></i>ค้นหาจากแผนที่
                                 </button>
                             </label>
                             <div class="flex space-x-2 items-center">
-                                <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ต้นทาง" />
+                                <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="ต้นทาง" />
                                 <span class="text-slate-400 font-bold">→</span>
-                                <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ปลายทาง" />
+                                <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="ปลายทาง" />
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-center">
                                     <span>ระยะทาง (กม.)</span>
-                                    <button type="button" onclick="autoCalcDistance()" id="btn-calc-dist" class="text-rose-800 hover:text-rose-900 text-xs font-bold flex items-center">
+                                    <button type="button" onclick="autoCalcDistance()" id="btn-calc-dist" class="text-navy-800 hover:text-navy-900 text-xs font-bold flex items-center">
                                         <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>คำนวณอัตโนมัติ
                                     </button>
                                 </label>
-                                <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-rose-800" placeholder="กรอกเองหรือคำนวณ" />
+                                <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-navy-800" placeholder="กรอกเองหรือคำนวณ" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">เรทค่าเที่ยว (ยอดรับ)</label>
-                                <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
                         
@@ -1930,8 +2133,8 @@
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             <div class="col-span-2">
-                                <label class="block text-sm font-bold text-rose-800 mb-1">⚖️ น้ำหนักบรรทุกของ (ตัน)</label>
-                                <input required type="number" step="0.01" id="f_weight" value="${state.formData.weight !== undefined ? state.formData.weight : ''}" class="w-full border border-rose-300 bg-rose-50/50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 font-bold text-rose-900" placeholder="ระบุน้ำหนักเป็นตัน เช่น 30.5" />
+                                <label class="block text-sm font-bold text-navy-800 mb-1">⚖️ น้ำหนักบรรทุกของ (ตัน)</label>
+                                <input required type="number" step="0.01" id="f_weight" value="${state.formData.weight !== undefined ? state.formData.weight : ''}" class="w-full border border-navy-300 bg-navy-50/50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 font-bold text-navy-900" placeholder="ระบุน้ำหนักเป็นตัน เช่น 30.5" />
                             </div>
                         </div>
                         <!-- ซ่อนอัตราสิ้นเปลืองและราคาน้ำมัน เพื่อไม่ให้ฟอร์มยาวเกินไปสำหรับรถดั๊ม -->
@@ -1945,18 +2148,18 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ค่าเที่ยวคนขับ</label>
-                                <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
                         ` : `
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">อัตราสิ้นเปลือง (กม./ลิตร)</label>
-                                <input required type="number" step="0.01" id="f_fuelRate" value="${defFuelRate}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 2.5" />
+                                <input required type="number" step="0.01" id="f_fuelRate" value="${defFuelRate}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 2.5" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ราคาน้ำมัน (บาท/ลิตร)</label>
-                                <input required type="number" step="0.01" id="f_currentFuelPrice" value="${defFuelPrice}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 36.00" />
+                                <input required type="number" step="0.01" id="f_currentFuelPrice" value="${defFuelPrice}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 36.00" />
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mt-4">
@@ -1966,21 +2169,21 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ค่าเที่ยวคนขับ</label>
-                                <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
                         `}
                     `;
                 } else if (state.activeTab === 'refuels') {
                     html += `
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">จำนวนลิตร</label>
-                                <input required type="number" step="0.01" id="f_liters" value="${state.formData.liters || ''}" oninput="calcTotalRefuel()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" step="0.01" id="f_liters" value="${state.formData.liters || ''}" oninput="calcTotalRefuel()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ราคาต่อลิตร</label>
-                                <input required type="number" step="0.01" id="f_price" value="${state.formData.price || ''}" oninput="calcTotalRefuel()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                                <input required type="number" step="0.01" id="f_price" value="${state.formData.price || ''}" oninput="calcTotalRefuel()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
                         <div id="refuel_estimate" class="p-3 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium text-center mt-4 hidden">ยอดรวมประเมิน: ฿0.00</div>
@@ -1996,39 +2199,39 @@
                     <div class="col-span-2">
                         <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between items-center">
                             <span>เส้นทางมาตรฐาน</span>
-                            <button type="button" onclick="openMapModal()" class="text-rose-800 bg-rose-50 px-3 py-1.5 rounded-full text-xs font-bold flex items-center hover:bg-rose-100">
+                            <button type="button" onclick="openMapModal()" class="text-navy-800 bg-navy-50 px-3 py-1.5 rounded-full text-xs font-bold flex items-center hover:bg-navy-100">
                                 <i data-lucide="map" class="w-3 h-3 mr-1"></i>หาพิกัดจากแผนที่
                             </button>
                         </label>
                         <div class="flex space-x-2 items-center">
-                            <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ต้นทาง" />
+                            <input required type="text" id="f_origin" value="${state.formData.origin || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="ต้นทาง" />
                             <span class="text-slate-400 font-bold">→</span>
-                            <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="ปลายทาง" />
+                            <input required type="text" id="f_dest" value="${state.formData.dest || ''}" class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="ปลายทาง" />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-center">
                                 <span>ระยะทาง (กม.)</span>
-                                <button type="button" onclick="autoCalcDistance()" id="btn-calc-dist" class="text-rose-800 hover:text-rose-900 text-xs font-bold flex items-center">
+                                <button type="button" onclick="autoCalcDistance()" id="btn-calc-dist" class="text-navy-800 hover:text-navy-900 text-xs font-bold flex items-center">
                                     <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>คำนวณ
                                 </button>
                             </label>
-                            <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 120" />
+                            <input required type="number" id="f_dist" value="${state.formData.dist || ''}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 120" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">เรทค่าเที่ยว (ยอดรับ)</label>
-                            <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 6600" />
+                            <input required type="number" id="f_revenue" value="${state.formData.revenue || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 6600" />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 mt-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">อัตราสิ้นเปลือง (กม./ลิตร)</label>
-                            <input required type="number" step="0.01" id="f_fuelRate" value="${defFuelRate}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-800 outline-none" placeholder="เช่น 2.5" />
+                            <input required type="number" step="0.01" id="f_fuelRate" value="${defFuelRate}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-navy-800 outline-none" placeholder="เช่น 2.5" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ราคาน้ำมัน (บาท/ลิตร)</label>
-                            <input required type="number" step="0.01" id="f_currentFuelPrice" value="${defFuelPrice}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-800 outline-none" placeholder="เช่น 36.00" />
+                            <input required type="number" step="0.01" id="f_currentFuelPrice" value="${defFuelPrice}" oninput="calcFuelCost()" onkeyup="calcFuelCost()" onchange="calcFuelCost()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-navy-800 outline-none" placeholder="เช่น 36.00" />
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 mt-4">
@@ -2038,7 +2241,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ค่าเที่ยวคนขับ</label>
-                            <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-rose-800 outline-none" />
+                            <input required type="number" id="f_driverFee" value="${defDriverFee}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-navy-800 outline-none" />
                         </div>
                     </div>
                 `;
@@ -2046,39 +2249,39 @@
                 html += `
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
-                        <input required type="text" id="f_plate" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 88-2059" />
+                        <input required type="text" id="f_plate" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 88-2059" />
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อคนขับ</label>
-                        <input required type="text" id="f_driver" value="${state.formData.driver || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="นาย สมชาย ใจดี" />
+                        <input required type="text" id="f_driver" value="${state.formData.driver || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="นาย สมชาย ใจดี" />
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">รุ่นรถ</label>
-                            <input type="text" id="f_model" list="model_list" value="${state.formData.model || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น UD370" />
+                            <input type="text" id="f_model" list="model_list" value="${state.formData.model || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น UD370" />
                             <datalist id="model_list"><option value="UD370"></option><option value="UD330"></option><option value="UD290"></option><option value="UD260"></option></datalist>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ปีรถ (พ.ศ.)</label>
-                            <input type="number" id="f_year" value="${state.formData.year || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น 2559" />
+                            <input type="number" id="f_year" value="${state.formData.year || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 2559" />
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ประเภทรถ (ถ้ามี)</label>
-                        <input type="text" id="f_type" value="${state.formData.type || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="รถบรรทุก 6 ล้อ" />
+                        <input type="text" id="f_type" value="${state.formData.type || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="รถบรรทุก 6 ล้อ" />
                     </div>
                     <div class="col-span-2 bg-sky-50 text-sky-800 p-3 rounded-lg text-sm border border-sky-200">
                         <i data-lucide="info" class="w-4 h-4 inline mr-1 mb-0.5"></i>
                         <b>เลขไมล์ฐาน:</b> ระบบจะใช้ค่านี้ + ระยะทางจากรายการวิ่งงานหลังวันที่บันทึกฐาน มาประเมิน "เลขไมล์ปัจจุบัน" ให้อัตโนมัติ เพื่อใช้แจ้งเตือนซ่อมบำรุงและอายุยาง
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ฐาน (กม.)</label>
-                            <input type="number" id="f_baselineOdometer" value="${state.formData.baselineOdometer !== undefined ? state.formData.baselineOdometer : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เลขไมล์ ณ วันที่บันทึก" />
+                            <input type="number" id="f_baselineOdometer" value="${state.formData.baselineOdometer !== undefined ? state.formData.baselineOdometer : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เลขไมล์ ณ วันที่บันทึก" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">วันที่บันทึกเลขไมล์ฐาน</label>
-                            <input type="date" id="f_baselineDate" value="${state.formData.baselineDate ? reverseThaiToISO(state.formData.baselineDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                            <input type="date" id="f_baselineDate" value="${state.formData.baselineDate ? reverseThaiToISO(state.formData.baselineDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                         </div>
                     </div>
                 `;
@@ -2093,47 +2296,47 @@
                 MAINTENANCE_TYPES.forEach(t => { catOptions += `<option value="${t.key}" ${state.formData.category === t.key ? 'selected' : ''}>${t.label}</option>`; });
 
                 html += `
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
-                            <select required id="f_m_plate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800 bg-white">
+                            <select required id="f_m_plate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-white">
                                 ${filteredVehicles.map(v => `<option value="${v.plate}" ${v.plate === selPlate ? 'selected' : ''}>${v.plate} — ${v.driver}${v.model ? ' ('+v.model+')' : ''}</option>`).join('')}
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">วันที่ทำรายการ</label>
-                            <input required type="date" id="f_m_date" value="${state.formData.date ? reverseThaiToISO(state.formData.date) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                            <input required type="date" id="f_m_date" value="${state.formData.date ? reverseThaiToISO(state.formData.date) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ประเภทงานซ่อมบำรุง</label>
-                            <select required id="f_m_category" class="w-full border border-rose-300 bg-rose-50 text-rose-900 font-semibold rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800">
+                            <select required id="f_m_category" class="w-full border border-navy-300 bg-navy-50 text-navy-900 font-semibold rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">
                                 ${catOptions}
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะทำรายการ (กม.)</label>
-                            <input required type="number" id="f_m_odometer" value="${defOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-rose-800" />
+                            <input required type="number" id="f_m_odometer" value="${defOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 outline-none focus:ring-2 focus:ring-navy-800" />
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">รายละเอียดงานที่ทำ</label>
-                        <textarea id="f_m_description" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง">${state.formData.description || ''}</textarea>
+                        <textarea id="f_m_description" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง">${state.formData.description || ''}</textarea>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ค่าใช้จ่าย (บาท)</label>
                             <input required type="number" step="0.01" id="f_m_cost" value="${state.formData.cost !== undefined ? state.formData.cost : ''}" class="w-full border border-orange-300 bg-orange-50/50 text-orange-800 font-medium rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">อะไหล่ที่เปลี่ยน (ถ้ามี)</label>
-                            <input type="text" id="f_m_parts" value="${state.formData.partsChanged || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" placeholder="เช่น ไส้กรองน้ำมันเครื่อง Hino" />
+                            <input type="text" id="f_m_parts" value="${state.formData.partsChanged || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น ไส้กรองน้ำมันเครื่อง Hino" />
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ช่าง/ศูนย์บริการ</label>
-                        <input type="text" id="f_m_tech" value="${state.formData.technician || 'ศูนย์บริการ UD Trucks'}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-800" />
+                        <input type="text" id="f_m_tech" value="${state.formData.technician || 'ศูนย์บริการ UD Trucks'}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                     </div>
                     <div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">
                         <i data-lucide="lightbulb" class="w-3.5 h-3.5 inline mr-1 mb-0.5"></i>
@@ -2145,7 +2348,7 @@
             html += `
                 <div class="flex space-x-3 pt-4 border-t border-slate-100 mt-2">
                     <button type="button" id="btn-cancel-form" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2 bg-rose-800 text-white rounded-lg hover:bg-rose-900 font-medium disabled:opacity-50">บันทึกข้อมูล</button>
+                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium disabled:opacity-50">บันทึกข้อมูล</button>
                 </div>
             `;
             
@@ -2357,21 +2560,18 @@
                 else state.maintenanceLogs.unshift(newData);
             }
 
+            let saveOk = true;
             if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                try {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: actionType, data: newData }),
-                        mode: 'no-cors'
-                    }).catch(() => {});
-                } catch(e) {}
+                saveOk = await sendGasAction(actionType, newData);
             }
 
-            // เพิ่มลูกเล่น: หน่วงเวลาและเปลี่ยนปุ่มเป็นสีเขียวแจ้งว่าสำเร็จก่อนปิด
-            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
-            btn.classList.remove('bg-rose-800', 'hover:bg-rose-900');
-            btn.classList.add('bg-green-600', 'hover:bg-green-700');
-            lucide.createIcons();
+            // เพิ่มลูกเล่น: หน่วงเวลาและเปลี่ยนปุ่มเป็นสีเขียวแจ้งว่าสำเร็จก่อนปิด (เฉพาะตอนบันทึกได้จริง)
+            if (saveOk) {
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
+                btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                lucide.createIcons();
+            }
 
             setTimeout(() => {
                 document.getElementById('main-modal').classList.add('hidden');
@@ -2383,8 +2583,8 @@
                 btn.className = originalClasses;
                 btn.innerText = 'บันทึกข้อมูล';
                 
-                showToast('บันทึกข้อมูลสำเร็จ!', 'success');
-            }, 800); // หน่วงเวลา 0.8 วินาทีให้ผู้ใช้มองทัน
+                if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+            }, saveOk ? 800 : 0); // หน่วงเวลา 0.8 วินาทีให้ผู้ใช้มองทันตอนสำเร็จ — ถ้าไม่สำเร็จปิดทันที (error toast จาก sendGasAction แสดงอยู่แล้ว)
         }
 
         // Custom Confirm Modal Logic
@@ -2393,14 +2593,14 @@
             overlay.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4";
             overlay.innerHTML = `
                 <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
-                    <div class="w-12 h-12 bg-rose-100 text-rose-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-12 h-12 bg-navy-100 text-navy-800 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="alert-triangle" class="w-6 h-6"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
                     <p class="text-slate-500 mb-6 text-sm">${message}</p>
                     <div class="flex space-x-3">
                         <button id="cancel-btn" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors">ยกเลิก</button>
-                        <button id="confirm-btn" class="flex-1 py-2.5 bg-rose-700 hover:bg-rose-800 text-white font-medium rounded-lg transition-colors shadow-sm">ลบข้อมูล</button>
+                        <button id="confirm-btn" class="flex-1 py-2.5 bg-navy-700 hover:bg-navy-800 text-white font-medium rounded-lg transition-colors shadow-sm">ลบข้อมูล</button>
                     </div>
                 </div>
             `;
@@ -2451,13 +2651,15 @@
             customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", async () => {
                 document.getElementById('loading-spinner').classList.remove('hidden');
                 try {
-                    await fetch(GAS_WEB_APP_URL, {
+                    const res = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
                     });
-                    
+                    const result = await res.json();
+                    if (result.status !== 'success') {
+                        throw new Error(result.message || 'เซิร์ฟเวอร์ปฏิเสธการลบ');
+                    }
+
                     if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id != id);
                     else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id != id);
                     else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id != id);
@@ -2482,7 +2684,7 @@
                 <!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
                 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
                 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-                <style>body, html, #map { height: 100%; margin: 0; padding: 0; font-family: sans-serif; } .search-panel { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; } input, button { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline:none; } button { background: #9f1239; color: white; border: none; cursor: pointer; font-weight: bold; } #status { font-size: 12px; text-align: center; }</style>
+                <style>body, html, #map { height: 100%; margin: 0; padding: 0; font-family: sans-serif; } .search-panel { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; } input, button { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline:none; } button { background: #1e3350; color: white; border: none; cursor: pointer; font-weight: bold; } #status { font-size: 12px; text-align: center; }</style>
                 </head><body>
                 <div class="search-panel"><label style="font-size:12px;font-weight:bold;color:#475569;">📍 ต้นทาง</label><input type="text" id="ori" placeholder="เช่น สระบุรี หรือ 13.7,100.5"><label style="font-size:12px;font-weight:bold;color:#475569;">🎯 ปลายทาง</label><input type="text" id="dest" placeholder="เช่น ระยอง"><button id="calcBtn">ค้นหาและคำนวณระยะทาง</button><div id="status"></div></div><div id="map"></div>
                 <script>
@@ -2502,7 +2704,7 @@
                     const dest = document.getElementById("dest").value;
                     const statusEl = document.getElementById("status");
                     if(!ori || !dest) return statusEl.innerText = "กรุณากรอกข้อมูลให้ครบ", statusEl.style.color="red";
-                    statusEl.innerText = "กำลังค้นหา..."; statusEl.style.color="#9f1239"; this.disabled = true;
+                    statusEl.innerText = "กำลังค้นหา..."; statusEl.style.color="#1e3350"; this.disabled = true;
                     try {
                         const [o, d] = await Promise.all([geocode(ori), geocode(dest)]);
                         if(markers.length) { markers.forEach(m=>map.removeLayer(m)); markers=[]; }
@@ -2514,7 +2716,7 @@
                         const data = await res.json();
                         if(data.code === "Ok") {
                             const dist = (data.routes[0].distance / 1000).toFixed(0);
-                            routeLayer = L.geoJSON(data.routes[0].geometry, {style: {color: "#9f1239", weight: 5}}).addTo(map);
+                            routeLayer = L.geoJSON(data.routes[0].geometry, {style: {color: "#1e3350", weight: 5}}).addTo(map);
                             map.fitBounds(routeLayer.getBounds(), {padding:[50,50]});
                             statusEl.innerText = "ระยะทาง: " + dist + " กม. (กำลังส่งข้อมูลกลับ)";
                             statusEl.style.color = "green";
@@ -2553,6 +2755,22 @@
             }
         });
 
+        // ==========================================================
+        // 🧹 ปรับชนิดข้อมูลให้เป็น "ข้อความ" เสมอหลังโหลดจากฐานข้อมูล
+        // ==========================================================
+        // ถ้ามีใครพิมพ์ทะเบียนรถที่เป็นตัวเลขล้วน (เช่น 729674) ตรงๆ ลงใน Google Sheet
+        // โดยไม่ผ่านฟอร์มของเว็บ, Sheets จะเก็บเป็นชนิด "ตัวเลข" ไม่ใช่ "ข้อความ"
+        // ทำให้การเทียบทะเบียนรถ (v.plate === state.activeVehiclePlate) ไม่ตรงกัน
+        // และกดเลือกรถคันนั้นไม่ติด — ฟังก์ชันนี้แปลงให้เป็นข้อความเหมือนกันหมดทุกจุดที่โหลดเข้ามา
+        function normalizeLoadedData() {
+            const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
+            state.vehicles.forEach(v => { v.plate = cleanPlate(v.plate); v.category = v.category || 'flatbed'; });
+            state.trips.forEach(t => { t.plate = cleanPlate(t.plate); });
+            state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
+            state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
+            state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
+        }
+
         async function initApp() {
             renderNav();
             if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
@@ -2573,6 +2791,7 @@
                     state.jobs = data.jobs || [];
                     state.maintenanceLogs = data.maintenance || data.maintenanceLogs || [];
                     state.tires = data.tires || [];
+                    normalizeLoadedData();
                 }
             } catch (e) { console.error("Load error", e); }
             finally {
@@ -2624,3 +2843,9 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
