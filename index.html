@@ -184,7 +184,7 @@
 
     <script>
         // 👇👇👇 URL ของ Google Apps Script 👇👇👇
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfBuxtjYNxQUS4BdWD-ZnqsTrjCBSNDUT7oaEZItLZF9vfoxFCqa_0Bc72sGEXJVFArA/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw9_j5MUH3MrBf1WvJ7vEJGsBTXtiAJSsRuXZ28TzSTMueV2L90WUjRlyut5Ii6vgVUlw/exec";
 
         // ==========================================
         // 🔒 รหัสผ่าน (PIN)
@@ -2485,6 +2485,7 @@
                 category: state.editMode ? (state.formData.category || state.activeCategory) : state.activeCategory 
             };
             const getVal = (id) => document.getElementById(id)?.value;
+            let cascadeJobEdit = null; // ถ้าเป็นการแก้ไข "เส้นทางและเรทราคา" จะเก็บ {oldJob, newJob} ไว้ถามผู้ใช้ทีหลังว่าจะอัปเดตรายการวิ่งงานเดิมด้วยไหม
 
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
                 newData.date = formatToThaiShort(getVal('f_date'));
@@ -2538,7 +2539,11 @@
                     fuelCost: Number(getVal('f_fuelCost') || 0),
                     driverFee: Number(getVal('f_driverFee') || 0) 
                 });
-                if(state.editMode) state.jobs = state.jobs.map(j => j.id === newData.id ? newData : j);
+                if(state.editMode) {
+                    const oldJob = state.jobs.find(j => j.id === newData.id);
+                    if (oldJob) cascadeJobEdit = { oldJob: { ...oldJob }, newJob: newData };
+                    state.jobs = state.jobs.map(j => j.id === newData.id ? newData : j);
+                }
                 else state.jobs.unshift(newData);
             } else if (state.activeTab === 'maintenance') {
                 actionType = state.editMode ? 'editMaintenance' : 'addMaintenance';
@@ -2580,36 +2585,94 @@
                 btn.innerText = 'บันทึกข้อมูล';
                 
                 if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+                if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
             }, saveOk ? 800 : 0); // หน่วงเวลา 0.8 วินาทีให้ผู้ใช้มองทันตอนสำเร็จ — ถ้าไม่สำเร็จปิดทันที (error toast จาก sendGasAction แสดงอยู่แล้ว)
         }
 
+        // ==========================================================
+        // 🔄 อัปเดตรายการวิ่งงานเดิมตามเรทเส้นทางที่เพิ่งแก้ไข (ถ้าผู้ใช้ยืนยัน)
+        // ==========================================================
+        // จับคู่รายการวิ่งงานเดิมกับเส้นทางด้วยต้นทาง+ปลายทาง+หมวดหมู่ (ระบบไม่ได้ผูก ID
+        // เส้นทางไว้กับรายการวิ่งงานที่กรอกไปแล้ว จึงจับคู่แบบอิงข้อความเป็นค่าประมาณที่ดีที่สุด)
+        function promptCascadeJobUpdate(oldJob, newJob) {
+            if (!oldJob) return;
+            const category = newJob.category || 'flatbed';
+            const matches = state.trips.filter(t =>
+                (t.category || 'flatbed') === category &&
+                t.origin === oldJob.origin &&
+                t.dest === oldJob.dest
+            );
+            if (matches.length === 0) return;
+
+            customConfirm(
+                `พบรายการวิ่งงานเดิมที่ใช้เส้นทาง "${oldJob.origin} → ${oldJob.dest}" อยู่ <b class="text-slate-700">${matches.length} รายการ</b><br>ต้องการอัปเดตระยะทาง/ยอดรับ/ค่าน้ำมัน/ค่าคนขับของรายการเหล่านี้ให้ตรงกับเรทที่เพิ่งแก้ไขด้วยหรือไม่?<br><span class="text-xs text-slate-400">(วันที่ ทะเบียนรถ และน้ำหนักของแต่ละเที่ยวจะไม่เปลี่ยน)</span>`,
+                async () => {
+                    document.getElementById('loading-spinner').classList.remove('hidden');
+                    matches.forEach(t => {
+                        t.origin = newJob.origin;
+                        t.dest = newJob.dest;
+                        t.dist = newJob.dist;
+                        t.fuelRate = newJob.fuelRate;
+                        t.currentFuelPrice = newJob.currentFuelPrice;
+                        t.fuelCost = newJob.fuelCost;
+                        t.driverFee = newJob.driverFee;
+                        t.revenue = newJob.revenue;
+                        t.profit = Number(newJob.revenue || 0) - Number(newJob.fuelCost || 0) - Number(newJob.driverFee || 0);
+                    });
+                    for (const t of matches) {
+                        await sendGasAction('editTrip', t);
+                    }
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    renderNav();
+                    renderContent();
+                    showToast(`อัปเดตรายการวิ่งงานที่เกี่ยวข้อง ${matches.length} รายการเรียบร้อย!`, 'success');
+                },
+                {
+                    title: 'อัปเดตรายการวิ่งงานเดิมด้วยหรือไม่?',
+                    icon: 'refresh-cw',
+                    iconWrapClass: 'bg-amber-100 text-amber-700',
+                    confirmLabel: `อัปเดตทั้ง ${matches.length} รายการ`,
+                    confirmLoadingLabel: 'กำลังอัปเดต...',
+                    confirmBtnClass: 'bg-amber-600 hover:bg-amber-700'
+                }
+            );
+        }
+
         // Custom Confirm Modal Logic
-        window.customConfirm = (message, onConfirm) => {
+        window.customConfirm = (message, onConfirm, opts) => {
+            opts = opts || {};
+            const title = opts.title || 'ยืนยันการลบข้อมูล';
+            const confirmLabel = opts.confirmLabel || 'ลบข้อมูล';
+            const confirmLoadingLabel = opts.confirmLoadingLabel || 'รอสักครู่...';
+            const icon = opts.icon || 'alert-triangle';
+            const iconWrapClass = opts.iconWrapClass || 'bg-navy-100 text-navy-800';
+            const confirmBtnClass = opts.confirmBtnClass || 'bg-navy-700 hover:bg-navy-800';
+
             const overlay = document.createElement('div');
             overlay.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4";
             overlay.innerHTML = `
                 <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
-                    <div class="w-12 h-12 bg-navy-100 text-navy-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    <div class="w-12 h-12 ${iconWrapClass} rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="${icon}" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 mb-2">ยืนยันการลบข้อมูล</h3>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">${title}</h3>
                     <p class="text-slate-500 mb-6 text-sm">${message}</p>
                     <div class="flex space-x-3">
                         <button id="cancel-btn" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors">ยกเลิก</button>
-                        <button id="confirm-btn" class="flex-1 py-2.5 bg-navy-700 hover:bg-navy-800 text-white font-medium rounded-lg transition-colors shadow-sm">ลบข้อมูล</button>
+                        <button id="confirm-btn" class="flex-1 py-2.5 ${confirmBtnClass} text-white font-medium rounded-lg transition-colors shadow-sm">${confirmLabel}</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(overlay);
             lucide.createIcons();
 
-            document.getElementById('cancel-btn').onclick = () => overlay.remove();
+            document.getElementById('cancel-btn').onclick = () => { overlay.remove(); if (opts.onCancel) opts.onCancel(); };
             document.getElementById('confirm-btn').onclick = function() {
                 const btn = this;
-                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>รอสักครู่...';
+                btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>${confirmLoadingLabel}`;
                 lucide.createIcons();
                 
-                // หน่วงเวลาเล็กน้อยให้ดูเนียนตาตอนกดลบ
+                // หน่วงเวลาเล็กน้อยให้ดูเนียนตา
                 setTimeout(() => {
                     overlay.remove();
                     onConfirm();
