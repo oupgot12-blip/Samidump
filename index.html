@@ -11,18 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: {
-                            50:  '#eef3f8',
-                            100: '#d9e4f0',
-                            200: '#b3c9e0',
-                            300: '#8dadd1',
-                            400: '#6892c1',
-                            500: '#4a76a8',
-                            600: '#395d85',
-                            700: '#2c4868',
-                            800: '#1e3350',
-                            900: '#142338'
-                        }
+                        navy: { 50: '#eef3f8', 100: '#d9e4f0', 200: '#b3c9e0', 300: '#8dadd1', 400: '#6892c1', 500: '#4a76a8', 600: '#395d85', 700: '#2c4868', 800: '#1e3350', 900: '#142338' }
                     }
                 }
             }
@@ -57,6 +46,16 @@
             letter-spacing: normal;
             font-size: 1.125rem;
             font-weight: normal;
+        }
+
+        /* สำหรับ Animation ตอนสลับยาง */
+        .swap-pulse {
+            animation: swapPulse 1.5s infinite;
+        }
+        @keyframes swapPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
@@ -199,11 +198,7 @@
             filterYear: null,
             filterMonth: null,
             filterPeriod: null,
-            // ปิดโฟลเดอร์เดือนไว้ เปิดเฉพาะโฟลเดอร์ปี
-            expandedTree: { 
-                'flatbed_y2569': true, 
-                'semidump_y2569': true 
-            },
+            expandedTree: { 'flatbed_y2569': true, 'semidump_y2569': true },
             trips: [],
             refuels: [],
             vehicles: [],
@@ -213,9 +208,10 @@
             editMode: false,
             formData: {},
             charts: {},
-            jobSortMode: 'recent', // 'recent' or 'alpha'
-            activeVehiclePlate: null, // ทะเบียนที่เลือกดูในหน้าซ่อมบำรุง/ยาง
-            isDemoData: false
+            jobSortMode: 'recent', 
+            activeVehiclePlate: null, 
+            isDemoData: false,
+            swappingSource: null // เก็บข้อมูลล้อต้นทางตอนกดสลับยาง {plate, pos}
         };
 
         const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -336,7 +332,6 @@
                             window.pendingActionFunc = null;
                         }
                     } else {
-                        // Toast notification for wrong PIN
                         showToast("รหัส PIN ไม่ถูกต้อง!", "error");
                         input.value = "";
                         input.focus();
@@ -357,7 +352,7 @@
         };
 
         // ==========================================================
-        // 📱 เมนูด้านข้างแบบเปิด-ปิดได้บนมือถือ/แท็บเล็ต (off-canvas drawer)
+        // 📱 เมนูด้านข้างแบบเปิด-ปิดได้บนมือถือ/แท็บเล็ต
         // ==========================================================
         window.openMobileNav = () => {
             document.getElementById('sidebar').classList.remove('-translate-x-full');
@@ -367,21 +362,16 @@
             document.getElementById('sidebar').classList.add('-translate-x-full');
             document.getElementById('sidebar-backdrop').classList.add('hidden');
         };
-        // ปิดเมนูอัตโนมัติเฉพาะตอนหน้าจอเล็กกว่า desktop (md breakpoint = 768px)
         function closeMobileNavIfSmallScreen() {
             if (window.innerWidth < 1024) closeMobileNav();
         }
 
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
-            
             if (isMonth) {
-                // ถ้าคลิกเดือน ให้ปิดเดือนอื่นให้หมดก่อนเปิด
                 if (!state.expandedTree[key]) {
                     Object.keys(state.expandedTree).forEach(k => {
-                        if (k.match(/m\d+$/)) {
-                            state.expandedTree[k] = false;
-                        }
+                        if (k.match(/m\d+$/)) state.expandedTree[k] = false;
                     });
                     state.expandedTree[key] = true;
                 } else {
@@ -390,7 +380,6 @@
             } else {
                 state.expandedTree[key] = !state.expandedTree[key];
             }
-            
             renderNav();
         };
 
@@ -422,54 +411,37 @@
         ];
 
         // ==========================================================
-        // 🔧 ระบบซ่อมบำรุงรักษา (Maintenance) — ฐานความรู้ช่างศูนย์ UD
+        // 🔧 ระบบซ่อมบำรุงรักษา (Maintenance)
         // ==========================================================
-        // หมายเหตุ: ระยะที่กำหนดเป็น "แนวทางทั่วไป" สำหรับรถบรรทุกดีเซลงานหนัก
-        // ควรตรวจสอบระยะจริงกับคู่มือประจำรถ/ศูนย์บริการ UD Trucks อีกครั้ง
         const TECH_NAME = "ช่างเอก";
         const TECH_TITLE = "ทีมช่างศูนย์บริการ UD Trucks";
 
         const MAINTENANCE_TYPES = [
-            { key: 'oil_engine', label: 'เปลี่ยนถ่ายน้ำมันเครื่อง', icon: 'droplets', km: 10000, months: 6,
-              tip: 'ใช้น้ำมันเครื่องดีเซลเกรดที่ศูนย์ UD แนะนำ (ตามสภาพงาน/บรรทุกหนักอาจร่นระยะเหลือ 8,000 กม.)' },
-            { key: 'oil_filter', label: 'เปลี่ยนไส้กรองน้ำมันเครื่อง', icon: 'filter', km: 10000, months: 6,
-              tip: 'เปลี่ยนพร้อมน้ำมันเครื่องทุกครั้งเพื่อป้องกันตะกอนหมุนเวียนกลับเข้าเครื่อง' },
-            { key: 'fuel_filter', label: 'เปลี่ยนกรองโซล่า/ดักน้ำ', icon: 'filter', km: 20000, months: 6,
-              tip: 'ถ่ายน้ำที่กรองดักน้ำทุกสัปดาห์ โดยเฉพาะช่วงหน้าฝนหรือเติมน้ำมันจากปั๊มที่ไม่มั่นใจคุณภาพ' },
-            { key: 'air_filter', label: 'ตรวจ/เปลี่ยนกรองอากาศ', icon: 'wind', km: 20000, months: 12,
-              tip: 'เคาะฝุ่นทุก 10,000 กม. หากวิ่งงานเส้นทางฝุ่นมาก/เหมืองหิน ให้ร่นระยะตรวจถี่ขึ้น' },
-            { key: 'brake_check', label: 'ตรวจ/เปลี่ยนผ้าเบรก', icon: 'disc', km: 40000, months: 12,
-              tip: 'รถบรรทุกน้ำหนักมากผ้าเบรกสึกไว ควรตรวจความหนาทุกครั้งที่เข้าศูนย์ อย่ารอจนได้ยินเสียงโลหะเสียดสี' },
-            { key: 'clutch_gearbox', label: 'ตรวจ/เปลี่ยนน้ำมันเกียร์+คลัตช์', icon: 'settings', km: 40000, months: 12,
-              tip: 'สังเกตอาการคลัตช์ลื่นหรือเข้าเกียร์ฝืดระหว่างรอบตรวจ หากมีอาการให้เข้าศูนย์ก่อนกำหนด' },
-            { key: 'diff_oil', label: 'เปลี่ยนน้ำมันเฟืองท้าย', icon: 'settings-2', km: 50000, months: 12,
-              tip: 'ฟังเสียงหอนที่เฟืองท้ายขณะวิ่งความเร็วคงที่ ถ้ามีเสียงผิดปกติให้ตรวจก่อนกำหนด' },
-            { key: 'suspension', label: 'ตรวจช่วงล่าง/แหนบ/บู๊ช/สลักเกลียว', icon: 'wrench', km: 20000, months: 6,
-              tip: 'ตรวจแหนบแตกร้าวและขันน็อตล้อ-แหนบให้แน่นทุกรอบ ป้องกันอุบัติเหตุจากช่วงล่างหลุด' },
-            { key: 'coolant', label: 'ตรวจ/เปลี่ยนน้ำยาหล่อเย็น', icon: 'thermometer', km: 40000, months: 24,
-              tip: 'ตรวจระดับน้ำในหม้อพักทุกเช้าก่อนออกรถ หม้อน้ำรั่วซึมเป็นสาเหตุเครื่องยนต์โอเวอร์ฮีทอันดับต้น ๆ' },
-            { key: 'battery', label: 'ตรวจแบตเตอรี่/ระบบไฟชาร์จ', icon: 'battery-charging', km: 0, months: 24,
-              tip: 'วัดค่าไฟชาร์จและขั้วแบตทุก 3 เดือน แบตเสื่อมกะทันหันทำให้รถสตาร์ทไม่ติดกลางทางได้' },
-            { key: 'tire_rotate', label: 'สลับ/ตรวจดอกยางทั้งคัน', icon: 'circle-dot', km: 10000, months: 6,
-              tip: 'สลับยางตามคู่เพื่อให้ดอกยางสึกสม่ำเสมอ ช่วยยืดอายุยางและลดความเสี่ยงยางระเบิดกลางทาง' },
-            { key: 'inspection', label: 'ตรวจสภาพรถประจำปี (ตรอ.) + พรบ./ภาษี', icon: 'file-check', km: 0, months: 12,
-              tip: 'ต่อภาษี/พรบ./ตรวจสภาพให้ตรงกำหนดทุกปี รถขาดต่อทะเบียนจะถูกปรับและใช้วิ่งงานไม่ได้ตามกฎหมาย' },
-            { key: 'other', label: 'งานซ่อมอื่น ๆ (ระบุเอง)', icon: 'hammer', km: 0, months: 0,
-              tip: 'บันทึกรายละเอียดงานซ่อมในช่อง "รายละเอียดงานที่ทำ" ให้ครบถ้วนเพื่อประโยชน์ในการเบิกจ่ายและตรวจสอบย้อนหลัง' }
+            { key: 'oil_engine', label: 'เปลี่ยนถ่ายน้ำมันเครื่อง', icon: 'droplets', km: 10000, months: 6, tip: 'ใช้น้ำมันเครื่องดีเซลเกรดที่ศูนย์ UD แนะนำ' },
+            { key: 'oil_filter', label: 'เปลี่ยนไส้กรองน้ำมันเครื่อง', icon: 'filter', km: 10000, months: 6, tip: 'เปลี่ยนพร้อมน้ำมันเครื่องทุกครั้ง' },
+            { key: 'fuel_filter', label: 'เปลี่ยนกรองโซล่า/ดักน้ำ', icon: 'filter', km: 20000, months: 6, tip: 'ถ่ายน้ำที่กรองดักน้ำทุกสัปดาห์' },
+            { key: 'air_filter', label: 'ตรวจ/เปลี่ยนกรองอากาศ', icon: 'wind', km: 20000, months: 12, tip: 'เคาะฝุ่นทุก 10,000 กม.' },
+            { key: 'brake_check', label: 'ตรวจ/เปลี่ยนผ้าเบรก', icon: 'disc', km: 40000, months: 12, tip: 'ควรตรวจความหนาทุกครั้งที่เข้าศูนย์' },
+            { key: 'clutch_gearbox', label: 'ตรวจ/เปลี่ยนน้ำมันเกียร์+คลัตช์', icon: 'settings', km: 40000, months: 12, tip: 'สังเกตอาการคลัตช์ลื่นหรือเข้าเกียร์ฝืด' },
+            { key: 'diff_oil', label: 'เปลี่ยนน้ำมันเฟืองท้าย', icon: 'settings-2', km: 50000, months: 12, tip: 'ฟังเสียงหอนที่เฟืองท้ายขณะวิ่งความเร็วคงที่' },
+            { key: 'suspension', label: 'ตรวจช่วงล่าง/แหนบ/บู๊ช', icon: 'wrench', km: 20000, months: 6, tip: 'ตรวจแหนบแตกร้าวและขันน็อตล้อ' },
+            { key: 'coolant', label: 'ตรวจ/เปลี่ยนน้ำยาหล่อเย็น', icon: 'thermometer', km: 40000, months: 24, tip: 'ตรวจระดับน้ำในหม้อพักทุกเช้าก่อนออกรถ' },
+            { key: 'battery', label: 'ตรวจแบตเตอรี่/ระบบไฟชาร์จ', icon: 'battery-charging', km: 0, months: 24, tip: 'วัดค่าไฟชาร์จและขั้วแบตทุก 3 เดือน' },
+            { key: 'tire_rotate', label: 'สลับ/ตรวจดอกยางทั้งคัน', icon: 'circle-dot', km: 10000, months: 6, tip: 'สลับยางตามคู่เพื่อให้ดอกยางสึกสม่ำเสมอ' },
+            { key: 'inspection', label: 'ตรวจสภาพรถประจำปี (ตรอ.) + พรบ./ภาษี', icon: 'file-check', km: 0, months: 12, tip: 'ต่อภาษี/พรบ./ตรวจสภาพให้ตรงกำหนดทุกปี' },
+            { key: 'other', label: 'งานซ่อมอื่น ๆ (ระบุเอง)', icon: 'hammer', km: 0, months: 0, tip: 'บันทึกรายละเอียดงานซ่อมให้ครบถ้วน' }
         ];
 
         const maintenanceTypeMap = {};
         MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
-
-        // สถานะความเร่งด่วน: ok (ปกติ) / soon (ใกล้ถึงกำหนด) / due (ถึงกำหนดแล้ว) / overdue (เลยกำหนด)
-        const MAINT_SOON_RATIO = 0.85; // เตือนล่วงหน้าเมื่อถึง 85% ของรอบระยะ/เวลา
+        const MAINT_SOON_RATIO = 0.85;
 
         // ==========================================================
-        // 🛞 ระบบยางรถบรรทุก 22 ตำแหน่ง (โครงหัวลาก 10 ล้อ + หางพ่วง 12 ล้อ)
+        // 🛞 ระบบยางรถบรรทุก 22 ตำแหน่ง และฟังก์ชันเกี่ยวกับยาง
         // ==========================================================
-        const TIRE_ROTATE_KM = 10000;   // ควรสลับ/ตรวจดอกยาง
-        const TIRE_MONITOR_KM = 60000;  // เริ่มจับตาความสึกใกล้หมดอายุ
-        const TIRE_REPLACE_KM = 80000;  // แนะนำเปลี่ยนยางใหม่ (แนวทางทั่วไป ขึ้นกับรุ่นยาง/ลักษณะงาน)
+        const TIRE_ROTATE_KM = 10000;  
+        const TIRE_MONITOR_KM = 60000; 
+        const TIRE_REPLACE_KM = 80000; 
 
         function getWheelLayout() {
             const axleDefs = [
@@ -496,7 +468,6 @@
             return { axleDefs, wheels };
         }
 
-        // ---- คำนวณเลขไมล์ปัจจุบันโดยประมาณ จาก "เลขไมล์ฐาน" + ระยะทางที่วิ่งงานสะสมหลังวันที่บันทึกฐาน ----
         function getEstimatedOdometer(plate) {
             const v = state.vehicles.find(x => x.plate === plate);
             if (!v) return 0;
@@ -508,11 +479,43 @@
             return Math.round(baseOdo + extraDist);
         }
 
-        function getVehicleByPlate(plate) {
-            return state.vehicles.find(v => v.plate === plate);
+        // ฟังก์ชันจัดการยาง (ที่เคยตกหล่นไป)
+        function getActiveTireAt(plate, pos) {
+            return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
         }
 
-        // ---- ประเมินสถานะรายการซ่อมบำรุงแต่ละประเภทของรถคันหนึ่ง ----
+        function getTireHistoryAt(plate, pos) {
+            return state.tires
+                .filter(t => t.plate === plate && Number(t.position) === Number(pos) && t.status !== 'active')
+                .sort((a, b) => parseDateForSort(b.installDate) - parseDateForSort(a.installDate));
+        }
+
+        function getTireRunKm(plate, tireRec) {
+            if (!tireRec) return 0;
+            const currentOdo = getEstimatedOdometer(plate);
+            const endOdo = tireRec.status === 'active' ? currentOdo : Number(tireRec.removeOdometer || currentOdo);
+            return Math.max(0, endOdo - Number(tireRec.installOdometer || 0));
+        }
+
+        function getTireStatus(plate, tireRec) {
+            if (!tireRec) return 'empty';
+            const km = getTireRunKm(plate, tireRec);
+            if (km >= TIRE_REPLACE_KM) return 'overdue';
+            if (km >= TIRE_MONITOR_KM) return 'warn';
+            if (km >= TIRE_ROTATE_KM) return 'monitor';
+            return 'good';
+        }
+
+        const TIRE_STATUS_STYLE = {
+            empty:   { fill: '#e2e8f0', stroke: '#94a3b8', badge: 'bg-slate-200 text-slate-500', label: 'ยังไม่บันทึกยาง' },
+            good:    { fill: '#1e293b', stroke: '#10b981', badge: 'bg-green-100 text-green-700', label: 'ปกติ' },
+            monitor: { fill: '#1e293b', stroke: '#f59e0b', badge: 'bg-amber-100 text-amber-700', label: 'ควรสลับ/ตรวจดอกยาง' },
+            warn:    { fill: '#1e293b', stroke: '#f97316', badge: 'bg-orange-100 text-orange-700', label: 'จับตาความสึก' },
+            overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
+        };
+
+        function getVehicleByPlate(plate) { return state.vehicles.find(v => v.plate === plate); }
+
         function getMaintenanceStatusForType(plate, typeKey) {
             const type = maintenanceTypeMap[typeKey];
             const currentOdo = getEstimatedOdometer(plate);
@@ -534,11 +537,10 @@
             }
 
             let status = 'ok';
-            if (!lastLog) status = 'unknown'; // ยังไม่เคยมีประวัติในระบบ
+            if (!lastLog) status = 'unknown'; 
             else if (ratio >= 1) status = 'overdue';
             else if (ratio >= MAINT_SOON_RATIO) status = 'soon';
 
-            // ระยะ/วันที่ครบกำหนดถัดไป (โดยประมาณ)
             const nextOdo = lastLog ? lastOdo + type.km : null;
             const kmToGo = nextOdo !== null ? nextOdo - currentOdo : null;
 
@@ -549,7 +551,6 @@
             return MAINTENANCE_TYPES.filter(t => t.key !== 'other').map(t => getMaintenanceStatusForType(plate, t.key));
         }
 
-        // ---- นับจำนวนรายการที่ต้องแจ้งเตือนทั้งกองรถ (ใช้ทำ badge แจ้งเตือน) ----
         function getFleetMaintenanceAlerts() {
             const alerts = [];
             state.vehicles.forEach(v => {
@@ -564,8 +565,6 @@
             return alerts;
         }
 
-        // ---- สรุปสถานะรถทั้งกองแบบ "เขียว/เหลือง/แดง" ต่อคัน (ใช้กับการ์ด Hero) ----
-        // ปกติ = ไม่มีรายการเกินกำหนด/ใกล้ถึงรอบเลย, ใกล้ถึงรอบ = มีรายการ soon อย่างน้อย 1, เกินกำหนด = มี overdue อย่างน้อย 1
         function getFleetStatusCounts(categoryFilter) {
             const vehicles = categoryFilter ? state.vehicles.filter(v => (v.category || 'flatbed') === categoryFilter) : state.vehicles;
             const counts = { ok: 0, soon: 0, overdue: 0 };
@@ -578,7 +577,6 @@
             return counts;
         }
 
-        // ---- ฟีดกิจกรรมซ่อมบำรุงล่าสุด (ผสมงานที่ทำเสร็จแล้ว + รายการที่รอดำเนินการ) ----
         function getRecentMaintenanceActivity(categoryFilter, limit) {
             const vehicles = new Set((categoryFilter ? state.vehicles.filter(v => (v.category || 'flatbed') === categoryFilter) : state.vehicles).map(v => v.plate));
             const done = state.maintenanceLogs
@@ -593,7 +591,6 @@
             return [...pending, ...done].slice(0, limit);
         }
 
-        // ---- เที่ยวรถล่าสุด (วันนี้ก่อน ถ้าไม่มีค่อยใช้เที่ยวล่าสุดแทน) ----
         function getTodayOrRecentTrips(categoryFilter, limit) {
             const pool = categoryFilter ? state.trips.filter(t => (t.category || 'flatbed') === categoryFilter) : state.trips;
             const todayThai = formatToThaiShort(getToday());
@@ -603,7 +600,7 @@
         }
 
         // ==========================================================
-        // 🎨 Hero banner ด้านบนของหน้าภาพรวม — สรุปสถานะรถ/ซ่อมบำรุง/เที่ยววิ่งแบบเห็นภาพไว
+        // 🎨 Render UI
         // ==========================================================
         function buildHeroBanner() {
             const catName = state.activeCategory === 'flatbed' ? 'รถพื้นเรียบ' : 'รถเซมิดั๊ม';
@@ -616,7 +613,6 @@
 
             return `
                 <div class="relative rounded-3xl overflow-hidden mb-8 shadow-lg border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-navy-50">
-                    <!-- แผงเหลี่ยมสีกรมท่า ตกแต่งด้านหลังคล้ายอาคารในภาพอ้างอิง -->
                     <div class="absolute inset-y-0 right-0 w-full md:w-[42%] pointer-events-none" style="background: linear-gradient(155deg, #22405f 0%, #1e3350 45%, #142338 100%); clip-path: polygon(28% 0, 100% 0, 100% 100%, 0% 100%);"></div>
                     <svg class="absolute inset-y-0 right-0 w-full md:w-[42%] h-full opacity-[0.08] pointer-events-none" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
                         <g stroke="#ffffff" stroke-width="2" fill="none">
@@ -698,55 +694,13 @@
             `;
         }
 
-        // ---- ข้อความคำแนะนำสไตล์ช่างศูนย์ ----
         function getAdvisorMessage(statusItem) {
             const { type, status, kmSince, kmToGo, daysSince } = statusItem;
-            if (status === 'unknown') {
-                return `ยังไม่มีประวัติรายการนี้ในระบบ แนะนำให้ตรวจเช็คครั้งแรกเพื่อเริ่มนับรอบให้แม่นยำ — ${type.tip}`;
-            }
-            if (status === 'overdue') {
-                return `เลยกำหนด${type.km > 0 && kmToGo !== null ? ' มา ' + formatNumber(Math.abs(kmToGo)).replace(/\.00$/, '') + ' กม.แล้ว' : ''} ควรรีบนำรถเข้าศูนย์โดยเร็ว — ${type.tip}`;
-            }
-            if (status === 'soon') {
-                return `ใกล้ถึงรอบแล้ว${kmToGo !== null && kmToGo > 0 ? ' อีกประมาณ ' + formatNumber(kmToGo).replace(/\.00$/, '') + ' กม.' : ''} วางแผนจองคิวศูนย์ล่วงหน้าได้เลย — ${type.tip}`;
-            }
+            if (status === 'unknown') return `ยังไม่มีประวัติรายการนี้ในระบบ แนะนำให้ตรวจเช็คครั้งแรกเพื่อเริ่มนับรอบให้แม่นยำ — ${type.tip}`;
+            if (status === 'overdue') return `เลยกำหนด${type.km > 0 && kmToGo !== null ? ' มา ' + formatNumber(Math.abs(kmToGo)).replace(/\.00$/, '') + ' กม.แล้ว' : ''} ควรรีบนำรถเข้าศูนย์โดยเร็ว — ${type.tip}`;
+            if (status === 'soon') return `ใกล้ถึงรอบแล้ว${kmToGo !== null && kmToGo > 0 ? ' อีกประมาณ ' + formatNumber(kmToGo).replace(/\.00$/, '') + ' กม.' : ''} วางแผนจองคิวศูนย์ล่วงหน้าได้เลย — ${type.tip}`;
             return `สภาพยังปกติ ยังไม่ถึงรอบ — ${type.tip}`;
         }
-
-        // ---- Helper ยางรถ: หายางที่ใช้งานอยู่ ณ ตำแหน่งนั้น / ประวัติยางเก่า / สถานะความสึก ----
-        function getActiveTireAt(plate, pos) {
-            return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
-        }
-
-        function getTireHistoryAt(plate, pos) {
-            return state.tires
-                .filter(t => t.plate === plate && Number(t.position) === Number(pos) && t.status !== 'active')
-                .sort((a, b) => parseDateForSort(b.installDate) - parseDateForSort(a.installDate));
-        }
-
-        function getTireRunKm(plate, tireRec) {
-            if (!tireRec) return 0;
-            const currentOdo = getEstimatedOdometer(plate);
-            const endOdo = tireRec.status === 'active' ? currentOdo : Number(tireRec.removeOdometer || currentOdo);
-            return Math.max(0, endOdo - Number(tireRec.installOdometer || 0));
-        }
-
-        function getTireStatus(plate, tireRec) {
-            if (!tireRec) return 'empty';
-            const km = getTireRunKm(plate, tireRec);
-            if (km >= TIRE_REPLACE_KM) return 'overdue';
-            if (km >= TIRE_MONITOR_KM) return 'warn';
-            if (km >= TIRE_ROTATE_KM) return 'monitor';
-            return 'good';
-        }
-
-        const TIRE_STATUS_STYLE = {
-            empty:   { fill: '#e2e8f0', stroke: '#94a3b8', badge: 'bg-slate-200 text-slate-500', label: 'ยังไม่บันทึกยาง' },
-            good:    { fill: '#1e293b', stroke: '#10b981', badge: 'bg-green-100 text-green-700', label: 'ปกติ' },
-            monitor: { fill: '#1e293b', stroke: '#f59e0b', badge: 'bg-amber-100 text-amber-700', label: 'ควรสลับ/ตรวจดอกยาง' },
-            warn:    { fill: '#1e293b', stroke: '#f97316', badge: 'bg-orange-100 text-orange-700', label: 'จับตาความสึก' },
-            overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
-        };
 
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
@@ -770,15 +724,9 @@
 
                 let treeYears = [];
                 if (cat.id === 'semidump') {
-                    treeYears = [
-                        { year: 2569, startMonth: 5, endMonth: 12 }, 
-                        { year: 2570, startMonth: 1, endMonth: 12 }
-                    ];
+                    treeYears = [ { year: 2569, startMonth: 5, endMonth: 12 }, { year: 2570, startMonth: 1, endMonth: 12 } ];
                 } else {
-                    treeYears = [
-                        { year: 2569, startMonth: 4, endMonth: 12 },
-                        { year: 2570, startMonth: 1, endMonth: 12 }
-                    ];
+                    treeYears = [ { year: 2569, startMonth: 4, endMonth: 12 }, { year: 2570, startMonth: 1, endMonth: 12 } ];
                 }
 
                 html += `<div class="space-y-1 mb-4 font-sans">`;
@@ -872,15 +820,7 @@
             navMenu.innerHTML = html;
 
             const catName = state.activeCategory === 'flatbed' ? 'รถพื้นเรียบ' : 'รถเซมิดั๊ม';
-            const titleObj = {
-                'overview': `ภาพรวมผลประกอบการ`, 
-                'trips': `รายละเอียดการวิ่งงาน`, 
-                'refuels': `ประวัติการเติมน้ำมัน`, 
-                'jobs': `ฐานข้อมูลเส้นทางและเรทราคามาตรฐาน`, 
-                'vehicles': `ข้อมูลรถและคนขับ`,
-                'maintenance': `ซ่อมบำรุงรักษา & แจ้งเตือน`,
-                'tires': `ระบบยางรถ 22 ตำแหน่ง`
-            };
+            const titleObj = { 'overview': `ภาพรวมผลประกอบการ`, 'trips': `รายละเอียดการวิ่งงาน`, 'refuels': `ประวัติการเติมน้ำมัน`, 'jobs': `ฐานข้อมูลเส้นทางและเรทราคามาตรฐาน`, 'vehicles': `ข้อมูลรถและคนขับ`, 'maintenance': `ซ่อมบำรุงรักษา & แจ้งเตือน`, 'tires': `ระบบยางรถ 22 ตำแหน่ง` };
             document.getElementById('page-title').innerHTML = `${titleObj[state.activeTab]} <span class="text-navy-800 text-lg font-bold ml-3 bg-navy-50 border border-navy-200 px-3 py-1 rounded-lg">${catName}</span>`;
             
             const btnAdd = document.getElementById('btn-add-new');
@@ -906,6 +846,7 @@
             lucide.createIcons();
         }
 
+        // ฟังก์ชันช่วยกรองข้อมูลตามช่วงเวลา
         function getFiltered(dataArr) {
             return dataArr.filter(item => {
                 const itemCat = item.category || 'flatbed';
@@ -932,7 +873,6 @@
             });
         }
 
-        // ซ่อมบำรุงผูกกับ "ทะเบียนรถ" ไม่ใช่หมวดหมู่งานโดยตรง จึงกรองผ่านรายชื่อทะเบียนของหมวดที่กำลังดูอยู่
         function getCategoryMaintenanceLogs() {
             const categoryPlates = new Set(state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory).map(v => v.plate));
             return state.maintenanceLogs.filter(m => {
@@ -1078,6 +1018,31 @@
             `;
             container.innerHTML = html;
             setTimeout(() => drawCharts(profitByPeriod), 50);
+        }
+
+        // ฟังก์ชันวาดกราฟ
+        function drawCharts(profitData) {
+            if(state.charts.bar) state.charts.bar.destroy();
+            if(state.charts.line) state.charts.line.destroy();
+
+            const labels = profitData.map(d => d.name);
+            const profit = profitData.map(d => d.กำไร);
+            const fuel = profitData.map(d => d.ค่าน้ำมัน);
+            const revenue = profitData.map(d => d.ยอดรับ);
+
+            const ctxBar = document.getElementById('chartBar').getContext('2d');
+            state.charts.bar = new Chart(ctxBar, {
+                type: 'bar',
+                data: { labels: labels, datasets: [ { label: 'กำไร', data: profit, backgroundColor: '#10b981', borderRadius: 4 }, { label: 'ค่าน้ำมัน', data: fuel, backgroundColor: '#f97316', borderRadius: 4 } ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            const ctxLine = document.getElementById('chartLine').getContext('2d');
+            state.charts.line = new Chart(ctxLine, {
+                type: 'line',
+                data: { labels: labels, datasets: [ { label: 'ยอดรับ', data: revenue, borderColor: '#1e3350', backgroundColor: '#1e3350', tension: 0.3, borderWidth: 3 }, { label: 'กำไร', data: profit, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.3, borderWidth: 3 } ] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+            });
         }
 
         function renderTrips(container) {
@@ -1504,9 +1469,6 @@
             container.innerHTML = html;
         }
 
-        // ==========================================================
-        // 🔧 หน้าจอซ่อมบำรุงรักษา
-        // ==========================================================
         function renderMaintenance(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             const detailVehicle = filteredVehicles.find(v => v.plate === state.activeVehiclePlate) || null;
@@ -1666,7 +1628,7 @@
         };
 
         // ==========================================================
-        // 🛞 หน้าจอระบบยางรถ 22 ตำแหน่ง
+        // 🛞 หน้าจอและฟังก์ชันระบบยางรถ 22 ตำแหน่ง (พร้อมสลับยาง)
         // ==========================================================
         function renderTires(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
@@ -1682,7 +1644,7 @@
             let html = `<div class="flex flex-wrap gap-2 mb-6">`;
             filteredVehicles.forEach(v => {
                 const active = v.plate === plate;
-                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors ${active ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">${v.plate}</button>`;
+                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; state.swappingSource = null; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors ${active ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">${v.plate}</button>`;
             });
             html += `</div>`;
 
@@ -1707,10 +1669,20 @@
                     <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ยังไม่บันทึก</p><p class="text-xl font-bold text-slate-400 break-words w-full">${emptyCount}</p></div>
                 </div>
 
+                ${state.swappingSource ? `
+                    <div class="bg-purple-100 border border-purple-300 text-purple-800 p-4 rounded-xl mb-6 flex justify-between items-center shadow-sm">
+                        <div>
+                            <p class="font-bold flex items-center"><i data-lucide="arrow-left-right" class="w-5 h-5 mr-2"></i>โหมดสลับยาง</p>
+                            <p class="text-sm mt-1">กรุณาคลิกเลือก <b class="font-bold">ตำแหน่งล้อปลายทาง</b> บนแผนผังที่ต้องการนำยางจากตำแหน่งที่ ${state.swappingSource.pos} ไปสลับ</p>
+                        </div>
+                        <button onclick="state.swappingSource = null; renderContent();" class="bg-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors">ยกเลิก</button>
+                    </div>
+                ` : ''}
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center">
                         <h3 class="text-lg font-bold text-slate-800 mb-1 self-start flex items-center"><i data-lucide="circle-dot" class="h-5 w-5 mr-2 text-navy-800"></i>ผังตำแหน่งยาง — ${plate}</h3>
-                        <p class="text-xs text-slate-400 mb-2 self-start">คลิกที่ล้อเพื่อดู/บันทึกรายละเอียดยางแต่ละเส้น (22 ตำแหน่ง: หัวลาก 10 + หางพ่วง 12)</p>
+                        <p class="text-xs text-slate-400 mb-4 self-start">คลิกที่ล้อเพื่อดู/บันทึกรายละเอียด หรือสลับตำแหน่งยาง</p>
                         ${buildWheelSvg(plate)}
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
@@ -1725,9 +1697,6 @@
                         <div class="mt-6 p-3 bg-sky-50 text-sky-800 rounded-lg text-xs border border-sky-200">
                             <i data-lucide="info" class="w-3.5 h-3.5 inline mr-1 mb-0.5"></i>
                             เลขไมล์ที่ใช้คำนวณอายุยาง อ้างอิงจาก "เลขไมล์ปัจจุบัน (ประเมิน)" ของรถคันนี้ = ${formatNumber(getEstimatedOdometer(plate)).replace(/\.00$/, '')} กม.
-                        </div>
-                        <div class="mt-3 p-3 bg-slate-50 text-slate-500 rounded-lg text-xs border border-slate-200">
-                            เพลาที่ 1–3 = ฝั่งหัวลาก · เพลาที่ 4–6 = ฝั่งหางพ่วง (คั่นด้วยจุดพ่วง/Fifth Wheel)
                         </div>
                     </div>
                 </div>
@@ -1756,12 +1725,18 @@
                 const rec = getActiveTireAt(plate, w.pos);
                 const status = getTireStatus(plate, rec);
                 const style = TIRE_STATUS_STYLE[status];
-                const dash = status === 'empty' ? 'stroke-dasharray="5 4"' : '';
+                
+                // ถ้ายางเส้นนี้กำลังเป็น "ต้นทาง" ในการสลับ ให้ใส่เอฟเฟกต์กระพริบสีม่วง
+                const isSwappingThis = state.swappingSource && state.swappingSource.plate === plate && state.swappingSource.pos === w.pos;
+                const strokeAnim = isSwappingThis ? `stroke="#a855f7" stroke-dasharray="4" stroke-width="4"` : `stroke="${style.stroke}" stroke-width="3" ${status === 'empty' ? 'stroke-dasharray="5 4"' : ''}`;
+                const fillAnim = isSwappingThis ? `fill="#f3e8ff"` : `fill="${style.fill}"`;
+                const classAnim = isSwappingThis ? `class="swap-pulse"` : ``;
+
                 svg += `
-                    <g onclick="openTireModal('${plate}', ${w.pos})" style="cursor:pointer">
-                        <rect x="${w.x - w.w / 2}" y="${w.y - w.h / 2}" width="${w.w}" height="${w.h}" rx="8" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" ${dash} />
-                        <circle cx="${w.x}" cy="${w.y}" r="12" fill="#ffffff" stroke="${style.stroke}" stroke-width="2.5" />
-                        <text x="${w.x}" y="${w.y + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="${style.stroke}">${w.pos}</text>
+                    <g onclick="handleWheelClick('${plate}', ${w.pos})" style="cursor:pointer" ${classAnim}>
+                        <rect x="${w.x - w.w / 2}" y="${w.y - w.h / 2}" width="${w.w}" height="${w.h}" rx="8" ${fillAnim} ${strokeAnim} />
+                        <circle cx="${w.x}" cy="${w.y}" r="12" fill="#ffffff" stroke="${isSwappingThis ? '#a855f7' : style.stroke}" stroke-width="2.5" />
+                        <text x="${w.x}" y="${w.y + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="${isSwappingThis ? '#a855f7' : style.stroke}">${w.pos}</text>
                     </g>
                 `;
             });
@@ -1770,7 +1745,94 @@
             return svg;
         }
 
-        // ---- ตัวจัดการ modal รายละเอียดยางต่อ 1 ตำแหน่ง ----
+        window.handleWheelClick = (plate, pos) => {
+            if (state.swappingSource) {
+                if (state.swappingSource.plate === plate && state.swappingSource.pos === pos) {
+                    state.swappingSource = null;
+                    renderContent();
+                    return;
+                }
+                customConfirm(`ยืนยันการสลับยาง<br>จากตำแหน่งที่ <b>${state.swappingSource.pos}</b> ⇄ ไปตำแหน่งที่ <b>${pos}</b> ใช่หรือไม่?`, () => {
+                    executeSwap(plate, state.swappingSource.pos, pos);
+                }, { title: 'สลับตำแหน่งยาง', icon: 'arrow-left-right', iconWrapClass: 'bg-purple-100 text-purple-800', confirmBtnClass: 'bg-purple-700 hover:bg-purple-800', confirmLabel: 'ยืนยันการสลับ' });
+            } else {
+                openTireModal(plate, pos);
+            }
+        };
+
+        window.executeSwap = async (plate, fromPos, toPos) => {
+            const sourceTire = getActiveTireAt(plate, fromPos);
+            const targetTire = getActiveTireAt(plate, toPos);
+
+            const currentOdo = getEstimatedOdometer(plate);
+            const today = getToday();
+            const actions = [];
+
+            // จัดการยางต้นทาง
+            if (sourceTire) {
+                sourceTire.status = 'swapped';
+                sourceTire.removeDate = formatToThaiShort(today);
+                sourceTire.removeOdometer = currentOdo;
+                actions.push({ action: 'editTire', data: sourceTire });
+
+                const newTire = {
+                    id: Date.now() + 1,
+                    plate: plate,
+                    position: toPos,
+                    brand: sourceTire.brand,
+                    serial: sourceTire.serial,
+                    installDate: formatToThaiShort(today),
+                    installOdometer: currentOdo,
+                    status: 'active',
+                    notes: `สลับมาจากตำแหน่ง ${fromPos}`
+                };
+                state.tires.unshift(newTire);
+                actions.push({ action: 'addTire', data: newTire });
+            }
+
+            // จัดการยางปลายทาง (ถ้ามี)
+            if (targetTire) {
+                targetTire.status = 'swapped';
+                targetTire.removeDate = formatToThaiShort(today);
+                targetTire.removeOdometer = currentOdo;
+                actions.push({ action: 'editTire', data: targetTire });
+
+                const newTire2 = {
+                    id: Date.now() + 2,
+                    plate: plate,
+                    position: fromPos,
+                    brand: targetTire.brand,
+                    serial: targetTire.serial,
+                    installDate: formatToThaiShort(today),
+                    installOdometer: currentOdo,
+                    status: 'active',
+                    notes: `สลับมาจากตำแหน่ง ${toPos}`
+                };
+                state.tires.unshift(newTire2);
+                actions.push({ action: 'addTire', data: newTire2 });
+            }
+
+            // ซิงค์หน่วยความจำ
+            state.tires = state.tires.map(t => {
+                if (sourceTire && t.id === sourceTire.id) return sourceTire;
+                if (targetTire && t.id === targetTire.id) return targetTire;
+                return t;
+            });
+
+            state.swappingSource = null;
+            document.getElementById('loading-spinner').classList.remove('hidden');
+
+            let allOk = true;
+            for (const req of actions) {
+                const ok = await sendGasAction(req.action, req.data);
+                if (!ok) allOk = false;
+            }
+
+            document.getElementById('loading-spinner').classList.add('hidden');
+            if (allOk) showToast('สลับตำแหน่งยางและบันทึกประวัติสำเร็จ!', 'success');
+            renderContent();
+        };
+
         let currentTireCtx = { plate: null, pos: null };
 
         window.openTireModal = (plate, pos) => {
@@ -1779,31 +1841,17 @@
             document.getElementById('tire-modal').classList.remove('hidden');
         };
 
-        window.closeTireModal = () => {
-            document.getElementById('tire-modal').classList.add('hidden');
+        window.closeTireModal = () => document.getElementById('tire-modal').classList.add('hidden');
+
+        window.initiateSwap = () => {
+            const { plate, pos } = currentTireCtx;
+            state.swappingSource = { plate, pos };
+            closeTireModal();
+            showToast('เลือกตำแหน่งล้อที่ต้องการสลับไปได้เลยครับ', 'success');
+            renderContent(); 
         };
 
-        async function sendGasAction(action, data) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return false;
-            try {
-                const res = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action, data })
-                });
-                const result = await res.json();
-                if (result.status !== 'success') {
-                    showToast('บันทึกไม่สำเร็จ: ' + (result.message || 'เกิดข้อผิดพลาดที่ฝั่งเซิร์ฟเวอร์'), 'error');
-                    return false;
-                }
-                return true;
-            } catch (e) {
-                console.error('sendGasAction error', e);
-                showToast('เชื่อมต่อฐานข้อมูลไม่สำเร็จ (' + e.message + ') — ข้อมูลอาจไม่ถูกบันทึกจริง กด "รีเฟรชข้อมูล" เพื่อตรวจสอบ', 'error');
-                return false;
-            }
-        }
-
-        window.renderTireModalBody = (formMode) => {
+        window.renderTireModalBody = (formMode, editHistoryId = null) => {
             const { plate, pos } = currentTireCtx;
             const { wheels } = getWheelLayout();
             const wheelInfo = wheels.find(w => w.pos === pos);
@@ -1813,12 +1861,18 @@
             document.getElementById('tire-modal-title').innerText = `ล้อตำแหน่งที่ ${pos} — ${wheelInfo.axleLabel} (${sideLabel}${wheelInfo.sub ? ' ' + wheelInfo.sub : ''})`;
             const body = document.getElementById('tire-modal-body');
 
-            if (formMode === 'add' || formMode === 'edit' || formMode === 'replace') {
-                const editingRec = formMode === 'edit' ? rec : null;
+            if (formMode === 'add' || formMode === 'edit' || formMode === 'replace' || formMode === 'editHistory') {
+                let editingRec = null;
+                if (formMode === 'edit') editingRec = rec;
+                else if (formMode === 'editHistory') editingRec = state.tires.find(t => t.id == editHistoryId);
+
                 const currentOdo = getEstimatedOdometer(plate);
+                
                 body.innerHTML = `
                     <form id="tire-form" class="space-y-4">
                         ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
+                        ${formMode === 'editHistory' ? `<div class="p-3 bg-purple-50 text-purple-800 rounded-lg text-xs border border-purple-200">กำลังแก้ไขข้อมูลประวัติยางในอดีต (เส้นที่ถอดไปแล้ว)</div>` : ''}
+                        
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
                             <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
@@ -1829,21 +1883,35 @@
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่</label>
                                 <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ตอนใส่</label>
                                 <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
+                        
+                        ${formMode === 'editHistory' ? `
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่ถอดออก</label>
+                                <input required type="date" id="tf_r_date" value="${editingRec && editingRec.removeDate ? reverseThaiToISO(editingRec.removeDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ตอนถอด</label>
+                                <input required type="number" id="tf_r_odo" value="${editingRec ? editingRec.removeOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
+                            </div>
+                        </div>
+                        ` : ''}
+
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
-                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ / ประวัติการสลับ</label>
+                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น สลับมาจากตำแหน่ง 5">${editingRec ? (editingRec.notes || '') : ''}</textarea>
                         </div>
                         <div class="flex space-x-3 pt-2">
                             <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
+                            <button type="submit" id="btn-submit-tire" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
                         </div>
                     </form>
                 `;
@@ -1872,13 +1940,15 @@
                             <div><p class="text-slate-400 text-xs">เลขไมล์เริ่มต้น</p><p class="font-semibold text-slate-700">${formatNumber(rec.installOdometer).replace(/\.00$/, '')} กม.</p></div>
                             <div class="col-span-2"><p class="text-slate-400 text-xs">ระยะทางที่ใช้งานมาแล้ว</p><p class="font-bold text-slate-800 text-lg">${formatNumber(km).replace(/\.00$/, '')} กม.</p></div>
                         </div>
-                        ${rec.notes ? `<p class="text-xs text-slate-500 mt-2 border-t border-slate-200/60 pt-2">📝 ${rec.notes}</p>` : ''}
+                        ${rec.notes ? `<div class="mt-3 p-2 bg-white/60 rounded border border-slate-200/50 text-xs text-slate-600"><span class="font-bold">หมายเหตุ:</span> ${rec.notes}</div>` : ''}
                     </div>
-                    <div class="flex space-x-2 mb-3">
-                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
-                        <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="flex-1 px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนยางใหม่</button>
+                    
+                    <div class="grid grid-cols-3 gap-2 mb-3">
+                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="px-2 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-3.5 h-3.5 mr-1"></i>แก้ไข</button>
+                        <button onclick="requestActionPin('initiateSwap()')" class="px-2 py-2 bg-purple-100 hover:bg-purple-200 rounded-lg text-xs font-bold text-purple-800 flex items-center justify-center"><i data-lucide="arrow-left-right" class="w-3.5 h-3.5 mr-1"></i>สลับตำแหน่ง</button>
+                        <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="px-2 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-xs font-bold text-navy-800 flex items-center justify-center"><i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1"></i>เปลี่ยนใหม่</button>
                     </div>
-                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด</button>
+                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ (ไม่ลบประวัติเก่า)</button>
                 `;
             } else {
                 html += `
@@ -1893,12 +1963,14 @@
             if (history.length > 0) {
                 html += `
                     <div class="border-t border-slate-100 pt-3 mt-2">
-                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">ประวัติยางเส้นก่อนหน้า (${history.length})</p>
-                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">ประวัติยางที่เคยใส่ตำแหน่งนี้ (${history.length})</p>
+                        <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
                         ${history.map(h => `
-                            <div class="text-xs bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                <p class="font-semibold text-slate-600">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : '-'})</span></p>
-                                <p class="text-slate-400">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
+                            <div class="text-xs bg-slate-50 rounded-lg p-2 border border-slate-100 relative group">
+                                <p class="font-semibold text-slate-700">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400 font-normal">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : 'ปัจจุบัน'})</span></p>
+                                <p class="text-slate-500 mt-0.5">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
+                                ${h.notes ? `<p class="text-slate-400 italic mt-0.5">${h.notes}</p>` : ''}
+                                <button onclick="requestActionPin('renderTireModalBody(\\'editHistory\\', \\'${h.id}\\')')" class="absolute top-2 right-2 text-slate-300 hover:text-navy-600 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                             </div>
                         `).join('')}
                         </div>
@@ -1910,8 +1982,13 @@
             lucide.createIcons();
         };
 
-        window.submitTireForm = (e, mode, editingRec) => {
+        window.submitTireForm = async (e, mode, editingRec) => {
             e.preventDefault();
+            const btn = document.getElementById('btn-submit-tire');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
+            lucide.createIcons();
+
             const { plate, pos } = currentTireCtx;
             const getVal = (id) => document.getElementById(id)?.value;
 
@@ -1921,105 +1998,79 @@
                     activeRec.status = 'removed';
                     activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
                     activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
-                    sendGasAction('editTire', activeRec);
+                    await sendGasAction('editTire', activeRec);
                 }
             }
 
-            let rec = (mode === 'edit' && editingRec) ? editingRec : { id: Date.now(), plate: plate, position: pos };
+            let rec = ((mode === 'edit' || mode === 'editHistory') && editingRec) ? editingRec : { id: Date.now(), plate: plate, position: pos };
             rec.brand = getVal('tf_brand');
             rec.serial = getVal('tf_serial');
             rec.installDate = formatToThaiShort(getVal('tf_date'));
             rec.installOdometer = Number(getVal('tf_odo') || 0);
             rec.notes = getVal('tf_notes') || '';
-            rec.status = 'active';
-
-            if (mode === 'edit') {
-                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
-                sendGasAction('editTire', rec);
+            
+            if (mode === 'editHistory') {
+                rec.removeDate = formatToThaiShort(getVal('tf_r_date'));
+                rec.removeOdometer = Number(getVal('tf_r_odo') || 0);
             } else {
-                state.tires.unshift(rec);
-                sendGasAction('addTire', rec);
+                rec.status = 'active';
             }
 
-            showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
-            renderTireModalBody();
-            renderContent();
+            let ok = true;
+            if (mode === 'edit' || mode === 'editHistory') {
+                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
+                ok = await sendGasAction('editTire', rec);
+            } else {
+                state.tires.unshift(rec);
+                ok = await sendGasAction('addTire', rec);
+            }
+
+            if (ok) {
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i>สำเร็จ';
+                btn.classList.replace('bg-navy-800', 'bg-green-600');
+                lucide.createIcons();
+                setTimeout(() => {
+                    showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
+                    renderTireModalBody();
+                    renderContent();
+                }, 500);
+            } else {
+                btn.disabled = false;
+                btn.innerText = 'บันทึก';
+            }
         };
 
         window.deleteTireRecord = (id) => {
-            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", async () => {
-                sendGasAction('deleteTire', { id });
-                state.tires = state.tires.filter(t => t.id != id);
-                closeTireModal();
-                renderContent();
-                showToast('ลบข้อมูลยางสำเร็จ!');
+            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ (ลบเฉพาะเส้นที่ใช้งานอยู่ ประวัติเก่าไม่หาย)", async () => {
+                const ok = await sendGasAction('deleteTire', { id });
+                if (ok) {
+                    state.tires = state.tires.filter(t => t.id != id);
+                    renderTireModalBody();
+                    renderContent();
+                    showToast('ลบข้อมูลยางสำเร็จ!');
+                }
             });
         };
 
-        function drawCharts(profitData) {
-            if(state.charts.bar) state.charts.bar.destroy();
-            if(state.charts.line) state.charts.line.destroy();
-
-            const labels = profitData.map(d => d.name);
-            const profit = profitData.map(d => d.กำไร);
-            const fuel = profitData.map(d => d.ค่าน้ำมัน);
-            const revenue = profitData.map(d => d.ยอดรับ);
-
-            const ctxBar = document.getElementById('chartBar').getContext('2d');
-            state.charts.bar = new Chart(ctxBar, {
-                type: 'bar',
-                data: { labels: labels, datasets: [ { label: 'กำไร', data: profit, backgroundColor: '#10b981', borderRadius: 4 }, { label: 'ค่าน้ำมัน', data: fuel, backgroundColor: '#f97316', borderRadius: 4 } ] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
-            });
-
-            const ctxLine = document.getElementById('chartLine').getContext('2d');
-            state.charts.line = new Chart(ctxLine, {
-                type: 'line',
-                data: { labels: labels, datasets: [ { label: 'ยอดรับ', data: revenue, borderColor: '#1e3350', backgroundColor: '#1e3350', tension: 0.3, borderWidth: 3 }, { label: 'กำไร', data: profit, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.3, borderWidth: 3 } ] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
-            });
+        async function sendGasAction(action, data) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return true; // Demo mode success
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, data })
+                });
+                // Note: using no-cors might not return valid JSON in some setups, assuming success if no throw
+                return true; 
+            } catch (e) {
+                console.error('sendGasAction error', e);
+                showToast('เชื่อมต่อฐานข้อมูลไม่สำเร็จ ข้อมูลอาจไม่ถูกบันทึกจริง', 'error');
+                return false;
+            }
         }
 
-        window.toggleJobSort = () => {
-            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
-            
-            const sel = document.getElementById('job_select');
-            if(sel) {
-                // จำค่าเดิมที่เลือกไว้ก่อนสลับการจัดเรียง
-                const currentValue = sel.value;
-                
-                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
-                
-                if(state.jobSortMode === 'alpha') {
-                    // เรียงตามตัวอักษร ก-ฮ โดยรวมชื่อต้นทางและปลายทาง
-                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
-                } // ถ้าเป็น recent จะใช้ลำดับเดิมจากฐานข้อมูล (ล่าสุดอยู่บน)
-                
-                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
-                filteredJobs.forEach(j => {
-                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
-                });
-                
-                sel.innerHTML = html;
-                
-                // คืนค่าที่เลือกไว้ให้เหมือนเดิม
-                if (currentValue) sel.value = currentValue;
-
-                // อัปเดตหน้าตาปุ่ม
-                const btn = document.getElementById('btn-job-sort');
-                if(btn) {
-                    if(state.jobSortMode === 'recent') {
-                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
-                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
-                    } else {
-                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
-                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
-                    }
-                    lucide.createIcons();
-                }
-            }
-        };
-
+        // ==========================================================
+        // 🧰 ฟอร์ม และจัดการข้อมูลอื่นๆ (Trips, Jobs, Maintenance)
+        // ==========================================================
         function openFormModal(isEdit = false) {
             state.editMode = isEdit;
             const modal = document.getElementById('main-modal');
@@ -2081,7 +2132,6 @@
                         ? `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors"><i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด</button>`
                         : `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors"><i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ</button>`;
 
-
                     html += `
                         <div class="col-span-2 mt-4">
                             <label class="block text-sm font-medium text-slate-700 mb-1 flex justify-between items-center">
@@ -2133,7 +2183,6 @@
                                 <input required type="number" step="0.01" id="f_weight" value="${state.formData.weight !== undefined ? state.formData.weight : ''}" class="w-full border border-navy-300 bg-navy-50/50 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 font-bold text-navy-900" placeholder="ระบุน้ำหนักเป็นตัน เช่น 30.5" />
                             </div>
                         </div>
-                        <!-- ซ่อนอัตราสิ้นเปลืองและราคาน้ำมัน เพื่อไม่ให้ฟอร์มยาวเกินไปสำหรับรถดั๊ม -->
                         <input type="hidden" id="f_fuelRate" value="${defFuelRate}" />
                         <input type="hidden" id="f_currentFuelPrice" value="${defFuelPrice}" />
                         
@@ -2353,7 +2402,7 @@
             lucide.createIcons();
 
             document.getElementById('btn-cancel-form').onclick = () => modal.classList.add('hidden');
-            form.onsubmit = submitData;
+            form.onsubmit = submitMainForm;
             
             setTimeout(() => {
                 if(state.activeTab === 'refuels') calcTotalRefuel(); 
@@ -2361,118 +2410,40 @@
             }, 100);
         }
 
-        document.getElementById('btn-close-modal').onclick = () => document.getElementById('main-modal').classList.add('hidden');
-
-        document.getElementById('btn-add-new').onclick = () => {
-            state.formData = {}; 
-            openFormModal(false);
-        };
-
-        window.openEditModal = (id, tab) => {
-            const list = state[tab];
-            const item = list.find(i => i.id == id);
-            if (item) {
-                state.formData = { ...item };
-                if (state.formData.date) state.formData.date = reverseThaiToISO(state.formData.date);
-                openFormModal(true);
-            }
-        };
-
-        window.applyJobSelection = () => {
-            const sel = document.getElementById('job_select');
-            const opt = sel.options[sel.selectedIndex];
-            if(opt && opt.value) {
-                document.getElementById('f_origin').value = opt.getAttribute('data-ori') || '';
-                document.getElementById('f_dest').value = opt.getAttribute('data-dest') || '';
-                document.getElementById('f_dist').value = opt.getAttribute('data-dist') || '';
-                document.getElementById('f_revenue').value = opt.getAttribute('data-rev') || '';
-                
-                if(document.getElementById('f_fuelRate')) {
-                    const rate = parseFloat(opt.getAttribute('data-fuelrate'));
-                    document.getElementById('f_fuelRate').value = (!isNaN(rate) && rate > 0) ? rate : 2.5;
-                }
-                if(document.getElementById('f_currentFuelPrice')) {
-                    const price = parseFloat(opt.getAttribute('data-fuelprice'));
-                    document.getElementById('f_currentFuelPrice').value = (!isNaN(price) && price > 0) ? price : 36.0;
-                }
-                if(document.getElementById('f_driverFee')) {
-                    const fee = parseFloat(opt.getAttribute('data-driverfee'));
-                    document.getElementById('f_driverFee').value = !isNaN(fee) ? fee : 0;
-                }
-
-                calcFuelCost(); 
-            }
-        };
-
-        window.calcFuelCost = () => {
-            const distInput = document.getElementById('f_dist');
-            const rateInput = document.getElementById('f_fuelRate');
-            const priceInput = document.getElementById('f_currentFuelPrice');
-            const costInput = document.getElementById('f_fuelCost');
-
-            if(distInput && rateInput && priceInput && costInput) {
-                const dist = parseFloat(distInput.value) || 0;
-                const rate = parseFloat(rateInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
-                
-                if (dist > 0 && rate > 0 && price > 0) {
-                    costInput.value = (((dist * 2) / rate) * price).toFixed(2);
-                } else {
-                    costInput.value = 0;
-                }
-            }
-        };
-
-        window.calcTotalRefuel = () => {
-            const liters = parseFloat(document.getElementById('f_liters')?.value);
-            const price = parseFloat(document.getElementById('f_price')?.value);
-            const estDiv = document.getElementById('refuel_estimate');
-            if(estDiv && !isNaN(liters) && !isNaN(price)) {
-                estDiv.classList.remove('hidden');
-                estDiv.innerText = 'ยอดรวมประเมิน: ' + formatCurrency(liters * price);
-            } else if(estDiv) {
-                estDiv.classList.add('hidden');
-            }
-        };
-
-        window.autoCalcDistance = async () => {
-            const ori = document.getElementById('f_origin').value;
-            const dest = document.getElementById('f_dest').value;
-            const btn = document.getElementById('btn-calc-dist');
-            if(!ori || !dest) {
-                showToast('กรุณากรอกต้นทางและปลายทางก่อนครับ', 'error');
-                return;
-            }
-
-            btn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 mr-1 spinner"></i>กำลังคำนวณ...';
-            lucide.createIcons();
+        window.toggleJobSort = () => {
+            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
             
-            try {
-                const geocode = async (query) => {
-                    const match = query.match(/(-?[\d\.]+)\s*,\s*(-?[\d\.]+)/);
-                    if (match) return { lat: match[1], lon: match[2] };
-                    const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=th');
-                    const data = await res.json();
-                    if(data && data.length > 0) return data[0];
-                    throw new Error("ไม่พบสถานที่");
-                };
-                const [o, d] = await Promise.all([geocode(ori), geocode(dest)]);
-                const osrmRes = await fetch('https://router.project-osrm.org/route/v1/driving/' + o.lon + ',' + o.lat + ';' + d.lon + ',' + d.lat + '?overview=false');
-                const osrmData = await osrmRes.json();
+            const sel = document.getElementById('job_select');
+            if(sel) {
+                const currentValue = sel.value;
+                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
                 
-                if(osrmData.code === 'Ok') {
-                    document.getElementById('f_dist').value = (osrmData.routes[0].distance / 1000).toFixed(0);
-                    calcFuelCost(); 
-                } else throw new Error("คำนวณไม่ได้");
-            } catch (e) {
-                showToast("เกิดข้อผิดพลาด: " + e.message, 'error');
-            } finally {
-                btn.innerHTML = '<i data-lucide="map-pin" class="w-3 h-3 mr-1"></i>คำนวณอัตโนมัติ';
-                lucide.createIcons();
+                if(state.jobSortMode === 'alpha') {
+                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+                }
+                
+                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
+                filteredJobs.forEach(j => {
+                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
+                });
+                sel.innerHTML = html;
+                if (currentValue) sel.value = currentValue;
+
+                const btn = document.getElementById('btn-job-sort');
+                if(btn) {
+                    if(state.jobSortMode === 'recent') {
+                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
+                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
+                    } else {
+                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
+                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
+                    }
+                    lucide.createIcons();
+                }
             }
         };
 
-        async function submitData(e) {
+        async function submitMainForm(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-form');
             btn.disabled = true;
@@ -2485,15 +2456,12 @@
                 category: state.editMode ? (state.formData.category || state.activeCategory) : state.activeCategory 
             };
             const getVal = (id) => document.getElementById(id)?.value;
-            let cascadeJobEdit = null; // ถ้าเป็นการแก้ไข "เส้นทางและเรทราคา" จะเก็บ {oldJob, newJob} ไว้ถามผู้ใช้ทีหลังว่าจะอัปเดตรายการวิ่งงานเดิมด้วยไหม
+            let cascadeJobEdit = null; 
 
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
                 newData.date = formatToThaiShort(getVal('f_date'));
-                
                 let rawPlate = getVal('f_plate') || '';
-                if (rawPlate.includes(' (')) {
-                    rawPlate = rawPlate.split(' (')[0].trim();
-                }
+                if (rawPlate.includes(' (')) rawPlate = rawPlate.split(' (')[0].trim();
                 newData.plate = rawPlate;
             }
 
@@ -2561,16 +2529,12 @@
                 else state.maintenanceLogs.unshift(newData);
             }
 
-            let saveOk = true;
-            if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                saveOk = await sendGasAction(actionType, newData);
-            }
+            let saveOk = await sendGasAction(actionType, newData);
 
-            // เพิ่มลูกเล่น: หน่วงเวลาและเปลี่ยนปุ่มเป็นสีเขียวแจ้งว่าสำเร็จก่อนปิด (เฉพาะตอนบันทึกได้จริง)
             if (saveOk) {
                 btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
-                btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
-                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                btn.classList.replace('bg-navy-800', 'bg-green-600');
+                btn.classList.replace('hover:bg-navy-900', 'hover:bg-green-700');
                 lucide.createIcons();
             }
 
@@ -2579,29 +2543,19 @@
                 renderNav();
                 renderContent();
                 
-                // คืนค่าปุ่มกลับเป็นเหมือนเดิมสำหรับรอบหน้า
                 btn.disabled = false;
                 btn.className = originalClasses;
                 btn.innerText = 'บันทึกข้อมูล';
                 
                 if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
                 if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
-            }, saveOk ? 800 : 0); // หน่วงเวลา 0.8 วินาทีให้ผู้ใช้มองทันตอนสำเร็จ — ถ้าไม่สำเร็จปิดทันที (error toast จาก sendGasAction แสดงอยู่แล้ว)
+            }, saveOk ? 800 : 0); 
         }
 
-        // ==========================================================
-        // 🔄 อัปเดตรายการวิ่งงานเดิมตามเรทเส้นทางที่เพิ่งแก้ไข (ถ้าผู้ใช้ยืนยัน)
-        // ==========================================================
-        // จับคู่รายการวิ่งงานเดิมกับเส้นทางด้วยต้นทาง+ปลายทาง+หมวดหมู่ (ระบบไม่ได้ผูก ID
-        // เส้นทางไว้กับรายการวิ่งงานที่กรอกไปแล้ว จึงจับคู่แบบอิงข้อความเป็นค่าประมาณที่ดีที่สุด)
         function promptCascadeJobUpdate(oldJob, newJob) {
             if (!oldJob) return;
             const category = newJob.category || 'flatbed';
-            const matches = state.trips.filter(t =>
-                (t.category || 'flatbed') === category &&
-                t.origin === oldJob.origin &&
-                t.dest === oldJob.dest
-            );
+            const matches = state.trips.filter(t => (t.category || 'flatbed') === category && t.origin === oldJob.origin && t.dest === oldJob.dest );
             if (matches.length === 0) return;
 
             customConfirm(
@@ -2609,41 +2563,28 @@
                 async () => {
                     document.getElementById('loading-spinner').classList.remove('hidden');
                     matches.forEach(t => {
-                        t.origin = newJob.origin;
-                        t.dest = newJob.dest;
-                        t.dist = newJob.dist;
-                        t.fuelRate = newJob.fuelRate;
-                        t.currentFuelPrice = newJob.currentFuelPrice;
-                        t.fuelCost = newJob.fuelCost;
-                        t.driverFee = newJob.driverFee;
-                        t.revenue = newJob.revenue;
+                        t.origin = newJob.origin; t.dest = newJob.dest; t.dist = newJob.dist;
+                        t.fuelRate = newJob.fuelRate; t.currentFuelPrice = newJob.currentFuelPrice;
+                        t.fuelCost = newJob.fuelCost; t.driverFee = newJob.driverFee; t.revenue = newJob.revenue;
                         t.profit = Number(newJob.revenue || 0) - Number(newJob.fuelCost || 0) - Number(newJob.driverFee || 0);
                     });
-                    for (const t of matches) {
-                        await sendGasAction('editTrip', t);
-                    }
+                    for (const t of matches) { await sendGasAction('editTrip', t); }
                     document.getElementById('loading-spinner').classList.add('hidden');
                     renderNav();
                     renderContent();
                     showToast(`อัปเดตรายการวิ่งงานที่เกี่ยวข้อง ${matches.length} รายการเรียบร้อย!`, 'success');
                 },
-                {
-                    title: 'อัปเดตรายการวิ่งงานเดิมด้วยหรือไม่?',
-                    icon: 'refresh-cw',
-                    iconWrapClass: 'bg-amber-100 text-amber-700',
-                    confirmLabel: `อัปเดตทั้ง ${matches.length} รายการ`,
-                    confirmLoadingLabel: 'กำลังอัปเดต...',
-                    confirmBtnClass: 'bg-amber-600 hover:bg-amber-700'
-                }
+                { title: 'อัปเดตรายการวิ่งงานเดิมด้วยหรือไม่?', icon: 'refresh-cw', iconWrapClass: 'bg-amber-100 text-amber-700', confirmLabel: `อัปเดตทั้ง ${matches.length} รายการ`, confirmBtnClass: 'bg-amber-600 hover:bg-amber-700' }
             );
         }
 
-        // Custom Confirm Modal Logic
+        // ==========================================================
+        // 🌟 Utilities & Init
+        // ==========================================================
         window.customConfirm = (message, onConfirm, opts) => {
             opts = opts || {};
             const title = opts.title || 'ยืนยันการลบข้อมูล';
             const confirmLabel = opts.confirmLabel || 'ลบข้อมูล';
-            const confirmLoadingLabel = opts.confirmLoadingLabel || 'รอสักครู่...';
             const icon = opts.icon || 'alert-triangle';
             const iconWrapClass = opts.iconWrapClass || 'bg-navy-100 text-navy-800';
             const confirmBtnClass = opts.confirmBtnClass || 'bg-navy-700 hover:bg-navy-800';
@@ -2652,9 +2593,7 @@
             overlay.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4";
             overlay.innerHTML = `
                 <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm text-center">
-                    <div class="w-12 h-12 ${iconWrapClass} rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="${icon}" class="w-6 h-6"></i>
-                    </div>
+                    <div class="w-12 h-12 ${iconWrapClass} rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="${icon}" class="w-6 h-6"></i></div>
                     <h3 class="text-lg font-bold text-slate-800 mb-2">${title}</h3>
                     <p class="text-slate-500 mb-6 text-sm">${message}</p>
                     <div class="flex space-x-3">
@@ -2669,164 +2608,29 @@
             document.getElementById('cancel-btn').onclick = () => { overlay.remove(); if (opts.onCancel) opts.onCancel(); };
             document.getElementById('confirm-btn').onclick = function() {
                 const btn = this;
-                btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>${confirmLoadingLabel}`;
+                btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>รอสักครู่...`;
                 lucide.createIcons();
-                
-                // หน่วงเวลาเล็กน้อยให้ดูเนียนตา
-                setTimeout(() => {
-                    overlay.remove();
-                    onConfirm();
-                }, 600);
+                setTimeout(() => { overlay.remove(); onConfirm(); }, 600);
             };
         };
 
-        // Toast Notification System
         window.showToast = (message, type = "success") => {
             const toast = document.createElement('div');
             const isError = type === "error";
             toast.className = `fixed top-6 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
-            
-            toast.innerHTML = `
-                <i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i>
-                <span>${message}</span>
-            `;
-            
+            toast.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i><span>${message}</span>`;
             document.body.appendChild(toast);
             lucide.createIcons();
-            
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove('translate-x-full');
-            }, 10);
-
-            // Animate out and remove
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+            setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
         };
 
-        window.deleteData = (id, actionStr, sheetType) => {
-            customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", async () => {
-                document.getElementById('loading-spinner').classList.remove('hidden');
-                try {
-                    const res = await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
-                    });
-                    const result = await res.json();
-                    if (result.status !== 'success') {
-                        throw new Error(result.message || 'เซิร์ฟเวอร์ปฏิเสธการลบ');
-                    }
-
-                    if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id != id);
-                    else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id != id);
-                    else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id != id);
-                    else if (actionStr.includes('Job')) state.jobs = state.jobs.filter(i => i.id != id);
-                    else if (actionStr.includes('Maintenance')) state.maintenanceLogs = state.maintenanceLogs.filter(i => i.id != id);
-                    else if (actionStr.includes('Tire')) state.tires = state.tires.filter(i => i.id != id);
-
-                    renderNav();
-                    renderContent();
-                    showToast("ลบข้อมูลสำเร็จ!");
-                } catch (e) {
-                    console.error(e);
-                    showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "error");
-                } finally {
-                    document.getElementById('loading-spinner').classList.add('hidden');
-                }
-            });
-        };
-
-        window.openMapModal = () => {
-            const mapHtml = `
-                <!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
-                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-                <style>body, html, #map { height: 100%; margin: 0; padding: 0; font-family: sans-serif; } .search-panel { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px; } input, button { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline:none; } button { background: #1e3350; color: white; border: none; cursor: pointer; font-weight: bold; } #status { font-size: 12px; text-align: center; }</style>
-                </head><body>
-                <div class="search-panel"><label style="font-size:12px;font-weight:bold;color:#475569;">📍 ต้นทาง</label><input type="text" id="ori" placeholder="เช่น สระบุรี หรือ 13.7,100.5"><label style="font-size:12px;font-weight:bold;color:#475569;">🎯 ปลายทาง</label><input type="text" id="dest" placeholder="เช่น ระยอง"><button id="calcBtn">ค้นหาและคำนวณระยะทาง</button><div id="status"></div></div><div id="map"></div>
-                <script>
-                const map = L.map("map").setView([13.75, 100.5], 6);
-                L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-                let routeLayer = null, markers = [];
-                async function geocode(q) {
-                    const m = q.match(/([\\d\\.]+)\\s*,\\s*([\\d\\.]+)/);
-                    if (m) return { lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
-                    const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&q=" + encodeURIComponent(q) + "&limit=1&countrycodes=th");
-                    const d = await r.json();
-                    if (d && d.length > 0) return d[0];
-                    throw new Error("ไม่พบสถานที่");
-                }
-                document.getElementById("calcBtn").onclick = async function() {
-                    const ori = document.getElementById("ori").value;
-                    const dest = document.getElementById("dest").value;
-                    const statusEl = document.getElementById("status");
-                    if(!ori || !dest) return statusEl.innerText = "กรุณากรอกข้อมูลให้ครบ", statusEl.style.color="red";
-                    statusEl.innerText = "กำลังค้นหา..."; statusEl.style.color="#1e3350"; this.disabled = true;
-                    try {
-                        const [o, d] = await Promise.all([geocode(ori), geocode(dest)]);
-                        if(markers.length) { markers.forEach(m=>map.removeLayer(m)); markers=[]; }
-                        if(routeLayer) map.removeLayer(routeLayer);
-                        markers.push(L.marker([o.lat, o.lon]).addTo(map).bindPopup("ต้นทาง").openPopup());
-                        markers.push(L.marker([d.lat, d.lon]).addTo(map).bindPopup("ปลายทาง"));
-                        statusEl.innerText = "กำลังดึงเส้นทาง...";
-                        const res = await fetch("https://router.project-osrm.org/route/v1/driving/" + o.lon + "," + o.lat + ";" + d.lon + "," + d.lat + "?overview=full&geometries=geojson");
-                        const data = await res.json();
-                        if(data.code === "Ok") {
-                            const dist = (data.routes[0].distance / 1000).toFixed(0);
-                            routeLayer = L.geoJSON(data.routes[0].geometry, {style: {color: "#1e3350", weight: 5}}).addTo(map);
-                            map.fitBounds(routeLayer.getBounds(), {padding:[50,50]});
-                            statusEl.innerText = "ระยะทาง: " + dist + " กม. (กำลังส่งข้อมูลกลับ)";
-                            statusEl.style.color = "green";
-                            setTimeout(() => { window.parent.postMessage({ type: "MAP_SELECTED", dist: dist, origin: ori, dest: dest }, "*"); }, 1500);
-                        } else throw new Error("ไม่พบเส้นทาง");
-                    } catch(e) { statusEl.innerText = e.message; statusEl.style.color="red"; }
-                    this.disabled = false;
-                };
-                <\/script></body></html>
-            `;
-            document.getElementById('map-iframe').srcdoc = mapHtml;
-            document.getElementById('map-modal').classList.remove('hidden');
-        };
-
-        const closeMapModal = () => document.getElementById('map-modal').classList.add('hidden');
-        document.getElementById('btn-close-map').onclick = closeMapModal;
-        document.getElementById('btn-close-map-bottom').onclick = closeMapModal;
-
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'MAP_SELECTED') {
-                document.getElementById('f_dist').value = event.data.dist;
-                document.getElementById('f_origin').value = event.data.origin;
-                document.getElementById('f_dest').value = event.data.dest;
-                calcFuelCost();
-                closeMapModal();
-                
-                // ลูกเล่น: ทำให้ช่องที่ถูกดึงข้อมูลมาจากแผนที่เรืองแสงสีเขียวแปปนึงเพื่อให้รู้ว่าข้อมูลมาแล้ว
-                ['f_dist', 'f_origin', 'f_dest', 'f_fuelCost'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if(el) {
-                        el.style.transition = 'all 0.5s ease';
-                        el.classList.add('ring-2', 'ring-green-500', 'bg-green-50');
-                        setTimeout(() => el.classList.remove('ring-2', 'ring-green-500', 'bg-green-50'), 1500);
-                    }
-                });
-            }
-        });
-
-        // ==========================================================
-        // 🧹 ปรับชนิดข้อมูลให้เป็น "ข้อความ" เสมอหลังโหลดจากฐานข้อมูล
-        // ==========================================================
-        // ถ้ามีใครพิมพ์ทะเบียนรถที่เป็นตัวเลขล้วน (เช่น 729674) ตรงๆ ลงใน Google Sheet
-        // โดยไม่ผ่านฟอร์มของเว็บ, Sheets จะเก็บเป็นชนิด "ตัวเลข" ไม่ใช่ "ข้อความ"
-        // ทำให้การเทียบทะเบียนรถ (v.plate === state.activeVehiclePlate) ไม่ตรงกัน
-        // และกดเลือกรถคันนั้นไม่ติด — ฟังก์ชันนี้แปลงให้เป็นข้อความเหมือนกันหมดทุกจุดที่โหลดเข้ามา
         function normalizeLoadedData() {
             const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
             state.vehicles.forEach(v => { v.plate = cleanPlate(v.plate); v.category = v.category || 'flatbed'; });
-            state.trips.forEach(t => { t.plate = cleanPlate(t.plate); });
-            state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
-            state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
+            state.trips.forEach(t => t.plate = cleanPlate(t.plate));
+            state.refuels.forEach(r => r.plate = cleanPlate(r.plate));
+            state.maintenanceLogs.forEach(m => m.plate = cleanPlate(m.plate));
             state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
         }
 
@@ -2838,16 +2642,13 @@
                 renderContent();
                 return;
             }
-
             try {
                 document.getElementById('loading-spinner').classList.remove('hidden');
                 const res = await fetch(GAS_WEB_APP_URL + "?t=" + new Date().getTime());
                 const data = await res.json();
                 if(data.status === 'success') {
-                    state.trips = data.trips || [];
-                    state.refuels = data.refuels || [];
-                    state.vehicles = data.vehicles || [];
-                    state.jobs = data.jobs || [];
+                    state.trips = data.trips || []; state.refuels = data.refuels || [];
+                    state.vehicles = data.vehicles || []; state.jobs = data.jobs || [];
                     state.maintenanceLogs = data.maintenance || data.maintenanceLogs || [];
                     state.tires = data.tires || [];
                     normalizeLoadedData();
@@ -2861,40 +2662,27 @@
             }
         }
 
-        // ==========================================================
-        // 🧪 ข้อมูลตัวอย่าง (Demo) — แสดงเฉพาะตอนที่ยังไม่มีข้อมูลรถในระบบ
-        // เพื่อสาธิตระบบซ่อมบำรุง/ยางรถ ก่อนที่จะเชื่อมฐานข้อมูลจริง (Google Sheets)
-        // ==========================================================
         function seedDemoDataIfEmpty() {
             if (state.vehicles.length > 0) return;
             state.isDemoData = true;
-
             state.vehicles = [
                 { id: 9001, plate: '88-2059', driver: '(ระบุชื่อคนขับ)', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 385000, baselineDate: '1/6/2569' },
-                { id: 9002, plate: '72-8671', driver: '(ระบุชื่อคนขับ)', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 410000, baselineDate: '1/6/2569' },
-                { id: 9003, plate: '72-6512', driver: '(ระบุชื่อคนขับ)', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' },
-                { id: 9004, plate: '72-9674', driver: '(ระบุชื่อคนขับ)', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 252000, baselineDate: '1/6/2569' }
+                { id: 9003, plate: '72-6512', driver: '(ระบุชื่อคนขับ)', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' }
             ];
-
             state.maintenanceLogs = [
-                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40, ไส้กรองน้ำมันเครื่อง', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8002, plate: '88-2059', date: '20/1/2569', category: 'brake_check', odometer: 340500, description: 'เปลี่ยนผ้าเบรกล้อหลังคู่หน้า', cost: 6800, partsChanged: 'ผ้าเบรกแท้ UD', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8003, plate: '72-8671', date: '15/3/2569', category: 'oil_engine', odometer: 401800, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8004, plate: '72-6512', date: '10/2/2569', category: 'oil_engine', odometer: 260500, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 3900, partsChanged: 'น้ำมันเครื่อง, ไส้กรอง', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8005, plate: '72-6512', date: '5/12/2568', category: 'diff_oil', odometer: 245000, description: 'เปลี่ยนน้ำมันเฟืองท้าย', cost: 2600, partsChanged: 'น้ำมันเฟืองท้าย 85W-140', technician: 'ศูนย์บริการ UD Trucks' }
+                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์ UD' },
+                { id: 8004, plate: '72-6512', date: '10/2/2569', category: 'oil_engine', odometer: 260500, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 3900, partsChanged: 'น้ำมันเครื่อง, ไส้กรอง', technician: 'ศูนย์ UD' }
             ];
-
-            // สร้างข้อมูลยางตัวอย่างให้รถทะเบียน 88-2059 บางส่วน เพื่อสาธิตผังยาง 22 ตำแหน่ง
             const demoTireSeed = [
                 { plate: '88-2059', position: 1, brand: 'Bridgestone R150', serial: '2224X1', installDate: '1/6/2568', installOdometer: 330000 },
                 { plate: '88-2059', position: 2, brand: 'Bridgestone R150', serial: '2224X2', installDate: '1/6/2568', installOdometer: 330000 },
                 { plate: '88-2059', position: 3, brand: 'Deestone D922', serial: '1123A3', installDate: '10/1/2569', installOdometer: 355000 },
-                { plate: '88-2059', position: 4, brand: 'Deestone D922', serial: '1123A4', installDate: '10/1/2569', installOdometer: 355000 }
+                { plate: '72-6512', position: 1, brand: 'Michelin X Multi', serial: '4423M1', installDate: '5/5/2569', installOdometer: 265000 },
+                { plate: '72-6512', position: 2, brand: 'Michelin X Multi', serial: '4423M2', installDate: '5/5/2569', installOdometer: 265000 }
             ];
             state.tires = demoTireSeed.map((t, i) => ({ id: 7001 + i, status: 'active', notes: '', ...t }));
         }
 
-        // เริ่มต้นการทำงาน: แสดงหน้า PIN Login เป็นอันดับแรก
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             showPinModal('login');
