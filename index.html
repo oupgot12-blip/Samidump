@@ -300,6 +300,7 @@
             return 0;
         };
 
+        // --- STREAMING_CHUNK:Adding PIN overlay and interaction logic... ---
         // --- PIN & UI Helpers ---
         window.pendingActionFunc = null;
 
@@ -394,6 +395,7 @@
             renderNav();
         };
 
+        // --- STREAMING_CHUNK:Configuring system states and navigation parameters... ---
         window.changeTab = (category, tabId) => {
             state.activeCategory = category;
             state.activeTab = tabId;
@@ -448,6 +450,7 @@
         const TIRE_MONITOR_KM = 60000;
         const TIRE_REPLACE_KM = 80000;
 
+        // --- STREAMING_CHUNK:Setting up logic for tires and maintenance processing... ---
         function getWheelLayout() {
             const axleDefs = [
                 { id: 'front',    label: 'เพลาที่ 1 — เพลาหน้า (พวงมาลัย)', dual: false, y: 50,  group: 'head' },
@@ -544,6 +547,7 @@
             });
         }
 
+        // --- STREAMING_CHUNK:Building data pipelines for maintenance schedules... ---
         function getMaintenanceStatusForType(plate, typeKey) {
             const type = maintenanceTypeMap[typeKey];
             const currentOdo = getEstimatedOdometer(plate);
@@ -648,6 +652,7 @@
             });
         }
 
+        // --- STREAMING_CHUNK:Rendering sidebar navigation components... ---
         // --- Render UI ---
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
@@ -808,6 +813,7 @@
             lucide.createIcons();
         }
 
+        // --- STREAMING_CHUNK:Rendering main dashboard layout... ---
         function renderContent() {
             const container = document.getElementById('tab-content');
             container.innerHTML = ''; 
@@ -921,6 +927,7 @@
             `;
         }
 
+        // --- STREAMING_CHUNK:Rendering the overview data and charts... ---
         function renderOverview(container) {
             const filteredTrips = getFiltered(state.trips);
             const filteredRefuels = getFiltered(state.refuels);
@@ -1050,6 +1057,7 @@
             });
         }
 
+        // --- STREAMING_CHUNK:Rendering the trips list and calculations... ---
         function renderTrips(container) {
             const data = getFiltered(state.trips);
             if (data.length === 0) {
@@ -1264,6 +1272,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering the jobs database and settings... ---
         function renderJobs(container) {
             const filteredJobs = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
             let html = `
@@ -1323,6 +1332,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering refuel logs and statistics... ---
         function renderRefuels(container) {
             const data = getFiltered(state.refuels);
             if (data.length === 0) {
@@ -1474,6 +1484,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering maintenance alerts and logs... ---
         function renderMaintenance(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             const detailVehicle = filteredVehicles.find(v => v.plate === state.activeVehiclePlate) || null;
@@ -1502,7 +1513,7 @@
                             ${badgeHtml}
                         </div>
                         <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
-                        <p class="text-sm text-slate-500">คนขับ: ${v.driver || '-'}</p>
+                        <p class="text-sm text-slate-500">คนขับ: ${detailVehicle?.driver || v.driver || '-'}</p>
                         <p class="text-lg font-bold text-slate-800 mt-2">${formatNumber(getEstimatedOdometer(v.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-400">กม.</span></p>
                     </button>
                 `;
@@ -1639,6 +1650,7 @@
             openFormModal(false);
         };
 
+        // --- STREAMING_CHUNK:Rendering the interactive 22-wheel tire module... ---
         function renderTires(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             if (filteredVehicles.length === 0) {
@@ -1745,6 +1757,7 @@
             return svg;
         }
 
+        // --- STREAMING_CHUNK:Implementing tire management and AI scanning interactions... ---
         // --- Tire Handlers ---
         let currentTireCtx = { plate: null, pos: null };
 
@@ -1808,7 +1821,8 @@
                     }]
                 };
 
-                const apiKey = "AQ.Ab8RN6lfEW8Z9iAKI7TlqWp2eBN02A2m6Su_GH9XIsmj_O5thQ"; 
+                // ⚠️ อัปเดต API KEY และ Endpoint ให้ถูกต้อง 100% 
+                const apiKey = "AQ.Ab8RN6JRrDKXEwvcc_zM8LnX8--kkWZ1o3e0V9SHxYl4ZxR4Rg"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -1943,6 +1957,7 @@
             }, { title: 'ยืนยันการสลับยาง', icon: 'refresh-ccw', confirmLabel: 'ยืนยันสลับยาง', confirmBtnClass: 'bg-navy-800 hover:bg-navy-900' });
         };
 
+        // --- STREAMING_CHUNK:Rendering individual tire modal and submitting records... ---
         window.editTireHistoryRecord = (tireId, histIndex) => {
             const tire = state.tires.find(t => t.id == tireId);
             if(!tire) return;
@@ -2144,6 +2159,7 @@
             });
         };
 
+        // --- STREAMING_CHUNK:Implementing Data Forms and Google Apps Script integrations... ---
         window.toggleJobSort = () => {
             state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
             
@@ -2855,6 +2871,7 @@
             });
         };
 
+        // --- STREAMING_CHUNK:Initializing external Leaflet map integration... ---
         window.openMapModal = () => {
             const scriptOpen = '<scr' + 'ipt>';
             const scriptClose = '</scr' + 'ipt>';
