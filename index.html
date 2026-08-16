@@ -421,6 +421,7 @@
             { id: 'semidump', label: 'รถเซมิดั๊ม', icon: 'combine' }
         ];
 
+        // --- STREAMING_CHUNK:Configuring system logic and parameters... ---
         // --- Maintenance Config ---
         const TECH_NAME = "ช่างเอก";
         const TECH_TITLE = "ทีมช่างศูนย์บริการ UD Trucks";
@@ -575,6 +576,7 @@
             return { type, lastLog, currentOdo, lastOdo, kmSince, daysSince, monthsSince, ratio, status, nextOdo, kmToGo };
         }
 
+        // --- STREAMING_CHUNK:Building data pipelines for maintenance and dashboards... ---
         function getVehicleMaintenanceSummary(plate) {
             return MAINTENANCE_TYPES.filter(t => t.key !== 'other').map(t => getMaintenanceStatusForType(plate, t.key));
         }
@@ -808,6 +810,7 @@
             lucide.createIcons();
         }
 
+        // --- STREAMING_CHUNK:Rendering main dashboard layout... ---
         function renderContent() {
             const container = document.getElementById('tab-content');
             container.innerHTML = ''; 
@@ -1050,6 +1053,7 @@
             });
         }
 
+        // --- STREAMING_CHUNK:Rendering the trips list and calculations... ---
         function renderTrips(container) {
             const data = getFiltered(state.trips);
             if (data.length === 0) {
@@ -1264,6 +1268,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering the jobs database and settings... ---
         function renderJobs(container) {
             const filteredJobs = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
             let html = `
@@ -1323,6 +1328,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering refuel logs and statistics... ---
         function renderRefuels(container) {
             const data = getFiltered(state.refuels);
             if (data.length === 0) {
@@ -1474,6 +1480,7 @@
             container.innerHTML = html;
         }
 
+        // --- STREAMING_CHUNK:Rendering maintenance alerts and logs... ---
         function renderMaintenance(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             const detailVehicle = filteredVehicles.find(v => v.plate === state.activeVehiclePlate) || null;
@@ -1502,7 +1509,7 @@
                             ${badgeHtml}
                         </div>
                         <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
-                        <p class="text-sm text-slate-500">คนขับ: ${v.driver || '-'}</p>
+                        <p class="text-sm text-slate-500">คนขับ: ${detailVehicle?.driver || v.driver || '-'}</p>
                         <p class="text-lg font-bold text-slate-800 mt-2">${formatNumber(getEstimatedOdometer(v.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-400">กม.</span></p>
                     </button>
                 `;
@@ -1639,6 +1646,7 @@
             openFormModal(false);
         };
 
+        // --- STREAMING_CHUNK:Rendering the interactive 22-wheel tire module... ---
         function renderTires(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             if (filteredVehicles.length === 0) {
@@ -1745,6 +1753,7 @@
             return svg;
         }
 
+        // --- STREAMING_CHUNK:Implementing tire management and AI scanning interactions... ---
         // --- Tire Handlers ---
         let currentTireCtx = { plate: null, pos: null };
 
@@ -1782,7 +1791,7 @@
             input.disabled = true;
 
             try {
-                // แปลงไฟล์ภาพให้เป็น Base64
+                // 1. แปลงไฟล์ภาพให้เป็น Base64
                 const base64ImageData = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -1790,7 +1799,7 @@
                     reader.readAsDataURL(file);
                 });
 
-                // สั่งงาน AI ให้หาเฉพาะเลข Serial/DOT
+                // 2. สั่งงาน AI ให้หาเฉพาะเลข Serial/DOT
                 const prompt = "Extract ONLY the tire serial number or DOT code from this image. It is usually an alphanumeric string. Return ONLY the extracted code, without spaces or explanations. Ignore any clocks, time stamps, or Thai texts.";
                 
                 const payload = {
@@ -1808,6 +1817,7 @@
                     }]
                 };
 
+                // ⚠️ ใส่คีย์ใหม่ของคุณที่นี่ และส่งผ่าน ?key= ที่ URL เพื่อให้ไม่โดนบล็อก CORS จากเบราว์เซอร์
                 const apiKey = "AQ.Ab8RN6JRrDKXEwvcc_zM8LnX8--kkWZ1o3e0V9SHxYl4ZxR4Rg"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -1819,14 +1829,16 @@
                     body: JSON.stringify(payload)
                 });
 
+                // ตรวจจับ Error อย่างละเอียด หากถูกบล็อกหรือมีปัญหา
                 if (!response.ok) {
-                    throw new Error("เชื่อมต่อระบบ AI ไม่สำเร็จ กรุณาเช็คการตั้งค่า");
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.error?.message || response.statusText || response.status;
+                    throw new Error(errorMessage);
                 }
 
                 const result = await response.json();
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
                     let text = result.candidates[0].content.parts[0].text.trim();
-                    // กรองเอาเฉพาะตัวเลขและตัวอักษรภาษาอังกฤษ
                     text = text.replace(/[\n\r]/g, "").replace(/[^A-Za-z0-9]/g, "");
                     
                     if (text && text.length >= 4) {
@@ -1841,7 +1853,18 @@
 
             } catch (error) {
                 console.error("AI Scan Error:", error);
-                window.showToast("ระบบเครือข่ายขัดข้อง กรุณาลองใหม่", "error");
+                
+                // ถ้าระบบขึ้นว่า Failed to fetch มักจะหมายถึงติดเรื่องโดเมนบน Google Cloud
+                let failMsg = error.message;
+                if (failMsg === "Failed to fetch") {
+                     failMsg = "เบราว์เซอร์บล็อกการส่งข้อมูล (CORS) โปรดตรวจสอบการจำกัดโดเมนใน Google Cloud";
+                }
+                
+                window.showToast("ข้อผิดพลาด API: " + failMsg, "error");
+                
+                // เด้ง Alert อธิบายวิธีแก้ปัญหาแบบชัดๆ
+                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ AI:\n" + error.message + "\n\nคำแนะนำการแก้ไข:\n1. หากคุณเห็นข้อความ 'Failed to fetch' แสดงว่าคุณใส่โดเมนใน Google Cloud ผิด หรือลืมใส่ /*\n2. ลองเข้าไปแก้ใน Google Cloud โดยลบโดเมนทิ้งไปก่อน (เลือก None) แล้วกด Save ทิ้งไว้สัก 2 นาที เพื่อเทสว่าคีย์ทำงานได้หรือไม่");
+
             } finally {
                 btn.innerHTML = originalIcon;
                 lucide.createIcons();
@@ -2143,6 +2166,7 @@
             });
         };
 
+        // --- STREAMING_CHUNK:Implementing Data Forms and Google Apps Script integrations... ---
         window.toggleJobSort = () => {
             state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
             
@@ -2854,6 +2878,7 @@
             });
         };
 
+        // --- STREAMING_CHUNK:Initializing external Leaflet map integration... ---
         window.openMapModal = () => {
             const scriptOpen = '<scr' + 'ipt>';
             const scriptClose = '</scr' + 'ipt>';
