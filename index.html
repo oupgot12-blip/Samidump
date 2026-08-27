@@ -2,7 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- แก้ไข Viewport ป้องกันมือถือ/iPad ซูมหน้าจอเองเวลาพิมพ์ข้อความ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ระบบจัดการรถ (Fleet Management)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -141,55 +142,59 @@
     </main>
 
     <!-- Main Modal (เพิ่ม/แก้ไข ข้อมูล) -->
-    <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+    <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
+        <!-- กำหนดความสูงสูงสุด (max-h) และใช้ flex-col เพื่อควบคุมเนื้อหาด้านใน -->
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden transform transition-all">
+            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
                 <h3 id="modal-title" class="text-lg font-bold text-slate-800">หัวข้อ</h3>
-                <button onclick="closeMainModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="closeMainModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1 rounded-full shadow-sm border border-slate-200">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <form id="main-form" class="p-6 space-y-4"></form>
+            <!-- แบบฟอร์มจะจัดเต็มพื้นที่ที่เหลือและซ่อนส่วนเกินเพื่อให้ข้างในเลื่อนได้ -->
+            <form id="main-form" class="flex flex-col flex-1 overflow-hidden"></form>
         </div>
     </div>
 
     <!-- Map Modal -->
-    <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm">
+    <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm flex-shrink-0">
                 <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="map" class="h-5 w-5 mr-2 text-navy-800"></i>ค้นหาสถานที่และคำนวณระยะทางจริง
+                    <i data-lucide="map" class="h-5 w-5 mr-2 text-navy-800"></i>ค้นหาสถานที่
                 </h3>
                 <button onclick="closeMapModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 p-1.5 rounded-full">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <div class="flex-1 relative w-full h-full bg-slate-100">
-                <iframe id="map-iframe" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin"></iframe>
+            <div class="flex-1 relative w-full h-full bg-slate-100 min-h-[50vh]">
+                <iframe id="map-iframe" class="w-full h-full border-none absolute inset-0" sandbox="allow-scripts allow-same-origin"></iframe>
             </div>
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button type="button" onclick="closeMapModal()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium">ปิดหน้าต่างแผนที่</button>
+            <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex justify-end flex-shrink-0">
+                <button type="button" onclick="closeMapModal()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium">ปิดหน้าต่าง</button>
             </div>
         </div>
     </div>
 
     <!-- Tire Detail Modal -->
-    <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+    <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-2 sm:p-4">
+        <!-- เพิ่ม max-h และ flex-col ให้เหมือนตัวหลัก -->
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
                 <h3 id="tire-modal-title" class="text-base font-bold text-slate-800">รายละเอียดยาง</h3>
-                <button onclick="closeTireModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="closeTireModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1.5 rounded-full shadow-sm border border-slate-200">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <div id="tire-modal-body" class="p-6 max-h-[75vh] overflow-y-auto"></div>
+            <!-- พื้นที่ตรงกลางสำหรับแสดงเนื้อหา -->
+            <div id="tire-modal-body" class="flex flex-col flex-1 overflow-hidden"></div>
         </div>
     </div>
 
     <!-- Barcode Scanner Modal -->
-    <div id="barcode-modal" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+    <div id="barcode-modal" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[80] flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
                 <h3 class="text-base font-bold text-slate-800 flex items-center">
                     <i data-lucide="barcode" class="w-5 h-5 mr-2 text-navy-800"></i> สแกนบาร์โค้ด
                 </h3>
@@ -197,7 +202,7 @@
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <div class="p-4 bg-slate-900 flex-1 relative flex items-center justify-center min-h-[300px]">
+            <div class="p-4 bg-slate-900 flex-1 relative flex items-center justify-center min-h-[300px] overflow-hidden">
                 <div id="reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-700 bg-black"></div>
             </div>
         </div>
@@ -421,7 +426,6 @@
             { id: 'semidump', label: 'รถเซมิดั๊ม', icon: 'combine' }
         ];
 
-        // --- STREAMING_CHUNK:Configuring system logic and parameters... ---
         // --- Maintenance Config ---
         const TECH_NAME = "ช่างเอก";
         const TECH_TITLE = "ทีมช่างศูนย์บริการ UD Trucks";
@@ -485,7 +489,6 @@
             return Math.round(baseOdo + extraDist);
         }
 
-        // --- Tire Functions ---
         function getActiveTireAt(plate, pos) {
             return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
         }
@@ -520,7 +523,6 @@
             overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
         };
 
-        // --- Filter & Maint. Helpers ---
         function getFiltered(dataArr) {
             return dataArr.filter(item => {
                 const itemCat = item.category || 'flatbed';
@@ -576,7 +578,6 @@
             return { type, lastLog, currentOdo, lastOdo, kmSince, daysSince, monthsSince, ratio, status, nextOdo, kmToGo };
         }
 
-        // --- STREAMING_CHUNK:Building data pipelines for maintenance and dashboards... ---
         function getVehicleMaintenanceSummary(plate) {
             return MAINTENANCE_TYPES.filter(t => t.key !== 'other').map(t => getMaintenanceStatusForType(plate, t.key));
         }
@@ -650,7 +651,6 @@
             });
         }
 
-        // --- Render UI ---
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
             let html = '';
@@ -810,7 +810,6 @@
             lucide.createIcons();
         }
 
-        // --- STREAMING_CHUNK:Rendering main dashboard layout... ---
         function renderContent() {
             const container = document.getElementById('tab-content');
             container.innerHTML = ''; 
@@ -1053,7 +1052,6 @@
             });
         }
 
-        // --- STREAMING_CHUNK:Rendering the trips list and calculations... ---
         function renderTrips(container) {
             const data = getFiltered(state.trips);
             if (data.length === 0) {
@@ -1268,7 +1266,6 @@
             container.innerHTML = html;
         }
 
-        // --- STREAMING_CHUNK:Rendering the jobs database and settings... ---
         function renderJobs(container) {
             const filteredJobs = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
             let html = `
@@ -1328,7 +1325,6 @@
             container.innerHTML = html;
         }
 
-        // --- STREAMING_CHUNK:Rendering refuel logs and statistics... ---
         function renderRefuels(container) {
             const data = getFiltered(state.refuels);
             if (data.length === 0) {
@@ -1480,7 +1476,6 @@
             container.innerHTML = html;
         }
 
-        // --- STREAMING_CHUNK:Rendering maintenance alerts and logs... ---
         function renderMaintenance(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             const detailVehicle = filteredVehicles.find(v => v.plate === state.activeVehiclePlate) || null;
@@ -1646,7 +1641,6 @@
             openFormModal(false);
         };
 
-        // --- STREAMING_CHUNK:Rendering the interactive 22-wheel tire module... ---
         function renderTires(container) {
             const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
             if (filteredVehicles.length === 0) {
@@ -1753,7 +1747,6 @@
             return svg;
         }
 
-        // --- STREAMING_CHUNK:Implementing tire management and AI scanning interactions... ---
         // --- Tire Handlers ---
         let currentTireCtx = { plate: null, pos: null };
 
@@ -1787,11 +1780,10 @@
             
             btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 spinner text-navy-600"></i>';
             lucide.createIcons();
-            input.placeholder = "AI กำลังวิเคราะห์รูปภาพ...";
+            input.placeholder = "AI กำลังวิเคราะห์...";
             input.disabled = true;
 
             try {
-                // 1. แปลงไฟล์ภาพให้เป็น Base64
                 const base64ImageData = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -1799,42 +1791,19 @@
                     reader.readAsDataURL(file);
                 });
 
-                // 2. สั่งงาน AI ให้หาเฉพาะเลข Serial/DOT
                 const prompt = "Extract ONLY the tire serial number or DOT code from this image. It is usually an alphanumeric string. Return ONLY the extracted code, without spaces or explanations. Ignore any clocks, time stamps, or Thai texts.";
                 
                 const payload = {
-                    contents: [{
-                        role: "user",
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: file.type || "image/jpeg",
-                                    data: base64ImageData
-                                }
-                            }
-                        ]
-                    }]
+                    contents: [{ role: "user", parts: [ { text: prompt }, { inlineData: { mimeType: file.type || "image/jpeg", data: base64ImageData } } ] }]
                 };
 
-                // ⚠️ ต้องใช้คีย์ที่ขึ้นต้นด้วย "AIza..." เท่านั้น (ห้ามใช้ AQ...)
+                // ⚠️ ต้องใช้คีย์ที่ขึ้นต้นด้วย "AIza..." เท่านั้น
                 const apiKey = "ใส่คีย์_AIza_ของคุณตรงนี้"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 
-                // ตรวจจับ Error อย่างละเอียด หากถูกบล็อกหรือมีปัญหา
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    const errorMessage = errorData.error?.message || response.statusText || response.status;
-                    throw new Error(errorMessage);
-                }
+                if (!response.ok) throw new Error("เชื่อมต่อระบบ AI ไม่สำเร็จ กรุณาเช็คการตั้งค่าคีย์");
 
                 const result = await response.json();
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
@@ -1853,18 +1822,7 @@
 
             } catch (error) {
                 console.error("AI Scan Error:", error);
-                
-                // ถ้าระบบขึ้นว่า Failed to fetch มักจะหมายถึงติดเรื่องโดเมนบน Google Cloud
-                let failMsg = error.message;
-                if (failMsg === "Failed to fetch") {
-                     failMsg = "เบราว์เซอร์บล็อกการส่งข้อมูล (CORS) โปรดตรวจสอบการจำกัดโดเมนใน Google Cloud";
-                }
-                
-                window.showToast("ข้อผิดพลาด API: " + failMsg, "error");
-                
-                // เด้ง Alert อธิบายวิธีแก้ปัญหาแบบชัดๆ
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ AI:\n" + error.message + "\n\nคำแนะนำการแก้ไข:\n1. หากคุณเห็นข้อความ 'Failed to fetch' แสดงว่าคุณใส่โดเมนใน Google Cloud ผิด หรือลืมใส่ /*\n2. ลองเข้าไปแก้ใน Google Cloud โดยลบโดเมนทิ้งไปก่อน (เลือก None) แล้วกด Save ทิ้งไว้สัก 2 นาที เพื่อเทสว่าคีย์ทำงานได้หรือไม่");
-
+                window.showToast("ระบบเครือข่ายขัดข้อง กรุณาลองใหม่", "error");
             } finally {
                 btn.innerHTML = originalIcon;
                 lucide.createIcons();
@@ -1879,31 +1837,20 @@
 
         window.startBarcodeScanner = () => {
             document.getElementById('barcode-modal').classList.remove('hidden');
-            
-            // หน่วงเวลาเล็กน้อยเพื่อให้ Modal แสดงผลเสร็จก่อนเริ่มกล้อง
             setTimeout(() => {
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("reader");
-                }
-                
-                // ตั้งค่าเฟรมเรตและขนาดกรอบที่เน้นอ่านบาร์โค้ด (แนวนอน)
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
                 const config = { fps: 10, qrbox: { width: 280, height: 120 } };
-                
                 html5QrCode.start(
-                    { facingMode: "environment" }, 
-                    config,
-                    (decodedText, decodedResult) => {
-                        // เมื่อสแกนสำเร็จ
+                    { facingMode: "environment" }, config,
+                    (decodedText) => {
                         document.getElementById('tf_serial').value = decodedText.toUpperCase();
                         window.showToast("สแกนบาร์โค้ดสำเร็จ!", "success");
                         closeBarcodeScanner();
                     },
-                    (errorMessage) => {
-                        // ไม่ต้องแจ้งเตือนข้อผิดพลาดขณะกำลังพยายามโฟกัส/ค้นหา
-                    }
+                    (errorMessage) => { }
                 ).catch((err) => {
                     console.error("Scanner Error:", err);
-                    window.showToast("ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์การเข้าถึงกล้อง", "error");
+                    window.showToast("ไม่สามารถเปิดกล้องได้", "error");
                     closeBarcodeScanner();
                 });
             }, 150);
@@ -1912,14 +1859,7 @@
         window.closeBarcodeScanner = () => {
             document.getElementById('barcode-modal').classList.add('hidden');
             if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                }).catch(err => {
-                    console.error("Failed to stop scanner", err);
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                });
+                html5QrCode.stop().then(() => { html5QrCode.clear(); html5QrCode = null; }).catch(err => { html5QrCode.clear(); html5QrCode = null; });
             }
         };
 
@@ -1995,8 +1935,8 @@
                 const editingRec = formMode === 'edit' ? rec : null;
                 const currentOdo = getEstimatedOdometer(plate);
                 body.innerHTML = `
-                    <form id="tire-form" class="flex flex-col h-full overflow-hidden">
-                        <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                    <form id="tire-form" class="flex flex-col flex-1 overflow-hidden">
+                        <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                             ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
@@ -2034,8 +1974,8 @@
                             </div>
                         </div>
                         <div class="p-4 bg-slate-50 border-t border-slate-200 flex space-x-3 flex-shrink-0">
-                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-50 font-bold shadow-sm">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2.5 bg-navy-800 text-white rounded-xl hover:bg-navy-900 font-bold shadow-sm">บันทึก</button>
+                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-bold shadow-sm transition-colors">ยกเลิก</button>
+                            <button type="submit" class="flex-1 px-4 py-2.5 bg-navy-800 text-white rounded-xl hover:bg-navy-900 font-bold shadow-sm transition-colors">บันทึก</button>
                         </div>
                     </form>
                 `;
@@ -2048,7 +1988,7 @@
             const style = TIRE_STATUS_STYLE[status];
             const km = rec ? getTireRunKm(plate, rec) : 0;
 
-            let html = '<div class="p-6 overflow-y-auto flex-1">';
+            let html = '<div class="p-4 sm:p-6 overflow-y-auto flex-1">';
             if (rec) {
                 html += `
                     <div class="p-4 rounded-xl border ${status === 'overdue' ? 'bg-rose-50 border-rose-200' : status === 'warn' ? 'bg-orange-50 border-orange-200' : status === 'monitor' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} mb-4">
@@ -2068,7 +2008,6 @@
                     </div>
                 `;
 
-                // ประวัติการสลับยางของเส้นนี้
                 let swapHistory = JSON.parse(rec.historyJson || '[]');
                 if (swapHistory.length > 0) {
                     html += `<div class="mb-4 space-y-2">`;
@@ -2086,10 +2025,10 @@
 
                 html += `
                     <div class="flex space-x-2 mb-3">
-                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
-                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
+                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center transition-colors"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
+                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center transition-colors"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
                     </div>
-                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
+                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3 transition-colors"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
                     <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
                 `;
             } else {
@@ -2097,7 +2036,7 @@
                     <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2">
                         <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
                         <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
-                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900">+ บันทึกยางเส้นนี้</button>
+                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900 transition-colors">+ บันทึกยางเส้นนี้</button>
                     </div>
                 `;
             }
@@ -2118,7 +2057,7 @@
                 `;
             }
 
-            html += '</div>'; // ปิดกรอบเลื่อนเนื้อหาหน้ายาง
+            html += '</div>';
             body.innerHTML = html;
             lucide.createIcons();
         };
@@ -2169,7 +2108,7 @@
             });
         };
 
-        // --- STREAMING_CHUNK:Implementing Data Forms and Google Apps Script integrations... ---
+        // --- STREAMING_CHUNK: โครงสร้างเนื้อหาใน Form แบบเลื่อนได้สำหรับมือถือ ---
         window.toggleJobSort = () => {
             state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
             
@@ -2221,13 +2160,9 @@
             const titleObj = { trips: 'รายการวิ่งงาน', refuels: 'รายการเติมน้ำมัน', vehicles: 'ข้อมูลรถ/คนขับ', jobs: 'ตั้งค่าเส้นทางและเรทราคา', maintenance: 'บันทึกงานซ่อมบำรุง' };
             document.getElementById('modal-title').innerHTML = (isEdit ? 'แก้ไข' : 'เพิ่ม') + titleObj[state.activeTab] + ` <span class="text-sm font-normal text-slate-500 ml-1">(${catName})</span>`;
             
-            let html = '';
+            let html = '<div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">';
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
-                let plateOptions = '';
                 const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
-                filteredVehicles.forEach(v => {
-                    plateOptions += `<option value="${v.plate} (${v.driver})"></option>`;
-                });
                 
                 let defaultDate = state.formData.date || getToday();
                 if (!isEdit && state.filterYear && state.filterMonth && state.filterPeriod) {
@@ -2249,10 +2184,10 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
-                            <input required type="text" id="f_plate" list="plate_list" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-white" placeholder="เลือกหรือพิมพ์ทะเบียนรถ" autocomplete="off" />
-                            <datalist id="plate_list">
-                                ${plateOptions}
-                            </datalist>
+                            <select required id="f_plate" class="w-full border border-navy-300 bg-navy-50 text-navy-900 font-semibold rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 appearance-none">
+                                <option value="" disabled ${!state.formData.plate ? 'selected' : ''}>-- เลือกรถจากฐานข้อมูล --</option>
+                                ${filteredVehicles.map(v => `<option value="${v.plate}" ${v.plate === state.formData.plate ? 'selected' : ''}>${v.plate} (${v.driver || '-'})</option>`).join('')}
+                            </select>
                         </div>
                     </div>
                 `;
@@ -2533,10 +2468,14 @@
                 `;
             }
 
+            // ปิดกรอบ div ที่เลื่อนได้
+            html += '</div>';
+
+            // ปุ่มกด ล็อกติดขอบล่าง (flex-shrink-0)
             html += `
-                <div class="flex space-x-3 pt-4 border-t border-slate-100 mt-2">
-                    <button type="button" onclick="closeMainModal()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium disabled:opacity-50">บันทึกข้อมูล</button>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex space-x-3 flex-shrink-0">
+                    <button type="button" onclick="closeMainModal()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-bold shadow-sm transition-colors">ยกเลิก</button>
+                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2.5 bg-navy-800 text-white rounded-xl hover:bg-navy-900 font-bold shadow-sm transition-colors disabled:opacity-50">บันทึกข้อมูล</button>
                 </div>
             `;
             
@@ -2881,7 +2820,6 @@
             });
         };
 
-        // --- STREAMING_CHUNK:Initializing external Leaflet map integration... ---
         window.openMapModal = () => {
             const scriptOpen = '<scr' + 'ipt>';
             const scriptClose = '</scr' + 'ipt>';
