@@ -2,8 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <!-- แก้ไข Viewport ป้องกันมือถือ/iPad ซูมหน้าจอเองเวลาพิมพ์ข้อความ -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการรถ (Fleet Management)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -89,7 +88,7 @@
     <div id="sidebar-backdrop" onclick="closeMobileNav()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:transition-none">
+    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 transition-all duration-300 ease-in-out lg:relative -translate-x-full lg:translate-x-0">
         <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="bg-navy-800 p-2 rounded-lg">
@@ -110,7 +109,7 @@
     <main class="flex-1 flex flex-col min-w-0 h-screen">
         <header class="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                <button onclick="openMobileNav()" class="lg:hidden flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
+                <button onclick="toggleSidebar()" class="flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
                     <i data-lucide="menu" class="h-6 w-6"></i>
                 </button>
                 <h2 class="text-lg md:text-2xl font-bold text-slate-800 flex items-center min-w-0 truncate">
@@ -142,52 +141,48 @@
     </main>
 
     <!-- Main Modal (เพิ่ม/แก้ไข ข้อมูล) -->
-    <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4">
-        <!-- กำหนดความสูงสูงสุด (max-h) และใช้ flex-col เพื่อควบคุมเนื้อหาด้านใน -->
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh] overflow-hidden transform transition-all">
-            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+    <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 id="modal-title" class="text-lg font-bold text-slate-800">หัวข้อ</h3>
-                <button onclick="closeMainModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1 rounded-full shadow-sm border border-slate-200">
+                <button onclick="closeMainModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <!-- แบบฟอร์มจะจัดเต็มพื้นที่ที่เหลือและซ่อนส่วนเกินเพื่อให้ข้างในเลื่อนได้ -->
-            <form id="main-form" class="flex flex-col flex-1 overflow-hidden"></form>
+            <form id="main-form" class="p-6 space-y-4"></form>
         </div>
     </div>
 
     <!-- Map Modal -->
-    <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-2 sm:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm flex-shrink-0">
+    <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm">
                 <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="map" class="h-5 w-5 mr-2 text-navy-800"></i>ค้นหาสถานที่
+                    <i data-lucide="map" class="h-5 w-5 mr-2 text-navy-800"></i>ค้นหาสถานที่และคำนวณระยะทางจริง
                 </h3>
                 <button onclick="closeMapModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 p-1.5 rounded-full">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <div class="flex-1 relative w-full h-full bg-slate-100 min-h-[50vh]">
-                <iframe id="map-iframe" class="w-full h-full border-none absolute inset-0" sandbox="allow-scripts allow-same-origin"></iframe>
+            <div class="flex-1 relative w-full h-full bg-slate-100">
+                <iframe id="map-iframe" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin"></iframe>
             </div>
-            <div class="p-3 sm:p-4 bg-slate-50 border-t border-slate-200 flex justify-end flex-shrink-0">
-                <button type="button" onclick="closeMapModal()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium">ปิดหน้าต่าง</button>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button type="button" onclick="closeMapModal()" class="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium">ปิดหน้าต่างแผนที่</button>
             </div>
         </div>
     </div>
 
     <!-- Tire Detail Modal -->
-    <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-2 sm:p-4">
-        <!-- เพิ่ม max-h และ flex-col ให้เหมือนตัวหลัก -->
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+    <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 id="tire-modal-title" class="text-base font-bold text-slate-800">รายละเอียดยาง</h3>
-                <button onclick="closeTireModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1.5 rounded-full shadow-sm border border-slate-200">
+                <button onclick="closeTireModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <!-- พื้นที่ตรงกลางสำหรับแสดงเนื้อหา -->
-            <div id="tire-modal-body" class="flex flex-col flex-1 overflow-hidden"></div>
+            <div id="tire-modal-body" class="p-6 max-h-[75vh] overflow-y-auto"></div>
         </div>
     </div>
 
@@ -204,33 +199,6 @@
             </div>
             <div class="p-4 bg-slate-900 flex-1 relative flex items-center justify-center min-h-[300px]">
                 <div id="reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-700 bg-black"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Maintenance Search Modal -->
-    <div id="maint-search-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] flex items-center justify-center p-2 sm:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                    <i data-lucide="search" class="w-5 h-5 mr-2 text-navy-800"></i>ค้นหาประวัติซ่อมบำรุง
-                </h3>
-                <button onclick="closeMaintSearchModal()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1.5 rounded-full shadow-sm border border-slate-200">
-                    <i data-lucide="x" class="h-5 w-5"></i>
-                </button>
-            </div>
-            <div class="p-4 border-b border-slate-100 flex-shrink-0 bg-white shadow-sm z-10">
-                <div class="relative">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"></i>
-                    <input type="text" id="maint-search-input" oninput="performMaintSearch(this.value)" placeholder="ค้นหา ทะเบียนรถ, อะไหล่, อาการเสีย, ชื่อช่าง..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-navy-800 transition-all font-medium text-slate-700">
-                </div>
-                <p class="text-[10px] sm:text-xs text-slate-400 mt-2"><i data-lucide="info" class="w-3 h-3 inline mr-1"></i>พิมพ์ข้อความ 2 ตัวอักษรขึ้นไป ระบบจะค้นหาให้อัตโนมัติจากรถทุกคัน</p>
-            </div>
-            <div id="maint-search-results" class="flex-1 overflow-y-auto p-2 sm:p-4 bg-slate-50/50">
-                <div class="text-center text-slate-400 py-10 flex flex-col items-center">
-                    <i data-lucide="search" class="w-10 h-10 mb-3 opacity-20"></i>
-                    <p>พิมพ์คำค้นหาในช่องด้านบน</p>
-                </div>
             </div>
         </div>
     </div>
@@ -397,17 +365,59 @@
             showPinModal('action');
         };
 
-        window.openMobileNav = () => {
-            document.getElementById('sidebar').classList.remove('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.remove('hidden');
+        let isSidebarOpen = window.innerWidth >= 1024;
+
+        window.toggleSidebar = () => {
+            isSidebarOpen = !isSidebarOpen;
+            applySidebarState();
         };
+
         window.closeMobileNav = () => {
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.add('hidden');
+            if (window.innerWidth < 1024) {
+                isSidebarOpen = false;
+                applySidebarState();
+            }
         };
-        function closeMobileNavIfSmallScreen() {
-            if (window.innerWidth < 1024) closeMobileNav();
-        }
+
+        window.applySidebarState = () => {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar || !backdrop) return;
+            
+            if (window.innerWidth >= 1024) {
+                backdrop.classList.add('hidden');
+                if (isSidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full', '-ml-72');
+                    sidebar.classList.add('translate-x-0');
+                } else {
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full', '-ml-72');
+                }
+            } else {
+                sidebar.classList.remove('-ml-72'); 
+                if (isSidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    backdrop.classList.remove('hidden');
+                } else {
+                    sidebar.classList.remove('translate-x-0');
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                }
+            }
+        };
+
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            const currentWidth = window.innerWidth;
+            if (lastWidth < 1024 && currentWidth >= 1024) {
+                isSidebarOpen = true; 
+            } else if (lastWidth >= 1024 && currentWidth < 1024) {
+                isSidebarOpen = false;
+            }
+            lastWidth = currentWidth;
+            applySidebarState();
+        });
 
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
@@ -434,7 +444,7 @@
             state.filterPeriod = null;
             renderNav();
             renderContent();
-            closeMobileNavIfSmallScreen();
+            window.closeMobileNav();
         };
 
         window.changeTabPeriod = (category, tabId, year, month, period) => {
@@ -445,7 +455,7 @@
             state.filterPeriod = period;
             renderNav();
             renderContent();
-            closeMobileNavIfSmallScreen();
+            window.closeMobileNav();
         };
 
         const categories = [
@@ -516,6 +526,7 @@
             return Math.round(baseOdo + extraDist);
         }
 
+        // --- Tire Functions ---
         function getActiveTireAt(plate, pos) {
             return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
         }
@@ -550,6 +561,7 @@
             overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
         };
 
+        // --- Filter & Maint. Helpers ---
         function getFiltered(dataArr) {
             return dataArr.filter(item => {
                 const itemCat = item.category || 'flatbed';
@@ -678,6 +690,7 @@
             });
         }
 
+        // --- Render UI ---
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
             let html = '';
@@ -1262,8 +1275,14 @@
                                     (${trips.length} เที่ยว ${state.activeCategory === 'semidump' ? ` | น้ำหนักรวม <span class="font-bold text-navy-900">${formatNumber(sumWeight).replace(/\.00$/, '')}</span> ตัน` : ''})
                                 </span>
                             </div>
-                            <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
-                                <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
+                            <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+                                <!-- ปุ่ม Export แยกแต่ละคัน -->
+                                <button onclick="exportTableCSV('trips', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                                    <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                                </button>
+                                <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
+                                    <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
+                                </div>
                             </div>
                         </div>
                         ${driverFeeDetailsHtml}
@@ -1331,10 +1350,17 @@
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-800">ตารางเส้นทางและเรทราคา</h3>
+                        <!-- ปุ่ม Export ตารางรวม -->
+                        <button onclick="exportTableCSV('jobs')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                        </button>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[800px] text-left border-collapse whitespace-nowrap table-fixed">
                             <thead>
-                                <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
+                                <tr class="bg-white text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                     <th class="p-4 font-semibold w-40">ต้นทาง</th>
                                     <th class="p-4 font-semibold w-40">ปลายทาง</th>
                                     <th class="p-4 font-semibold text-right w-24">ระยะทาง</th>
@@ -1418,10 +1444,16 @@
 
                 html += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex items-center space-x-3">
-                            <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
-                            <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
-                            <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
+                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                                <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
+                                <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
+                            </div>
+                            <!-- ปุ่ม Export แยกแต่ละคัน -->
+                            <button onclick="exportTableCSV('refuels', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                                <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                            </button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full min-w-[600px] text-left border-collapse whitespace-nowrap table-fixed">
@@ -1482,10 +1514,17 @@
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-800">ตารางข้อมูลรถและคนขับ</h3>
+                        <!-- ปุ่ม Export ตารางรวม -->
+                        <button onclick="exportTableCSV('vehicles')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                        </button>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
+                                <tr class="bg-white text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                     <th class="p-4 font-semibold">ทะเบียนรถ</th>
                                     <th class="p-4 font-semibold">ชื่อคนขับ</th>
                                     <th class="p-4 font-semibold">ประเภทรถ</th>
@@ -1509,15 +1548,6 @@
 
             let html = '';
 
-            html += `
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                    <p class="text-slate-500 text-sm font-medium"><i data-lucide="mouse-pointer-click" class="w-4 h-4 inline mr-1 mb-0.5"></i>คลิกที่การ์ดทะเบียนรถด้านล่างเพื่อดูและบันทึกประวัติ</p>
-                    <button onclick="openMaintSearchModal()" class="px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 font-bold text-sm hover:bg-slate-50 flex items-center justify-center shadow-sm transition-colors w-full sm:w-auto ring-1 ring-slate-100">
-                        <i data-lucide="search" class="w-4 h-4 mr-2 text-navy-800"></i>ค้นหาประวัติซ่อมทั้งหมด
-                    </button>
-                </div>
-            `;
-
             html += `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">`;
             if (filteredVehicles.length === 0) {
                 html += `<div class="col-span-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">ยังไม่มีข้อมูลรถในหมวดนี้ กรุณาเพิ่มรถที่แท็บ "ข้อมูลรถและคนขับ" ก่อน</div>`;
@@ -1540,7 +1570,7 @@
                             ${badgeHtml}
                         </div>
                         <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
-                        <p class="text-sm text-slate-500">คนขับ: ${detailVehicle?.driver || v.driver || '-'}</p>
+                        <p class="text-sm text-slate-500">คนขับ: ${v.driver || '-'}</p>
                         <p class="text-lg font-bold text-slate-800 mt-2">${formatNumber(getEstimatedOdometer(v.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-400">กม.</span></p>
                     </button>
                 `;
@@ -1615,9 +1645,12 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
                         <h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3>
-                        <button onclick="openMaintSearchModal()" class="text-xs font-bold text-navy-700 bg-white border border-navy-200 px-3 py-1.5 rounded-lg hover:bg-navy-50 flex items-center shadow-sm transition-colors">
-                            <i data-lucide="search" class="w-3.5 h-3.5 mr-1"></i>ค้นหาจากรถคันอื่น
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <!-- ปุ่ม Export เฉพาะคันนี้ -->
+                            <button onclick="exportTableCSV('maintenance', '${detailVehicle.plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                                <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                            </button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
@@ -1821,10 +1854,11 @@
             
             btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 spinner text-navy-600"></i>';
             lucide.createIcons();
-            input.placeholder = "AI กำลังวิเคราะห์...";
+            input.placeholder = "AI กำลังวิเคราะห์รูปภาพ...";
             input.disabled = true;
 
             try {
+                // แปลงไฟล์ภาพให้เป็น Base64
                 const base64ImageData = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -1832,23 +1866,43 @@
                     reader.readAsDataURL(file);
                 });
 
+                // สั่งงาน AI ให้หาเฉพาะเลข Serial/DOT
                 const prompt = "Extract ONLY the tire serial number or DOT code from this image. It is usually an alphanumeric string. Return ONLY the extracted code, without spaces or explanations. Ignore any clocks, time stamps, or Thai texts.";
                 
                 const payload = {
-                    contents: [{ role: "user", parts: [ { text: prompt }, { inlineData: { mimeType: file.type || "image/jpeg", data: base64ImageData } } ] }]
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: file.type || "image/jpeg",
+                                    data: base64ImageData
+                                }
+                            }
+                        ]
+                    }]
                 };
 
-                // ⚠️ ต้องใช้คีย์ที่ขึ้นต้นด้วย "AIza..." เท่านั้น
-                const apiKey = "ใส่คีย์_AIza_ของคุณตรงนี้"; 
+                const apiKey = "AQ.Ab8RN6JRrDKXEwvcc_zM8LnX8--kkWZ1o3e0V9SHxYl4ZxR4Rg"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-                if (!response.ok) throw new Error("เชื่อมต่อระบบ AI ไม่สำเร็จ กรุณาเช็คการตั้งค่าคีย์");
+                if (!response.ok) {
+                    throw new Error("เชื่อมต่อระบบ AI ไม่สำเร็จ กรุณาเช็คการตั้งค่า");
+                }
 
                 const result = await response.json();
                 if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
                     let text = result.candidates[0].content.parts[0].text.trim();
+                    // กรองเอาเฉพาะตัวเลขและตัวอักษรภาษาอังกฤษ
                     text = text.replace(/[\n\r]/g, "").replace(/[^A-Za-z0-9]/g, "");
                     
                     if (text && text.length >= 4) {
@@ -1878,20 +1932,31 @@
 
         window.startBarcodeScanner = () => {
             document.getElementById('barcode-modal').classList.remove('hidden');
+            
+            // หน่วงเวลาเล็กน้อยเพื่อให้ Modal แสดงผลเสร็จก่อนเริ่มกล้อง
             setTimeout(() => {
-                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
+                
+                // ตั้งค่าเฟรมเรตและขนาดกรอบที่เน้นอ่านบาร์โค้ด (แนวนอน)
                 const config = { fps: 10, qrbox: { width: 280, height: 120 } };
+                
                 html5QrCode.start(
-                    { facingMode: "environment" }, config,
-                    (decodedText) => {
+                    { facingMode: "environment" }, 
+                    config,
+                    (decodedText, decodedResult) => {
+                        // เมื่อสแกนสำเร็จ
                         document.getElementById('tf_serial').value = decodedText.toUpperCase();
                         window.showToast("สแกนบาร์โค้ดสำเร็จ!", "success");
                         closeBarcodeScanner();
                     },
-                    (errorMessage) => { }
+                    (errorMessage) => {
+                        // ไม่ต้องแจ้งเตือนข้อผิดพลาดขณะกำลังพยายามโฟกัส/ค้นหา
+                    }
                 ).catch((err) => {
                     console.error("Scanner Error:", err);
-                    window.showToast("ไม่สามารถเปิดกล้องได้", "error");
+                    window.showToast("ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์การเข้าถึงกล้อง", "error");
                     closeBarcodeScanner();
                 });
             }, 150);
@@ -1909,85 +1974,6 @@
                     html5QrCode = null;
                 });
             }
-        };
-
-        window.openMaintSearchModal = () => {
-            document.getElementById('maint-search-input').value = '';
-            document.getElementById('maint-search-results').innerHTML = `
-                <div class="text-center text-slate-400 py-10 flex flex-col items-center">
-                    <i data-lucide="search" class="w-10 h-10 mb-3 opacity-20"></i>
-                    <p>พิมพ์คำค้นหาในช่องด้านบน</p>
-                </div>`;
-            document.getElementById('maint-search-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('maint-search-input').focus(), 150);
-            lucide.createIcons();
-        };
-
-        window.closeMaintSearchModal = () => {
-            document.getElementById('maint-search-modal').classList.add('hidden');
-        };
-
-        window.performMaintSearch = (keyword) => {
-            const resultsContainer = document.getElementById('maint-search-results');
-            if (!keyword || keyword.trim().length < 2) {
-                resultsContainer.innerHTML = `
-                <div class="text-center text-slate-400 py-10 flex flex-col items-center">
-                    <i data-lucide="search" class="w-10 h-10 mb-3 opacity-20"></i>
-                    <p>พิมพ์อย่างน้อย 2 ตัวอักษร...</p>
-                </div>`;
-                lucide.createIcons();
-                return;
-            }
-
-            const lowerKw = keyword.toLowerCase().trim();
-            const logs = state.maintenanceLogs.filter(m => {
-                const maintTypeLabel = (maintenanceTypeMap[m.category] || {label: m.category || ''}).label || '';
-                const searchString = `${m.plate || ''} ${m.description || ''} ${m.partsChanged || ''} ${m.technician || ''} ${maintTypeLabel} ${formatDisplayDate(m.date)}`.toLowerCase();
-                return searchString.includes(lowerKw);
-            }).sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date));
-
-            if (logs.length === 0) {
-                resultsContainer.innerHTML = `
-                <div class="text-center text-slate-500 py-10 flex flex-col items-center">
-                    <i data-lucide="file-x-2" class="w-10 h-10 mb-3 opacity-20"></i>
-                    <p>ไม่พบประวัติซ่อมที่ตรงกับ "${keyword}"</p>
-                </div>`;
-                lucide.createIcons();
-                return;
-            }
-
-            let html = '<div class="space-y-3">';
-            logs.forEach(m => {
-                const vehicle = state.vehicles.find(v => v.plate === m.plate);
-                const vCat = vehicle ? (vehicle.category || 'flatbed') : 'flatbed';
-                const maintType = maintenanceTypeMap[m.category] || { label: m.category || 'ไม่ระบุ', icon: 'wrench' };
-                html += `
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-navy-300 transition-colors">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <span class="bg-navy-100 text-navy-800 text-xs font-extrabold px-2.5 py-1 rounded border border-navy-200">${m.plate || 'ไม่ระบุทะเบียน'}</span>
-                                <span class="text-sm font-bold text-slate-800">${maintType.label}</span>
-                            </div>
-                            <p class="text-sm text-slate-700 font-medium mb-1 break-words">${m.description || '-'}</p>
-                            ${m.partsChanged ? `<p class="text-xs text-slate-500 mb-1"><i data-lucide="tool" class="inline w-3 h-3 mr-1 text-slate-400"></i>อะไหล่: ${m.partsChanged}</p>` : ''}
-                            <div class="flex items-center flex-wrap text-xs text-slate-400 gap-x-3 gap-y-1 mt-2">
-                                <span><i data-lucide="calendar" class="inline w-3 h-3 mr-1"></i>${formatDisplayDate(m.date)}</span>
-                                <span><i data-lucide="gauge" class="inline w-3 h-3 mr-1"></i>${formatNumber(m.odometer).replace(/\.00$/, '')} กม.</span>
-                                ${m.technician ? `<span class="truncate"><i data-lucide="user" class="inline w-3 h-3 mr-1"></i>${m.technician}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 flex-shrink-0 mt-2 sm:mt-0 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
-                            <span class="text-base font-bold text-orange-600">${formatCurrency(m.cost)}</span>
-                            <button onclick="closeMaintSearchModal(); changeTab('${vCat}','maintenance'); state.activeVehiclePlate='${m.plate}'; renderNav(); renderContent();" class="text-xs font-bold text-navy-600 bg-navy-50 hover:bg-navy-100 px-3 py-1.5 rounded-lg border border-navy-200 transition-colors flex items-center">
-                                <i data-lucide="external-link" class="w-3 h-3 mr-1"></i>ดูคันนี้
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            html += '</div>';
-            resultsContainer.innerHTML = html;
-            lucide.createIcons();
         };
 
         window.startSwapMode = () => {
@@ -2062,47 +2048,45 @@
                 const editingRec = formMode === 'edit' ? rec : null;
                 const currentOdo = getEstimatedOdometer(plate);
                 body.innerHTML = `
-                    <form id="tire-form" class="flex flex-col flex-1 overflow-hidden">
-                        <div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-                            ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
+                    <form id="tire-form" class="space-y-4">
+                        ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
+                            <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
+                            <div class="relative flex items-center mb-1">
+                                <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg pl-3 pr-24 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
+                                <div class="absolute right-1 flex space-x-1 bg-white p-0.5 rounded-md border border-slate-100 shadow-sm">
+                                    <button type="button" onclick="startBarcodeScanner()" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors" title="สแกนบาร์โค้ด">
+                                        <i data-lucide="barcode" class="w-5 h-5"></i>
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('tire-serial-upload').click()" id="btn-scan-serial" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors border-l border-slate-200 pl-2" title="สแกนด้วย Google AI">
+                                        <i data-lucide="camera" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                                <input type="file" id="tire-serial-upload" accept="image/*" capture="environment" class="hidden" onchange="processTireImage(event)">
+                            </div>
+                            <p class="text-[10px] text-slate-400">✨ เคล็ดลับ: สแกนบาร์โค้ด หรือถ่ายภาพให้ AI ช่วยดึงตัวเลขซีเรียล</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
-                                <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
+                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
+                                <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
-                                <div class="relative flex items-center mb-1">
-                                    <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg pl-3 pr-24 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
-                                    <div class="absolute right-1 flex space-x-1 bg-white p-0.5 rounded-md border border-slate-100 shadow-sm">
-                                        <button type="button" onclick="startBarcodeScanner()" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors" title="สแกนบาร์โค้ด">
-                                            <i data-lucide="barcode" class="w-5 h-5"></i>
-                                        </button>
-                                        <button type="button" onclick="document.getElementById('tire-serial-upload').click()" id="btn-scan-serial" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors border-l border-slate-200 pl-2" title="สแกนด้วย Google AI">
-                                            <i data-lucide="camera" class="w-5 h-5"></i>
-                                        </button>
-                                    </div>
-                                    <input type="file" id="tire-serial-upload" accept="image/*" capture="environment" class="hidden" onchange="processTireImage(event)">
-                                </div>
-                                <p class="text-[10px] text-slate-400">✨ เคล็ดลับ: สแกนบาร์โค้ด หรือถ่ายภาพให้ AI ช่วยดึงตัวเลขซีเรียล</p>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
-                                    <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
-                                    <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
-                                <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
+                                <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
                             </div>
                         </div>
-                        <div class="p-4 bg-slate-50 border-t border-slate-200 flex space-x-3 flex-shrink-0">
-                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-bold shadow-sm transition-colors">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2.5 bg-navy-800 text-white rounded-xl hover:bg-navy-900 font-bold shadow-sm transition-colors">บันทึก</button>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
+                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
+                        </div>
+                        <div class="flex space-x-3 pt-2">
+                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
                         </div>
                     </form>
                 `;
@@ -2115,7 +2099,7 @@
             const style = TIRE_STATUS_STYLE[status];
             const km = rec ? getTireRunKm(plate, rec) : 0;
 
-            let html = '<div class="p-4 sm:p-6 overflow-y-auto flex-1">';
+            let html = '';
             if (rec) {
                 html += `
                     <div class="p-4 rounded-xl border ${status === 'overdue' ? 'bg-rose-50 border-rose-200' : status === 'warn' ? 'bg-orange-50 border-orange-200' : status === 'monitor' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} mb-4">
@@ -2135,6 +2119,7 @@
                     </div>
                 `;
 
+                // ประวัติการสลับยางของเส้นนี้
                 let swapHistory = JSON.parse(rec.historyJson || '[]');
                 if (swapHistory.length > 0) {
                     html += `<div class="mb-4 space-y-2">`;
@@ -2152,10 +2137,10 @@
 
                 html += `
                     <div class="flex space-x-2 mb-3">
-                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center transition-colors"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
-                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center transition-colors"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
+                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
+                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
                     </div>
-                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3 transition-colors"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
+                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
                     <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
                 `;
             } else {
@@ -2163,7 +2148,7 @@
                     <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2">
                         <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
                         <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
-                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900 transition-colors">+ บันทึกยางเส้นนี้</button>
+                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900">+ บันทึกยางเส้นนี้</button>
                     </div>
                 `;
             }
@@ -2184,7 +2169,6 @@
                 `;
             }
 
-            html += '</div>';
             body.innerHTML = html;
             lucide.createIcons();
         };
@@ -2235,7 +2219,6 @@
             });
         };
 
-        // --- STREAMING_CHUNK: โครงสร้างเนื้อหาใน Form แบบเลื่อนได้สำหรับมือถือ ---
         window.toggleJobSort = () => {
             state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
             
@@ -2287,9 +2270,13 @@
             const titleObj = { trips: 'รายการวิ่งงาน', refuels: 'รายการเติมน้ำมัน', vehicles: 'ข้อมูลรถ/คนขับ', jobs: 'ตั้งค่าเส้นทางและเรทราคา', maintenance: 'บันทึกงานซ่อมบำรุง' };
             document.getElementById('modal-title').innerHTML = (isEdit ? 'แก้ไข' : 'เพิ่ม') + titleObj[state.activeTab] + ` <span class="text-sm font-normal text-slate-500 ml-1">(${catName})</span>`;
             
-            let html = '<div class="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">';
+            let html = '';
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
+                let plateOptions = '';
                 const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+                filteredVehicles.forEach(v => {
+                    plateOptions += `<option value="${v.plate} (${v.driver})"></option>`;
+                });
                 
                 let defaultDate = state.formData.date || getToday();
                 if (!isEdit && state.filterYear && state.filterMonth && state.filterPeriod) {
@@ -2311,10 +2298,10 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
-                            <select required id="f_plate" class="w-full border border-navy-300 bg-navy-50 text-navy-900 font-semibold rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 appearance-none">
-                                <option value="" disabled ${!state.formData.plate ? 'selected' : ''}>-- เลือกรถจากฐานข้อมูล --</option>
-                                ${filteredVehicles.map(v => `<option value="${v.plate}" ${v.plate === state.formData.plate ? 'selected' : ''}>${v.plate} (${v.driver || '-'})</option>`).join('')}
-                            </select>
+                            <input required type="text" id="f_plate" list="plate_list" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-white" placeholder="เลือกหรือพิมพ์ทะเบียนรถ" autocomplete="off" />
+                            <datalist id="plate_list">
+                                ${plateOptions}
+                            </datalist>
                         </div>
                     </div>
                 `;
@@ -2595,14 +2582,10 @@
                 `;
             }
 
-            // ปิดกรอบ div ที่เลื่อนได้
-            html += '</div>';
-
-            // ปุ่มกด ล็อกติดขอบล่าง (flex-shrink-0)
             html += `
-                <div class="p-4 bg-slate-50 border-t border-slate-200 flex space-x-3 flex-shrink-0">
-                    <button type="button" onclick="closeMainModal()" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 hover:bg-slate-100 font-bold shadow-sm transition-colors">ยกเลิก</button>
-                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2.5 bg-navy-800 text-white rounded-xl hover:bg-navy-900 font-bold shadow-sm transition-colors disabled:opacity-50">บันทึกข้อมูล</button>
+                <div class="flex space-x-3 pt-4 border-t border-slate-100 mt-2">
+                    <button type="button" onclick="closeMainModal()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
+                    <button type="submit" id="btn-submit-form" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium disabled:opacity-50">บันทึกข้อมูล</button>
                 </div>
             `;
             
@@ -3033,6 +3016,30 @@
             state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
         }
 
+        function seedDemoDataIfEmpty() {
+            if (state.vehicles.length > 0) return;
+            state.isDemoData = true;
+
+            state.vehicles = [
+                { id: 9001, plate: '88-2059', driver: 'นายสมชาย', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 385000, baselineDate: '1/6/2569' },
+                { id: 9002, plate: '72-8671', driver: 'นายสมบัติ', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 410000, baselineDate: '1/6/2569' },
+                { id: 9003, plate: '72-6512', driver: 'นายสมศักดิ์', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' },
+                { id: 9004, plate: '72-9674', driver: 'นายสมปอง', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 252000, baselineDate: '1/6/2569' }
+            ];
+
+            state.maintenanceLogs = [
+                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40, ไส้กรองน้ำมันเครื่อง', technician: 'ศูนย์บริการ UD Trucks' },
+                { id: 8002, plate: '88-2059', date: '20/1/2569', category: 'brake_check', odometer: 340500, description: 'เปลี่ยนผ้าเบรกล้อหลังคู่หน้า', cost: 6800, partsChanged: 'ผ้าเบรกแท้ UD', technician: 'ศูนย์บริการ UD Trucks' },
+                { id: 8003, plate: '72-8671', date: '15/3/2569', category: 'oil_engine', odometer: 401800, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์บริการ UD Trucks' }
+            ];
+
+            const demoTireSeed = [
+                { plate: '88-2059', position: 1, brand: 'Bridgestone R150', serial: '2224X1', installDate: '1/6/2568', installOdometer: 330000 },
+                { plate: '88-2059', position: 2, brand: 'Bridgestone R150', serial: '2224X2', installDate: '1/6/2568', installOdometer: 330000 }
+            ];
+            state.tires = demoTireSeed.map((t, i) => ({ id: 7001 + i, status: 'active', notes: '', ...t }));
+        }
+
         async function initApp() {
             renderNav();
             if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
@@ -3064,31 +3071,76 @@
             }
         }
 
-        function seedDemoDataIfEmpty() {
-            if (state.vehicles.length > 0) return;
-            state.isDemoData = true;
+        window.exportTableCSV = (type, plate = null) => {
+            let data = [];
+            let headers = [];
+            let mappedData = [];
 
-            state.vehicles = [
-                { id: 9001, plate: '88-2059', driver: 'นายสมชาย', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 385000, baselineDate: '1/6/2569' },
-                { id: 9002, plate: '72-8671', driver: 'นายสมบัติ', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 410000, baselineDate: '1/6/2569' },
-                { id: 9003, plate: '72-6512', driver: 'นายสมศักดิ์', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' },
-                { id: 9004, plate: '72-9674', driver: 'นายสมปอง', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 252000, baselineDate: '1/6/2569' }
-            ];
+            if (type === 'trips') {
+                const filtered = getFiltered(state.trips);
+                data = plate ? filtered.filter(t => t.plate === plate) : filtered;
+                headers = ["วันที่", "ทะเบียน", "ต้นทาง", "ปลายทาง", "ระยะทาง(กม.)", "น้ำหนัก(ตัน)", "ยอดรับ(บ.)", "ค่าน้ำมัน(บ.)", "ค่าคนขับ(บ.)", "กำไร(บ.)"];
+                mappedData = data.map(t => [formatDisplayDate(t.date), t.plate, t.origin, t.dest, t.dist, t.weight||0, t.revenue, t.fuelCost, t.driverFee||0, t.profit]);
+            } else if (type === 'refuels') {
+                const filtered = getFiltered(state.refuels);
+                data = plate ? filtered.filter(r => r.plate === plate) : filtered;
+                headers = ["วันที่", "ทะเบียน", "ราคา/ลิตร", "จำนวนลิตร", "เป็นเงินรวม(บาท)"];
+                mappedData = data.map(r => [formatDisplayDate(r.date), r.plate, r.price, r.liters, r.total]);
+            } else if (type === 'jobs') {
+                data = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
+                headers = ["ต้นทาง", "ปลายทาง", "ระยะทาง(กม.)", "เรทค่าเที่ยว(รับ)", "ค่าน้ำมัน(จ่าย)", "ค่าเที่ยวคนขับ"];
+                mappedData = data.map(j => [j.origin, j.dest, j.dist, j.revenue, j.fuelCost, j.driverFee||0]);
+            } else if (type === 'vehicles') {
+                data = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+                headers = ["ทะเบียน", "คนขับ", "ประเภทรถ", "รุ่น/ปี", "เลขไมล์ปัจจุบัน(ประเมิน)"];
+                mappedData = data.map(v => [v.plate, v.driver, v.type||'-', (v.model||'') + ' ' + (v.year||''), getEstimatedOdometer(v.plate)]);
+            } else if (type === 'maintenance') {
+                data = state.maintenanceLogs.filter(m => m.plate === plate).sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date));
+                headers = ["วันที่", "ทะเบียน", "ประเภทงาน", "รายละเอียด", "เลขไมล์(กม.)", "ค่าใช้จ่าย(บาท)", "อะไหล่", "ช่าง/ศูนย์"];
+                mappedData = data.map(m => [
+                    formatDisplayDate(m.date), m.plate, 
+                    (maintenanceTypeMap[m.category] || { label: m.category }).label, 
+                    m.description||'-', m.odometer, m.cost, m.partsChanged||'-', m.technician||'-'
+                ]);
+            }
 
-            state.maintenanceLogs = [
-                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40, ไส้กรองน้ำมันเครื่อง', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8002, plate: '88-2059', date: '20/1/2569', category: 'brake_check', odometer: 340500, description: 'เปลี่ยนผ้าเบรกล้อหลังคู่หน้า', cost: 6800, partsChanged: 'ผ้าเบรกแท้ UD', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8003, plate: '72-8671', date: '15/3/2569', category: 'oil_engine', odometer: 401800, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์บริการ UD Trucks' }
-            ];
+            if (mappedData.length === 0) {
+                showToast('ไม่พบข้อมูลสำหรับดาวน์โหลด', 'error');
+                return;
+            }
 
-            const demoTireSeed = [
-                { plate: '88-2059', position: 1, brand: 'Bridgestone R150', serial: '2224X1', installDate: '1/6/2568', installOdometer: 330000 },
-                { plate: '88-2059', position: 2, brand: 'Bridgestone R150', serial: '2224X2', installDate: '1/6/2568', installOdometer: 330000 }
-            ];
-            state.tires = demoTireSeed.map((t, i) => ({ id: 7001 + i, status: 'active', notes: '', ...t }));
-        }
+            let csvContent = "\uFEFF" + headers.join(",") + "\n"; 
+            mappedData.forEach(rowArray => {
+                let row = rowArray.map(cell => {
+                    let cellStr = cell !== undefined && cell !== null ? String(cell) : "";
+                    cellStr = cellStr.replace(/"/g, '""');
+                    if (cellStr.search(/("|,|\n)/g) >= 0) cellStr = `"${cellStr}"`;
+                    return cellStr;
+                });
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            
+            let filename = `Fleet_${type}`;
+            if (plate) filename += `_${plate}`;
+            filename += `_${getToday()}.csv`;
+
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`ดาวน์โหลดไฟล์สำเร็จ!`, 'success');
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
+            applySidebarState(); // จัดการเปิดเมนูอัตโนมัติเมื่อโหลดหน้าจอเสร็จ
             lucide.createIcons();
             showPinModal('login');
         });
