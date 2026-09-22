@@ -88,7 +88,7 @@
     <div id="sidebar-backdrop" onclick="closeMobileNav()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 transition-all duration-300 ease-in-out lg:relative -translate-x-full lg:translate-x-0">
+    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:transition-none">
         <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="bg-navy-800 p-2 rounded-lg">
@@ -109,7 +109,7 @@
     <main class="flex-1 flex flex-col min-w-0 h-screen">
         <header class="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                <button onclick="toggleSidebar()" class="flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
+                <button onclick="openMobileNav()" class="lg:hidden flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
                     <i data-lucide="menu" class="h-6 w-6"></i>
                 </button>
                 <h2 class="text-lg md:text-2xl font-bold text-slate-800 flex items-center min-w-0 truncate">
@@ -365,59 +365,17 @@
             showPinModal('action');
         };
 
-        let isSidebarOpen = window.innerWidth >= 1024;
-
-        window.toggleSidebar = () => {
-            isSidebarOpen = !isSidebarOpen;
-            applySidebarState();
+        window.openMobileNav = () => {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.remove('hidden');
         };
-
         window.closeMobileNav = () => {
-            if (window.innerWidth < 1024) {
-                isSidebarOpen = false;
-                applySidebarState();
-            }
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.add('hidden');
         };
-
-        window.applySidebarState = () => {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            if (!sidebar || !backdrop) return;
-            
-            if (window.innerWidth >= 1024) {
-                backdrop.classList.add('hidden');
-                if (isSidebarOpen) {
-                    sidebar.classList.remove('-translate-x-full', '-ml-72');
-                    sidebar.classList.add('translate-x-0');
-                } else {
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full', '-ml-72');
-                }
-            } else {
-                sidebar.classList.remove('-ml-72'); 
-                if (isSidebarOpen) {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    backdrop.classList.remove('hidden');
-                } else {
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                    backdrop.classList.add('hidden');
-                }
-            }
-        };
-
-        let lastWidth = window.innerWidth;
-        window.addEventListener('resize', () => {
-            const currentWidth = window.innerWidth;
-            if (lastWidth < 1024 && currentWidth >= 1024) {
-                isSidebarOpen = true; 
-            } else if (lastWidth >= 1024 && currentWidth < 1024) {
-                isSidebarOpen = false;
-            }
-            lastWidth = currentWidth;
-            applySidebarState();
-        });
+        function closeMobileNavIfSmallScreen() {
+            if (window.innerWidth < 1024) closeMobileNav();
+        }
 
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
@@ -444,7 +402,7 @@
             state.filterPeriod = null;
             renderNav();
             renderContent();
-            window.closeMobileNav();
+            closeMobileNavIfSmallScreen();
         };
 
         window.changeTabPeriod = (category, tabId, year, month, period) => {
@@ -455,7 +413,7 @@
             state.filterPeriod = period;
             renderNav();
             renderContent();
-            window.closeMobileNav();
+            closeMobileNavIfSmallScreen();
         };
 
         const categories = [
@@ -1276,7 +1234,6 @@
                                 </span>
                             </div>
                             <div class="flex items-center space-x-3 flex-wrap gap-y-2">
-                                <!-- ปุ่ม Export แยกแต่ละคัน -->
                                 <button onclick="exportTableCSV('trips', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
                                     <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
                                 </button>
@@ -1352,7 +1309,6 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">ตารางเส้นทางและเรทราคา</h3>
-                        <!-- ปุ่ม Export ตารางรวม -->
                         <button onclick="exportTableCSV('jobs')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
                             <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
                         </button>
@@ -1450,7 +1406,6 @@
                                 <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
                                 <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
                             </div>
-                            <!-- ปุ่ม Export แยกแต่ละคัน -->
                             <button onclick="exportTableCSV('refuels', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
                                 <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
                             </button>
@@ -1516,7 +1471,6 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">ตารางข้อมูลรถและคนขับ</h3>
-                        <!-- ปุ่ม Export ตารางรวม -->
                         <button onclick="exportTableCSV('vehicles')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
                             <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
                         </button>
@@ -1645,12 +1599,9 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
                         <h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3>
-                        <div class="flex items-center space-x-2">
-                            <!-- ปุ่ม Export เฉพาะคันนี้ -->
-                            <button onclick="exportTableCSV('maintenance', '${detailVehicle.plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                                <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                            </button>
-                        </div>
+                        <button onclick="exportTableCSV('maintenance', '${detailVehicle.plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
+                        </button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
@@ -2003,14 +1954,14 @@
                     hA.push({ type: 'swap_out', from: fromPos, to: toPos, date: today, odo: currentOdo });
                     tireA.position = toPos;
                     tireA.historyJson = JSON.stringify(hA);
-                    await sendGasAction('editTire', tireA);
+                    sendGasAction('editTire', tireA).catch(e=>console.log(e));
                 }
                 if (tireB) {
                     let hB = JSON.parse(tireB.historyJson || '[]');
                     hB.push({ type: 'swap_out', from: toPos, to: fromPos, date: today, odo: currentOdo });
                     tireB.position = fromPos;
                     tireB.historyJson = JSON.stringify(hB);
-                    await sendGasAction('editTire', tireB);
+                    sendGasAction('editTire', tireB).catch(e=>console.log(e));
                 }
 
                 cancelSwapMode();
@@ -2028,7 +1979,7 @@
             if (newText !== null && newText.trim() !== '') {
                 rec.customText = newText;
                 tire.historyJson = JSON.stringify(history);
-                sendGasAction('editTire', tire);
+                sendGasAction('editTire', tire).catch(e=>console.log(e));
                 renderTireModalBody();
                 showToast('อัปเดตประวัติยางเรียบร้อย');
             }
@@ -2184,7 +2135,7 @@
                     activeRec.status = 'removed';
                     activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
                     activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
-                    sendGasAction('editTire', activeRec);
+                    sendGasAction('editTire', activeRec).catch(e=>console.log(e));
                 }
             }
 
@@ -2198,10 +2149,10 @@
 
             if (mode === 'edit') {
                 state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
-                sendGasAction('editTire', rec);
+                sendGasAction('editTire', rec).catch(e=>console.log(e));
             } else {
                 state.tires.unshift(rec);
-                sendGasAction('addTire', rec);
+                sendGasAction('addTire', rec).catch(e=>console.log(e));
             }
 
             showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
@@ -2210,8 +2161,8 @@
         };
 
         window.deleteTireRecord = (id) => {
-            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", async () => {
-                sendGasAction('deleteTire', { id });
+            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", () => {
+                sendGasAction('deleteTire', { id }).catch(e=>console.log(e));
                 state.tires = state.tires.filter(t => t.id != id);
                 closeTireModal();
                 renderContent();
@@ -2682,12 +2633,12 @@
              }
         }
 
-        async function submitData(e) {
+        function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-form');
             btn.disabled = true;
             const originalClasses = btn.className;
-            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังจัดเตรียมข้อมูล...';
             lucide.createIcons();
 
             let newData = { 
@@ -2768,17 +2719,16 @@
                 else state.maintenanceLogs.unshift(newData);
             }
 
-            let saveOk = true;
+            // --- หัวใจสำคัญที่ทำให้เร็ว: ส่งข้อมูลไปหลังบ้านแบบไม่รอ (Fire and Forget) ---
             if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                saveOk = await sendGasAction(actionType, newData);
+                sendGasAction(actionType, newData).catch(err => console.error("Background save failed:", err));
             }
 
-            if (saveOk) {
-                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
-                btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
-                btn.classList.add('bg-green-600', 'hover:bg-green-700');
-                lucide.createIcons();
-            }
+            // แสดงหน้าต่างบันทึกสำเร็จทันที
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
+            btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
+            btn.classList.add('bg-green-600', 'hover:bg-green-700');
+            lucide.createIcons();
 
             setTimeout(() => {
                 closeMainModal();
@@ -2789,9 +2739,9 @@
                 btn.className = originalClasses;
                 btn.innerText = 'บันทึกข้อมูล';
                 
-                if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
-                if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
-            }, saveOk ? 800 : 0); 
+                showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+                if (cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
+            }, 500); // ดีเลย์สั้นๆ แค่ 0.5 วินาทีให้ผู้ใช้เห็นว่าสำเร็จแล้วค่อยปิด
         }
 
         function promptCascadeJobUpdate(oldJob, newJob) {
@@ -2806,8 +2756,7 @@
 
             customConfirm(
                 `พบรายการวิ่งงานเดิมที่ใช้เส้นทาง "${oldJob.origin} → ${oldJob.dest}" อยู่ <b class="text-slate-700">${matches.length} รายการ</b><br>ต้องการอัปเดตระยะทาง/ยอดรับ/ค่าน้ำมัน/ค่าคนขับของรายการเหล่านี้ให้ตรงกับเรทที่เพิ่งแก้ไขด้วยหรือไม่?<br><span class="text-xs text-slate-400">(วันที่ ทะเบียนรถ และน้ำหนักของแต่ละเที่ยวจะไม่เปลี่ยน)</span>`,
-                async () => {
-                    document.getElementById('loading-spinner').classList.remove('hidden');
+                () => {
                     matches.forEach(t => {
                         t.origin = newJob.origin;
                         t.dest = newJob.dest;
@@ -2818,11 +2767,11 @@
                         t.driverFee = newJob.driverFee;
                         t.revenue = newJob.revenue;
                         t.profit = Number(newJob.revenue || 0) - Number(newJob.fuelCost || 0) - Number(newJob.driverFee || 0);
+                        
+                        // ส่งคำสั่งไปอัปเดตหลังบ้านแบบไม่รอ
+                        sendGasAction('editTrip', t).catch(e=>console.log(e));
                     });
-                    for (const t of matches) {
-                        await sendGasAction('editTrip', t);
-                    }
-                    document.getElementById('loading-spinner').classList.add('hidden');
+                    
                     renderNav();
                     renderContent();
                     showToast(`อัปเดตรายการวิ่งงานที่เกี่ยวข้อง ${matches.length} รายการเรียบร้อย!`, 'success');
@@ -2874,14 +2823,14 @@
                 setTimeout(() => {
                     overlay.remove();
                     onConfirm();
-                }, 600);
+                }, 400); // หน่วงนิดหน่อยให้รู้สึกว่าปุ่มโดนกด
             };
         };
 
         window.showToast = (message, type = "success") => {
             const toast = document.createElement('div');
             const isError = type === "error";
-            // ขยับจาก top-6 ลงมาเป็น top-28 เพื่อให้พ้นแถบเมนูด้านบน
+            // ขยับจาก top-6 เป็น top-28 เพื่อหลบแถบเมนูด้านบน จะได้ไม่บังปุ่มเพิ่มข้อมูล
             toast.className = `fixed top-28 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
             
             toast.innerHTML = `
@@ -2900,33 +2849,27 @@
         };
 
         window.deleteData = (id, actionStr, sheetType) => {
-            customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", async () => {
-                document.getElementById('loading-spinner').classList.remove('hidden');
-                try {
-                    const res = await fetch(GAS_WEB_APP_URL, {
+            customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", () => {
+                // ลบข้อมูลออกจากตัวแปรในเครื่องทันที
+                if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id != id);
+                else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id != id);
+                else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id != id);
+                else if (actionStr.includes('Job')) state.jobs = state.jobs.filter(i => i.id != id);
+                else if (actionStr.includes('Maintenance')) state.maintenanceLogs = state.maintenanceLogs.filter(i => i.id != id);
+                else if (actionStr.includes('Tire')) state.tires = state.tires.filter(i => i.id != id);
+
+                // รีเฟรชหน้าจอใหม่ให้หายไปทันที
+                renderNav();
+                renderContent();
+                showToast("ลบข้อมูลสำเร็จ!");
+
+                // ส่งคำสั่งไปลบที่ Google Sheets แบบเบื้องหลัง ไม่ต้องรอ
+                if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
+                    fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
-                        body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
-                    });
-                    const result = await res.json();
-                    if (result.status !== 'success') {
-                        throw new Error(result.message || 'เซิร์ฟเวอร์ปฏิเสธการลบ');
-                    }
-
-                    if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id != id);
-                    else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id != id);
-                    else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id != id);
-                    else if (actionStr.includes('Job')) state.jobs = state.jobs.filter(i => i.id != id);
-                    else if (actionStr.includes('Maintenance')) state.maintenanceLogs = state.maintenanceLogs.filter(i => i.id != id);
-                    else if (actionStr.includes('Tire')) state.tires = state.tires.filter(i => i.id != id);
-
-                    renderNav();
-                    renderContent();
-                    showToast("ลบข้อมูลสำเร็จ!");
-                } catch (e) {
-                    console.error(e);
-                    showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "error");
-                } finally {
-                    document.getElementById('loading-spinner').classList.add('hidden');
+                        body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType }),
+                        mode: 'no-cors'
+                    }).catch(e => console.error("Delete error:", e));
                 }
             });
         };
@@ -3015,30 +2958,6 @@
             state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
             state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
             state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
-        }
-
-        function seedDemoDataIfEmpty() {
-            if (state.vehicles.length > 0) return;
-            state.isDemoData = true;
-
-            state.vehicles = [
-                { id: 9001, plate: '88-2059', driver: 'นายสมชาย', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 385000, baselineDate: '1/6/2569' },
-                { id: 9002, plate: '72-8671', driver: 'นายสมบัติ', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 410000, baselineDate: '1/6/2569' },
-                { id: 9003, plate: '72-6512', driver: 'นายสมศักดิ์', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' },
-                { id: 9004, plate: '72-9674', driver: 'นายสมปอง', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 252000, baselineDate: '1/6/2569' }
-            ];
-
-            state.maintenanceLogs = [
-                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40, ไส้กรองน้ำมันเครื่อง', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8002, plate: '88-2059', date: '20/1/2569', category: 'brake_check', odometer: 340500, description: 'เปลี่ยนผ้าเบรกล้อหลังคู่หน้า', cost: 6800, partsChanged: 'ผ้าเบรกแท้ UD', technician: 'ศูนย์บริการ UD Trucks' },
-                { id: 8003, plate: '72-8671', date: '15/3/2569', category: 'oil_engine', odometer: 401800, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์บริการ UD Trucks' }
-            ];
-
-            const demoTireSeed = [
-                { plate: '88-2059', position: 1, brand: 'Bridgestone R150', serial: '2224X1', installDate: '1/6/2568', installOdometer: 330000 },
-                { plate: '88-2059', position: 2, brand: 'Bridgestone R150', serial: '2224X2', installDate: '1/6/2568', installOdometer: 330000 }
-            ];
-            state.tires = demoTireSeed.map((t, i) => ({ id: 7001 + i, status: 'active', notes: '', ...t }));
         }
 
         async function initApp() {
@@ -3140,8 +3059,31 @@
             showToast(`ดาวน์โหลดไฟล์สำเร็จ!`, 'success');
         };
 
+        function seedDemoDataIfEmpty() {
+            if (state.vehicles.length > 0) return;
+            state.isDemoData = true;
+
+            state.vehicles = [
+                { id: 9001, plate: '88-2059', driver: 'นายสมชาย', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 385000, baselineDate: '1/6/2569' },
+                { id: 9002, plate: '72-8671', driver: 'นายสมบัติ', type: 'รถหัวลาก', category: 'flatbed', model: 'UD370', year: '2559', baselineOdometer: 410000, baselineDate: '1/6/2569' },
+                { id: 9003, plate: '72-6512', driver: 'นายสมศักดิ์', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 268000, baselineDate: '1/6/2569' },
+                { id: 9004, plate: '72-9674', driver: 'นายสมปอง', type: 'รถหัวลาก', category: 'semidump', model: 'UD330', year: '2561', baselineOdometer: 252000, baselineDate: '1/6/2569' }
+            ];
+
+            state.maintenanceLogs = [
+                { id: 8001, plate: '88-2059', date: '2/4/2569', category: 'oil_engine', odometer: 376200, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง + ไส้กรอง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40, ไส้กรองน้ำมันเครื่อง', technician: 'ศูนย์บริการ UD Trucks' },
+                { id: 8002, plate: '88-2059', date: '20/1/2569', category: 'brake_check', odometer: 340500, description: 'เปลี่ยนผ้าเบรกล้อหลังคู่หน้า', cost: 6800, partsChanged: 'ผ้าเบรกแท้ UD', technician: 'ศูนย์บริการ UD Trucks' },
+                { id: 8003, plate: '72-8671', date: '15/3/2569', category: 'oil_engine', odometer: 401800, description: 'เปลี่ยนถ่ายน้ำมันเครื่อง', cost: 4200, partsChanged: 'น้ำมันเครื่อง 15W-40', technician: 'ศูนย์บริการ UD Trucks' }
+            ];
+
+            const demoTireSeed = [
+                { plate: '88-2059', position: 1, brand: 'Bridgestone R150', serial: '2224X1', installDate: '1/6/2568', installOdometer: 330000 },
+                { plate: '88-2059', position: 2, brand: 'Bridgestone R150', serial: '2224X2', installDate: '1/6/2568', installOdometer: 330000 }
+            ];
+            state.tires = demoTireSeed.map((t, i) => ({ id: 7001 + i, status: 'active', notes: '', ...t }));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            applySidebarState(); // จัดการเปิดเมนูอัตโนมัติเมื่อโหลดหน้าจอเสร็จ
             lucide.createIcons();
             showPinModal('login');
         });
