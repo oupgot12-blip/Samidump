@@ -2881,7 +2881,8 @@
         window.showToast = (message, type = "success") => {
             const toast = document.createElement('div');
             const isError = type === "error";
-            toast.className = `fixed top-6 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
+            // ขยับจาก top-6 ลงมาเป็น top-28 เพื่อให้พ้นแถบเมนูด้านบน
+            toast.className = `fixed top-28 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
             
             toast.innerHTML = `
                 <i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i>
