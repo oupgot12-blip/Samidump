@@ -30,7 +30,6 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -183,23 +182,6 @@
                 </button>
             </div>
             <div id="tire-modal-body" class="p-6 max-h-[75vh] overflow-y-auto"></div>
-        </div>
-    </div>
-
-    <!-- Barcode Scanner Modal -->
-    <div id="barcode-modal" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="text-base font-bold text-slate-800 flex items-center">
-                    <i data-lucide="barcode" class="w-5 h-5 mr-2 text-navy-800"></i> สแกนบาร์โค้ด
-                </h3>
-                <button onclick="closeBarcodeScanner()" class="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 p-1.5 rounded-full">
-                    <i data-lucide="x" class="h-5 w-5"></i>
-                </button>
-            </div>
-            <div class="p-4 bg-slate-900 flex-1 relative flex items-center justify-center min-h-[300px]">
-                <div id="reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-700 bg-black"></div>
-            </div>
         </div>
     </div>
 
@@ -1774,6 +1756,7 @@
 
         // --- Tire Handlers ---
         let currentTireCtx = { plate: null, pos: null };
+        window.currentTireImageBase64 = null; // เก็บรูประหว่างพิมพ์ฟอร์ม
 
         window.handleWheelClick = (plate, pos) => {
             if (state.isSwapMode) {
@@ -1794,137 +1777,57 @@
             document.getElementById('tire-modal').classList.add('hidden');
         };
 
-        // --- ระบบอัจฉริยะ (Google Gemini AI) อ่านเลขซีเรียลยาง ---
-        window.processTireImage = async (event) => {
+        // --- ฟังก์ชันจัดการรูปภาพยางแบบธรรมดา ---
+        window.handleTireImageSelect = (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
-            const btn = document.getElementById('btn-scan-serial');
-            const input = document.getElementById('tf_serial');
-            const originalIcon = btn.innerHTML;
-            
-            btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 spinner text-navy-600"></i>';
-            lucide.createIcons();
-            input.placeholder = "AI กำลังวิเคราะห์รูปภาพ...";
-            input.disabled = true;
+            document.getElementById('tire-image-name').innerText = file.name;
 
-            try {
-                // แปลงไฟล์ภาพให้เป็น Base64
-                const base64ImageData = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result.split(',')[1]);
-                    reader.onerror = error => reject(error);
-                    reader.readAsDataURL(file);
-                });
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // ย่อขนาดเพื่อไม่ให้หนักเกินไป
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
 
-                // สั่งงาน AI ให้หาเฉพาะเลข Serial/DOT
-                const prompt = "Extract ONLY the tire serial number or DOT code from this image. It is usually an alphanumeric string. Return ONLY the extracted code, without spaces or explanations. Ignore any clocks, time stamps, or Thai texts.";
-                
-                const payload = {
-                    contents: [{
-                        role: "user",
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: file.type || "image/jpeg",
-                                    data: base64ImageData
-                                }
-                            }
-                        ]
-                    }]
-                };
-
-                const apiKey = "AQ.Ab8RN6JRrDKXEwvcc_zM8LnX8--kkWZ1o3e0V9SHxYl4ZxR4Rg"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error("เชื่อมต่อระบบ AI ไม่สำเร็จ กรุณาเช็คการตั้งค่า");
-                }
-
-                const result = await response.json();
-                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
-                    let text = result.candidates[0].content.parts[0].text.trim();
-                    // กรองเอาเฉพาะตัวเลขและตัวอักษรภาษาอังกฤษ
-                    text = text.replace(/[\n\r]/g, "").replace(/[^A-Za-z0-9]/g, "");
-                    
-                    if (text && text.length >= 4) {
-                        input.value = text.toUpperCase();
-                        window.showToast("สแกนตัวเลขสำเร็จ!", "success");
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
                     } else {
-                        window.showToast("ไม่พบตัวเลขซีเรียลที่ชัดเจน โปรดถ่ายให้ใกล้ขึ้น", "error");
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
                     }
-                } else {
-                    window.showToast("ระบบไม่สามารถวิเคราะห์รูปภาพได้", "error");
-                }
+                    canvas.width = width;
+                    canvas.height = height;
 
-            } catch (error) {
-                console.error("AI Scan Error:", error);
-                window.showToast("ระบบเครือข่ายขัดข้อง กรุณาลองใหม่", "error");
-            } finally {
-                btn.innerHTML = originalIcon;
-                lucide.createIcons();
-                input.placeholder = "เช่น 1224XXXX";
-                input.disabled = false;
-                event.target.value = '';
-            }
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // เก็บ Base64 ไว้ส่งข้อมูล
+                    window.currentTireImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    
+                    document.getElementById('tire-preview-img').src = window.currentTireImageBase64;
+                    document.getElementById('tire-image-preview-container').classList.remove('hidden');
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         };
 
-        // --- ระบบสแกนบาร์โค้ด (Barcode / QR Scanner) ---
-        let html5QrCode = null;
-
-        window.startBarcodeScanner = () => {
-            document.getElementById('barcode-modal').classList.remove('hidden');
-            
-            // หน่วงเวลาเล็กน้อยเพื่อให้ Modal แสดงผลเสร็จก่อนเริ่มกล้อง
-            setTimeout(() => {
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("reader");
-                }
-                
-                // ตั้งค่าเฟรมเรตและขนาดกรอบที่เน้นอ่านบาร์โค้ด (แนวนอน)
-                const config = { fps: 10, qrbox: { width: 280, height: 120 } };
-                
-                html5QrCode.start(
-                    { facingMode: "environment" }, 
-                    config,
-                    (decodedText, decodedResult) => {
-                        // เมื่อสแกนสำเร็จ
-                        document.getElementById('tf_serial').value = decodedText.toUpperCase();
-                        window.showToast("สแกนบาร์โค้ดสำเร็จ!", "success");
-                        closeBarcodeScanner();
-                    },
-                    (errorMessage) => {
-                        // ไม่ต้องแจ้งเตือนข้อผิดพลาดขณะกำลังพยายามโฟกัส/ค้นหา
-                    }
-                ).catch((err) => {
-                    console.error("Scanner Error:", err);
-                    window.showToast("ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์การเข้าถึงกล้อง", "error");
-                    closeBarcodeScanner();
-                });
-            }, 150);
-        };
-
-        window.closeBarcodeScanner = () => {
-            document.getElementById('barcode-modal').classList.add('hidden');
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                }).catch(err => {
-                    console.error("Failed to stop scanner", err);
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                });
-            }
+        window.removeTireImage = () => {
+            window.currentTireImageBase64 = null;
+            const uploadInput = document.getElementById('tire-image-upload');
+            if (uploadInput) uploadInput.value = '';
+            document.getElementById('tire-image-name').innerText = 'ยังไม่ได้เลือกรูป';
+            document.getElementById('tire-image-preview-container').classList.add('hidden');
         };
 
         window.startSwapMode = () => {
@@ -1945,7 +1848,7 @@
             const tireA = getActiveTireAt(plate, fromPos);
             const tireB = getActiveTireAt(plate, toPos);
 
-            customConfirm(`ต้องการสลับยางจากตำแหน่ง <b>${fromPos}</b> ไปยัง <b>${toPos}</b> ใช่หรือไม่?${tireB ? '<br><span class="text-xs text-rose-500">(ตำแหน่งปลายทางมียางอยู่แล้ว ระบบจะสลับตำแหน่งให้กันอัตโนมัติ)</span>' : ''}`, async () => {
+            customConfirm(`ต้องการสลับยางจากตำแหน่ง <b>${fromPos}</b> ไปยัง <b>${toPos}</b> ใช่หรือไม่?${tireB ? '<br><span class="text-xs text-rose-500">(ตำแหน่งปลายทางมียางอยู่แล้ว ระบบจะสลับตำแหน่งให้กันอัตโนมัติ)</span>' : ''}`, () => {
                 const today = formatToThaiShort(getToday());
                 const currentOdo = getEstimatedOdometer(plate);
 
@@ -1986,6 +1889,7 @@
         };
 
         window.renderTireModalBody = (formMode) => {
+            window.currentTireImageBase64 = null; // รีเซ็ตรูปทุกครั้งที่เปิดหน้าต่างใหม่
             const { plate, pos } = currentTireCtx;
             const { wheels } = getWheelLayout();
             const wheelInfo = wheels.find(w => w.pos === pos);
@@ -2005,22 +1909,31 @@
                             <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
                             <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
                         </div>
+                        
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
-                            <div class="relative flex items-center mb-1">
-                                <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg pl-3 pr-24 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
-                                <div class="absolute right-1 flex space-x-1 bg-white p-0.5 rounded-md border border-slate-100 shadow-sm">
-                                    <button type="button" onclick="startBarcodeScanner()" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors" title="สแกนบาร์โค้ด">
-                                        <i data-lucide="barcode" class="w-5 h-5"></i>
-                                    </button>
-                                    <button type="button" onclick="document.getElementById('tire-serial-upload').click()" id="btn-scan-serial" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors border-l border-slate-200 pl-2" title="สแกนด้วย Google AI">
-                                        <i data-lucide="camera" class="w-5 h-5"></i>
+                            <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">แนบรูปถ่ายซีเรียล/สภาพยาง</label>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center gap-2">
+                                    <label for="tire-image-upload" class="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg border border-slate-300 transition-colors text-sm font-medium flex items-center shadow-sm">
+                                        <i data-lucide="image-plus" class="w-4 h-4 mr-2 text-navy-600"></i> เลือกรูปภาพ
+                                    </label>
+                                    <input type="file" id="tire-image-upload" accept="image/*" class="hidden" onchange="handleTireImageSelect(event)">
+                                    <span id="tire-image-name" class="text-xs text-slate-500 truncate max-w-[150px]">ยังไม่ได้เลือกรูป</span>
+                                </div>
+                                <div id="tire-image-preview-container" class="hidden relative w-32 h-32 border border-slate-300 rounded-lg overflow-hidden bg-slate-50 shadow-sm mt-1">
+                                    <img id="tire-preview-img" src="" class="w-full h-full object-cover">
+                                    <button type="button" onclick="removeTireImage()" class="absolute top-1 right-1 bg-red-500/90 text-white rounded-full p-1 hover:bg-red-600 shadow-sm backdrop-blur-sm">
+                                        <i data-lucide="x" class="h-3 w-3"></i>
                                     </button>
                                 </div>
-                                <input type="file" id="tire-serial-upload" accept="image/*" capture="environment" class="hidden" onchange="processTireImage(event)">
                             </div>
-                            <p class="text-[10px] text-slate-400">✨ เคล็ดลับ: สแกนบาร์โค้ด หรือถ่ายภาพให้ AI ช่วยดึงตัวเลขซีเรียล</p>
                         </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
@@ -2146,6 +2059,9 @@
             rec.installOdometer = Number(getVal('tf_odo') || 0);
             rec.notes = getVal('tf_notes') || '';
             rec.status = 'active';
+            
+            // ส่งรูปภาพที่ถูกย่อขนาดเป็น Base64 ไปด้วย
+            rec.imageBase64 = window.currentTireImageBase64 || "";
 
             if (mode === 'edit') {
                 state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
@@ -2180,7 +2096,38 @@
                 
                 if(state.jobSortMode === 'alpha') {
                     filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
-                } 
+                } else {
+                    // เรียงตามล่าสุด
+                    const tripDateMap = new Map();
+                    if (state.trips && state.trips.length > 0) {
+                        for (let i = 0; i < state.trips.length; i++) {
+                            const t = state.trips[i];
+                            const key = (t.origin || '').trim() + '|||' + (t.dest || '').trim();
+                            const d = parseDateForSort(t.date);
+                            if (!tripDateMap.has(key) || d > tripDateMap.get(key)) {
+                                tripDateMap.set(key, d);
+                            }
+                        }
+                    }
+
+                    filteredJobs.sort((a, b) => {
+                        const keyA = (a.origin || '').trim() + '|||' + (a.dest || '');
+                        const keyB = (b.origin || '').trim() + '|||' + (b.dest || '');
+                        const tripTimeA = tripDateMap.get(keyA) || 0;
+                        const tripTimeB = tripDateMap.get(keyB) || 0;
+
+                        const idA = Number(a.id) || 0;
+                        const idB = Number(b.id) || 0;
+
+                        const scoreA = Math.max(tripTimeA, idA > 1000000000000 ? idA : 0);
+                        const scoreB = Math.max(tripTimeB, idB > 1000000000000 ? idB : 0);
+
+                        if (scoreA !== scoreB) {
+                            return scoreB - scoreA; 
+                        }
+                        return idB - idA;
+                    });
+                }
                 
                 let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
                 filteredJobs.forEach(j => {
@@ -2259,10 +2206,42 @@
 
                 if (state.activeTab === 'trips') {
                     if (!state.jobSortMode) state.jobSortMode = 'recent';
+                    
                     let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
                     
                     if(state.jobSortMode === 'alpha') {
                         filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+                    } else {
+                        // เรียงตามล่าสุด
+                        const tripDateMap = new Map();
+                        if (state.trips && state.trips.length > 0) {
+                            for (let i = 0; i < state.trips.length; i++) {
+                                const t = state.trips[i];
+                                const key = (t.origin || '').trim() + '|||' + (t.dest || '').trim();
+                                const d = parseDateForSort(t.date);
+                                if (!tripDateMap.has(key) || d > tripDateMap.get(key)) {
+                                    tripDateMap.set(key, d);
+                                }
+                            }
+                        }
+
+                        filteredJobs.sort((a, b) => {
+                            const keyA = (a.origin || '').trim() + '|||' + (a.dest || '');
+                            const keyB = (b.origin || '').trim() + '|||' + (b.dest || '');
+                            const tripTimeA = tripDateMap.get(keyA) || 0;
+                            const tripTimeB = tripDateMap.get(keyB) || 0;
+
+                            const idA = Number(a.id) || 0;
+                            const idB = Number(b.id) || 0;
+
+                            const scoreA = Math.max(tripTimeA, idA > 1000000000000 ? idA : 0);
+                            const scoreB = Math.max(tripTimeB, idB > 1000000000000 ? idB : 0);
+
+                            if (scoreA !== scoreB) {
+                                return scoreB - scoreA; 
+                            }
+                            return idB - idA;
+                        });
                     }
 
                     let jobOptions = '';
@@ -2633,12 +2612,12 @@
              }
         }
 
-        function submitData(e) {
+        async function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-form');
             btn.disabled = true;
             const originalClasses = btn.className;
-            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังจัดเตรียมข้อมูล...';
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
             lucide.createIcons();
 
             let newData = { 
@@ -2719,16 +2698,17 @@
                 else state.maintenanceLogs.unshift(newData);
             }
 
-            // --- หัวใจสำคัญที่ทำให้เร็ว: ส่งข้อมูลไปหลังบ้านแบบไม่รอ (Fire and Forget) ---
+            let saveOk = true;
             if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
                 sendGasAction(actionType, newData).catch(err => console.error("Background save failed:", err));
             }
 
-            // แสดงหน้าต่างบันทึกสำเร็จทันที
-            btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
-            btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
-            btn.classList.add('bg-green-600', 'hover:bg-green-700');
-            lucide.createIcons();
+            if (saveOk) {
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
+                btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                lucide.createIcons();
+            }
 
             setTimeout(() => {
                 closeMainModal();
@@ -2739,9 +2719,9 @@
                 btn.className = originalClasses;
                 btn.innerText = 'บันทึกข้อมูล';
                 
-                showToast('บันทึกข้อมูลสำเร็จ!', 'success');
-                if (cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
-            }, 500); // ดีเลย์สั้นๆ แค่ 0.5 วินาทีให้ผู้ใช้เห็นว่าสำเร็จแล้วค่อยปิด
+                if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+                if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
+            }, saveOk ? 500 : 0); 
         }
 
         function promptCascadeJobUpdate(oldJob, newJob) {
@@ -2768,10 +2748,8 @@
                         t.revenue = newJob.revenue;
                         t.profit = Number(newJob.revenue || 0) - Number(newJob.fuelCost || 0) - Number(newJob.driverFee || 0);
                         
-                        // ส่งคำสั่งไปอัปเดตหลังบ้านแบบไม่รอ
                         sendGasAction('editTrip', t).catch(e=>console.log(e));
                     });
-                    
                     renderNav();
                     renderContent();
                     showToast(`อัปเดตรายการวิ่งงานที่เกี่ยวข้อง ${matches.length} รายการเรียบร้อย!`, 'success');
@@ -2823,14 +2801,13 @@
                 setTimeout(() => {
                     overlay.remove();
                     onConfirm();
-                }, 400); // หน่วงนิดหน่อยให้รู้สึกว่าปุ่มโดนกด
+                }, 400); 
             };
         };
 
         window.showToast = (message, type = "success") => {
             const toast = document.createElement('div');
             const isError = type === "error";
-            // ขยับจาก top-6 เป็น top-28 เพื่อหลบแถบเมนูด้านบน จะได้ไม่บังปุ่มเพิ่มข้อมูล
             toast.className = `fixed top-28 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
             
             toast.innerHTML = `
@@ -2850,7 +2827,6 @@
 
         window.deleteData = (id, actionStr, sheetType) => {
             customConfirm("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลรายการนี้? (ลบแล้วกู้คืนไม่ได้)", () => {
-                // ลบข้อมูลออกจากตัวแปรในเครื่องทันที
                 if (actionStr.includes('Trip')) state.trips = state.trips.filter(i => i.id != id);
                 else if (actionStr.includes('Refuel')) state.refuels = state.refuels.filter(i => i.id != id);
                 else if (actionStr.includes('Vehicle')) state.vehicles = state.vehicles.filter(i => i.id != id);
@@ -2858,12 +2834,10 @@
                 else if (actionStr.includes('Maintenance')) state.maintenanceLogs = state.maintenanceLogs.filter(i => i.id != id);
                 else if (actionStr.includes('Tire')) state.tires = state.tires.filter(i => i.id != id);
 
-                // รีเฟรชหน้าจอใหม่ให้หายไปทันที
                 renderNav();
                 renderContent();
                 showToast("ลบข้อมูลสำเร็จ!");
 
-                // ส่งคำสั่งไปลบที่ Google Sheets แบบเบื้องหลัง ไม่ต้องรอ
                 if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
                     fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
@@ -2951,46 +2925,6 @@
             }
         });
 
-        function normalizeLoadedData() {
-            const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
-            state.vehicles.forEach(v => { v.plate = cleanPlate(v.plate); v.category = v.category || 'flatbed'; });
-            state.trips.forEach(t => { t.plate = cleanPlate(t.plate); });
-            state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
-            state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
-            state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
-        }
-
-        async function initApp() {
-            renderNav();
-            if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                seedDemoDataIfEmpty();
-                renderNav();
-                renderContent();
-                return;
-            }
-
-            try {
-                document.getElementById('loading-spinner').classList.remove('hidden');
-                const res = await fetch(GAS_WEB_APP_URL + "?t=" + new Date().getTime());
-                const data = await res.json();
-                if(data.status === 'success') {
-                    state.trips = data.trips || [];
-                    state.refuels = data.refuels || [];
-                    state.vehicles = data.vehicles || [];
-                    state.jobs = data.jobs || [];
-                    state.maintenanceLogs = data.maintenance || data.maintenanceLogs || [];
-                    state.tires = data.tires || [];
-                    normalizeLoadedData();
-                }
-            } catch (e) { console.error("Load error", e); }
-            finally {
-                seedDemoDataIfEmpty();
-                renderNav();
-                renderContent();
-                document.getElementById('loading-spinner').classList.add('hidden');
-            }
-        }
-
         window.exportTableCSV = (type, plate = null) => {
             let data = [];
             let headers = [];
@@ -3058,6 +2992,46 @@
             
             showToast(`ดาวน์โหลดไฟล์สำเร็จ!`, 'success');
         };
+
+        function normalizeLoadedData() {
+            const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
+            state.vehicles.forEach(v => { v.plate = cleanPlate(v.plate); v.category = v.category || 'flatbed'; });
+            state.trips.forEach(t => { t.plate = cleanPlate(t.plate); });
+            state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
+            state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
+            state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
+        }
+
+        async function initApp() {
+            renderNav();
+            if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
+                seedDemoDataIfEmpty();
+                renderNav();
+                renderContent();
+                return;
+            }
+
+            try {
+                document.getElementById('loading-spinner').classList.remove('hidden');
+                const res = await fetch(GAS_WEB_APP_URL + "?t=" + new Date().getTime());
+                const data = await res.json();
+                if(data.status === 'success') {
+                    state.trips = data.trips || [];
+                    state.refuels = data.refuels || [];
+                    state.vehicles = data.vehicles || [];
+                    state.jobs = data.jobs || [];
+                    state.maintenanceLogs = data.maintenance || data.maintenanceLogs || [];
+                    state.tires = data.tires || [];
+                    normalizeLoadedData();
+                }
+            } catch (e) { console.error("Load error", e); }
+            finally {
+                seedDemoDataIfEmpty();
+                renderNav();
+                renderContent();
+                document.getElementById('loading-spinner').classList.add('hidden');
+            }
+        }
 
         function seedDemoDataIfEmpty() {
             if (state.vehicles.length > 0) return;
