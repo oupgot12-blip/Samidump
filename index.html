@@ -11,18 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: {
-                            50:  '#eef3f8',
-                            100: '#d9e4f0',
-                            200: '#b3c9e0',
-                            300: '#8dadd1',
-                            400: '#6892c1',
-                            500: '#4a76a8',
-                            600: '#395d85',
-                            700: '#2c4868',
-                            800: '#1e3350',
-                            900: '#142338'
-                        }
+                        navy: { 50: '#eef3f8', 100: '#d9e4f0', 200: '#b3c9e0', 300: '#8dadd1', 400: '#6892c1', 500: '#4a76a8', 600: '#395d85', 700: '#2c4868', 800: '#1e3350', 900: '#142338' }
                     }
                 }
             }
@@ -58,11 +47,18 @@
             font-size: 1.125rem;
             font-weight: normal;
         }
+        
+        .sidebar-collapsed {
+            width: 0px !important;
+            overflow: hidden;
+            border-right: none;
+            opacity: 0;
+            padding: 0 !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden relative">
     
-    <!-- PIN Overlay -->
     <div id="pinOverlay" class="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
             <div class="mb-8">
@@ -83,32 +79,29 @@
         </div>
     </div>
 
-    <!-- Mobile Sidebar Backdrop -->
-    <div id="sidebar-backdrop" onclick="closeMobileNav()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
 
-    <!-- Sidebar -->
-    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:transition-none">
-        <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+    <aside id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0 min-w-[280px]">
             <div class="flex items-center space-x-3">
                 <div class="bg-navy-800 p-2 rounded-lg">
                     <i data-lucide="layout-panel-left" class="h-6 w-6 text-white"></i>
                 </div>
-                <h1 class="text-xl font-bold text-slate-800">ระบบจัดการรถ</h1>
+                <h1 class="text-xl font-bold text-slate-800 whitespace-nowrap">ระบบจัดการรถ</h1>
             </div>
-            <button onclick="closeMobileNav()" class="lg:hidden text-slate-400 hover:text-slate-600 p-1">
-                <i data-lucide="x" class="h-5 w-5"></i>
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-600 p-1 bg-slate-50 rounded-lg">
+                <i data-lucide="panel-left-close" class="h-5 w-5"></i>
             </button>
         </div>
-        <nav class="flex-1 p-4 overflow-y-auto" id="nav-menu">
+        <nav class="flex-1 p-4 overflow-y-auto min-w-[280px]" id="nav-menu">
             <!-- เมนูสร้างผ่าน JavaScript -->
         </nav>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col min-w-0 h-screen">
+    <main class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 w-full">
         <header class="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                <button onclick="openMobileNav()" class="lg:hidden flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
+                <button onclick="toggleSidebar()" class="flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
                     <i data-lucide="menu" class="h-6 w-6"></i>
                 </button>
                 <h2 class="text-lg md:text-2xl font-bold text-slate-800 flex items-center min-w-0 truncate">
@@ -128,7 +121,7 @@
             </div>
         </header>
 
-        <div class="content-scroll relative" id="main-content">
+        <div class="content-scroll relative bg-slate-50" id="main-content">
             <div class="p-4 md:p-8">
                 <div id="loading-spinner" class="absolute inset-0 bg-slate-50/80 z-50 flex flex-col items-center justify-center hidden">
                     <div class="spinner rounded-full h-12 w-12 border-b-2 border-navy-800 mb-4"></div>
@@ -139,7 +132,6 @@
         </div>
     </main>
 
-    <!-- Main Modal (เพิ่ม/แก้ไข ข้อมูล) -->
     <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -148,11 +140,10 @@
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <form id="main-form" class="p-6 space-y-4"></form>
+            <form id="main-form" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto"></form>
         </div>
     </div>
 
-    <!-- Map Modal -->
     <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm">
@@ -172,7 +163,6 @@
         </div>
     </div>
 
-    <!-- Tire Detail Modal -->
     <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -185,10 +175,9 @@
         </div>
     </div>
 
-    <!-- Javascript Core -->
     <script>
-        // 👇👇👇 URL ของ Google Apps Script 👇👇👇
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzUL5nrNT7B5dZU0SCQsPpQTEY7WoSHB5qZvd8RIIh9hZXOc_X1B2i4qzXrA4Tyq506/exec";
+        // 👇👇👇 เอา URL Web App ล่าสุด มาใส่ตรงนี้ 👇👇👇
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyzbuaq5FKxniDv_37c5Iq0bshCTdpW3-wKxHojAm74_N05GQhY29iDtVL4FRkemRc/exec";
 
         const LOGIN_PIN = "8899";
         const ACTION_PIN = "2233";
@@ -206,7 +195,8 @@
             activeVehiclePlate: null, 
             isSwapMode: false,
             swapSourcePos: null,
-            isDemoData: false
+            isDemoData: false,
+            isSidebarOpen: true // ค่าเริ่มต้นเปิดเมนูบนจอใหญ่
         };
 
         const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -282,7 +272,6 @@
             return 0;
         };
 
-        // --- PIN & UI Helpers ---
         window.pendingActionFunc = null;
 
         window.showPinModal = (type) => {
@@ -347,17 +336,62 @@
             showPinModal('action');
         };
 
-        window.openMobileNav = () => {
-            document.getElementById('sidebar').classList.remove('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.remove('hidden');
+        window.toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
+            if (window.innerWidth < 1024) {
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                    backdrop.classList.remove('hidden');
+                    state.isSidebarOpen = true;
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                    state.isSidebarOpen = false;
+                }
+            } else {
+                if (state.isSidebarOpen) {
+                    sidebar.classList.add('sidebar-collapsed');
+                    state.isSidebarOpen = false;
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    state.isSidebarOpen = true;
+                }
+            }
         };
+
+        window.applySidebarState = () => {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            
+            if (window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('sidebar-collapsed'); 
+                backdrop.classList.add('hidden');
+                state.isSidebarOpen = false;
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.add('hidden');
+                if (!state.isSidebarOpen) {
+                    sidebar.classList.add('sidebar-collapsed');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                }
+            }
+        };
+
+        window.addEventListener('resize', () => {
+            window.applySidebarState();
+        });
+
         window.closeMobileNav = () => {
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.add('hidden');
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-backdrop').classList.add('hidden');
+                state.isSidebarOpen = false;
+            }
         };
-        function closeMobileNavIfSmallScreen() {
-            if (window.innerWidth < 1024) closeMobileNav();
-        }
 
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
@@ -384,7 +418,7 @@
             state.filterPeriod = null;
             renderNav();
             renderContent();
-            closeMobileNavIfSmallScreen();
+            closeMobileNav();
         };
 
         window.changeTabPeriod = (category, tabId, year, month, period) => {
@@ -395,7 +429,7 @@
             state.filterPeriod = period;
             renderNav();
             renderContent();
-            closeMobileNavIfSmallScreen();
+            closeMobileNav();
         };
 
         const categories = [
@@ -403,7 +437,6 @@
             { id: 'semidump', label: 'รถเซมิดั๊ม', icon: 'combine' }
         ];
 
-        // --- Maintenance Config ---
         const TECH_NAME = "ช่างเอก";
         const TECH_TITLE = "ทีมช่างศูนย์บริการ UD Trucks";
         const MAINTENANCE_TYPES = [
@@ -425,7 +458,6 @@
         MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
         const MAINT_SOON_RATIO = 0.85;
 
-        // --- Tire Config ---
         const TIRE_ROTATE_KM = 10000;
         const TIRE_MONITOR_KM = 60000;
         const TIRE_REPLACE_KM = 80000;
@@ -466,7 +498,6 @@
             return Math.round(baseOdo + extraDist);
         }
 
-        // --- Tire Functions ---
         function getActiveTireAt(plate, pos) {
             return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
         }
@@ -501,7 +532,6 @@
             overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
         };
 
-        // --- Filter & Maint. Helpers ---
         function getFiltered(dataArr) {
             return dataArr.filter(item => {
                 const itemCat = item.category || 'flatbed';
@@ -630,7 +660,6 @@
             });
         }
 
-        // --- Render UI ---
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
             let html = '';
@@ -1215,13 +1244,8 @@
                                     (${trips.length} เที่ยว ${state.activeCategory === 'semidump' ? ` | น้ำหนักรวม <span class="font-bold text-navy-900">${formatNumber(sumWeight).replace(/\.00$/, '')}</span> ตัน` : ''})
                                 </span>
                             </div>
-                            <div class="flex items-center space-x-3 flex-wrap gap-y-2">
-                                <button onclick="exportTableCSV('trips', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                                    <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                                </button>
-                                <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
-                                    <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
-                                </div>
+                            <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
+                                <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
                             </div>
                         </div>
                         ${driverFeeDetailsHtml}
@@ -1289,16 +1313,10 @@
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-slate-800">ตารางเส้นทางและเรทราคา</h3>
-                        <button onclick="exportTableCSV('jobs')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                        </button>
-                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[800px] text-left border-collapse whitespace-nowrap table-fixed">
                             <thead>
-                                <tr class="bg-white text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
+                                <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                     <th class="p-4 font-semibold w-40">ต้นทาง</th>
                                     <th class="p-4 font-semibold w-40">ปลายทาง</th>
                                     <th class="p-4 font-semibold text-right w-24">ระยะทาง</th>
@@ -1382,15 +1400,10 @@
 
                 html += `
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
-                            <div class="flex items-center space-x-3">
-                                <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
-                                <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
-                                <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
-                            </div>
-                            <button onclick="exportTableCSV('refuels', '${plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                                <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                            </button>
+                        <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex items-center space-x-3">
+                            <div class="bg-navy-100 p-1.5 rounded-lg flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                            <h3 class="text-lg font-bold text-slate-800">ทะเบียนรถ: <span class="text-navy-900">${plate}</span></h3>
+                            <span class="text-sm font-medium text-slate-500 ml-2">(${refuels.length} รายการ)</span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full min-w-[600px] text-left border-collapse whitespace-nowrap table-fixed">
@@ -1432,7 +1445,7 @@
                         <td class="p-4 font-medium text-navy-800"><span class="bg-navy-50 px-3 py-1.5 rounded-md border border-navy-100">${v.plate}</span></td>
                         <td class="p-4 text-slate-800 font-medium">${v.driver}</td>
                         <td class="p-4 text-slate-600">${v.type || '-'}</td>
-                        <td class="p-4 text-slate-600">${v.model || '-'} ${v.year ? `<span class="text-xs text-slate-400">(ปี ${v.year})</span>` : ''}</td>
+                        <td class="p-4 text-slate-600">${v.model || '-'} ${v.year ? '<span class="text-xs text-slate-400">(ปี '+v.year+')</span>' : ''}</td>
                         <td class="p-4 text-right tabular-nums text-slate-700">${formatNumber(odo).replace(/\.00$/, '')} <span class="text-xs text-slate-400">กม.</span></td>
                         <td class="p-4 text-center">
                             <button onclick="changeTab('${v.category || 'flatbed'}','maintenance'); state.activeVehiclePlate='${v.plate}'; renderNav(); renderContent();" class="${alertCount > 0 ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-green-100 text-green-700 border-green-200'} border px-3 py-1 rounded-full text-xs font-bold inline-flex items-center hover:opacity-80">
@@ -1451,16 +1464,10 @@
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                        <h3 class="text-lg font-bold text-slate-800">ตารางข้อมูลรถและคนขับ</h3>
-                        <button onclick="exportTableCSV('vehicles')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                        </button>
-                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-white text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
+                                <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                     <th class="p-4 font-semibold">ทะเบียนรถ</th>
                                     <th class="p-4 font-semibold">ชื่อคนขับ</th>
                                     <th class="p-4 font-semibold">ประเภทรถ</th>
@@ -1505,7 +1512,7 @@
                             <span class="font-bold text-navy-900 bg-navy-50 px-2.5 py-1 rounded-lg border border-navy-100">${v.plate}</span>
                             ${badgeHtml}
                         </div>
-                        <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
+                        <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? '(ปี ' + v.year + ')' : ''}</p>
                         <p class="text-sm text-slate-500">คนขับ: ${v.driver || '-'}</p>
                         <p class="text-lg font-bold text-slate-800 mt-2">${formatNumber(getEstimatedOdometer(v.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-400">กม.</span></p>
                     </button>
@@ -1579,12 +1586,7 @@
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
-                        <h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3>
-                        <button onclick="exportTableCSV('maintenance', '${detailVehicle.plate}')" class="text-sm font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm flex items-center transition-colors">
-                            <i data-lucide="download" class="w-4 h-4 mr-1.5"></i> Export (CSV)
-                        </button>
-                    </div>
+                    <div class="bg-navy-50/50 px-6 py-4 border-b border-slate-200"><h3 class="text-lg font-bold text-slate-800">ประวัติงานซ่อมบำรุง</h3></div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
                             <thead>
@@ -1741,8 +1743,13 @@
                 let isTargetSource = state.isSwapMode && state.swapSourcePos === w.pos;
                 let strokeAnim = isTargetSource ? `stroke="#ef4444" stroke-width="4" stroke-dasharray="8 4"` : `stroke="${style.stroke}" stroke-width="3" ${dash}`;
 
+                // 🌟 เพิ่ม onmouseenter, onmousemove, onmouseleave สำหรับแสดงป๊อปอัป
                 svg += `
-                    <g onclick="handleWheelClick('${plate}', ${w.pos})" style="cursor:pointer">
+                    <g onclick="handleWheelClick('${plate}', ${w.pos})" 
+                       onmouseenter="showTireTooltip('${plate}', ${w.pos}, event)" 
+                       onmousemove="moveTireTooltip(event)" 
+                       onmouseleave="hideTireTooltip()" 
+                       style="cursor:pointer">
                         <rect x="${w.x - w.w / 2}" y="${w.y - w.h / 2}" width="${w.w}" height="${w.h}" rx="8" fill="${style.fill}" ${strokeAnim} />
                         <circle cx="${w.x}" cy="${w.y}" r="12" fill="#ffffff" stroke="${isTargetSource ? '#ef4444' : style.stroke}" stroke-width="2.5" />
                         <text x="${w.x}" y="${w.y + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="${isTargetSource ? '#ef4444' : style.stroke}">${w.pos}</text>
@@ -1754,11 +1761,104 @@
             return svg;
         }
 
-        // --- Tire Handlers ---
+        // 🌟 ระบบ Popup Tooltip เลื่อนตามเมาส์
+        window.showTireTooltip = (plate, pos, e) => {
+            if (state.isSwapMode) return; 
+            
+            let tooltip = document.getElementById('tire-hover-tooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'tire-hover-tooltip';
+                tooltip.className = 'fixed z-[100] pointer-events-none bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 w-64 opacity-0 transition-opacity duration-200 backdrop-blur-md';
+                document.body.appendChild(tooltip);
+            }
+
+            const rec = getActiveTireAt(plate, pos);
+            const status = getTireStatus(plate, rec);
+            const style = TIRE_STATUS_STYLE[status];
+            
+            let html = "";
+            if (rec) {
+                const km = getTireRunKm(plate, rec);
+                let badgeClass = 'bg-slate-700 text-slate-300';
+                if (status === 'good') badgeClass = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                else if (status === 'monitor') badgeClass = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                else if (status === 'warn') badgeClass = 'bg-orange-500/20 text-orange-400 border border-orange-500/30';
+                else if (status === 'overdue') badgeClass = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+                
+                // 🌟 เพิ่มส่วนแสดงรูปภาพตรงนี้
+                let imgHtml = '';
+                if (rec.imageUrl && rec.imageUrl.includes('http')) {
+                    imgHtml = `
+                        <div class="mt-3 mb-3 w-full h-28 rounded-lg border border-slate-600 overflow-hidden bg-slate-800 shadow-inner">
+                            <img src="${rec.imageUrl}" class="w-full h-full object-cover" alt="Tire Image" onerror="this.style.display='none'">
+                        </div>
+                    `;
+                }
+
+                html = `
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="font-bold text-sm text-white truncate pr-2">${rec.brand || 'ไม่ระบุยี่ห้อ'}</p>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${badgeClass}">${style.label}</span>
+                    </div>
+                    ${imgHtml}
+                    <div class="space-y-1.5 text-[11px] text-slate-300">
+                        <div class="flex justify-between"><span class="text-slate-400">S/N:</span> <span class="font-medium text-white">${rec.serial || '-'}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">วันที่เริ่มใส่:</span> <span class="font-medium text-white">${formatDisplayDate(rec.installDate)}</span></div>
+                        <div class="flex justify-between items-end mt-2 pt-2 border-t border-slate-700/50">
+                            <span class="text-slate-400">ใช้งานแล้ว:</span> 
+                            <span class="font-bold text-white text-sm">${formatNumber(km).replace(/\.00$/, '')} กม.</span>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-sky-400 mt-3 flex items-center justify-center bg-sky-900/30 py-1.5 rounded-lg border border-sky-800/50"><i data-lucide="mouse-pointer-click" class="w-3 h-3 mr-1.5"></i> คลิกเพื่อจัดการข้อมูล</p>
+                `;
+            } else {
+                html = `
+                    <div class="flex flex-col items-center justify-center text-center p-2">
+                        <i data-lucide="circle-dashed" class="w-8 h-8 text-slate-500 mb-2"></i>
+                        <p class="font-bold text-sm text-white mb-1">ยังไม่มีข้อมูลยาง</p>
+                        <p class="text-xs text-slate-400">คลิกที่ล้อตำแหน่งที่ ${pos} เพื่อเพิ่มข้อมูล</p>
+                    </div>
+                `;
+            }
+            
+            tooltip.innerHTML = html;
+            if (window.lucide) lucide.createIcons();
+            
+            moveTireTooltip(e);
+            tooltip.classList.remove('opacity-0');
+            tooltip.classList.add('opacity-100');
+        };
+
+        window.moveTireTooltip = (e) => {
+            const tooltip = document.getElementById('tire-hover-tooltip');
+            if (tooltip && tooltip.classList.contains('opacity-100')) {
+                // ให้ป๊อปอัปโผล่ที่ขวาล่างของลูกศรเมาส์นิดหน่อย
+                let x = e.clientX + 15;
+                let y = e.clientY + 15;
+                
+                // ป้องกันป๊อปอัปทะลุขอบจอภาพ
+                const rect = tooltip.getBoundingClientRect();
+                if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - 15;
+                if (y + rect.height > window.innerHeight) y = e.clientY - rect.height - 15;
+                
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            }
+        };
+
+        window.hideTireTooltip = () => {
+            const tooltip = document.getElementById('tire-hover-tooltip');
+            if (tooltip) {
+                tooltip.classList.remove('opacity-100');
+                tooltip.classList.add('opacity-0');
+            }
+        };
+
         let currentTireCtx = { plate: null, pos: null };
-        window.currentTireImageBase64 = null; // เก็บรูประหว่างพิมพ์ฟอร์ม
 
         window.handleWheelClick = (plate, pos) => {
+            hideTireTooltip(); // ซ่อนป๊อปอัปเมื่อถูกคลิก
             if (state.isSwapMode) {
                 if (pos === state.swapSourcePos) return cancelSwapMode();
                 processTireSwap(plate, state.swapSourcePos, pos);
@@ -1769,6 +1869,7 @@
 
         window.openTireModal = (plate, pos) => {
             currentTireCtx = { plate, pos };
+            window.currentTireImageBase64 = null;
             renderTireModalBody();
             document.getElementById('tire-modal').classList.remove('hidden');
         };
@@ -1777,119 +1878,7 @@
             document.getElementById('tire-modal').classList.add('hidden');
         };
 
-        // --- ฟังก์ชันจัดการรูปภาพยางแบบธรรมดา ---
-        window.handleTireImageSelect = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            document.getElementById('tire-image-name').innerText = file.name;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // ย่อขนาดเพื่อไม่ให้หนักเกินไป
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // เก็บ Base64 ไว้ส่งข้อมูล
-                    window.currentTireImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                    
-                    document.getElementById('tire-preview-img').src = window.currentTireImageBase64;
-                    document.getElementById('tire-image-preview-container').classList.remove('hidden');
-                }
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.removeTireImage = () => {
-            window.currentTireImageBase64 = null;
-            const uploadInput = document.getElementById('tire-image-upload');
-            if (uploadInput) uploadInput.value = '';
-            document.getElementById('tire-image-name').innerText = 'ยังไม่ได้เลือกรูป';
-            document.getElementById('tire-image-preview-container').classList.add('hidden');
-        };
-
-        window.startSwapMode = () => {
-            state.isSwapMode = true;
-            state.swapSourcePos = currentTireCtx.pos;
-            closeTireModal();
-            renderContent();
-            showToast('คลิกตำแหน่งล้อที่ต้องการย้ายยางไปใส่บนแผนผัง');
-        };
-
-        window.cancelSwapMode = () => {
-            state.isSwapMode = false;
-            state.swapSourcePos = null;
-            renderContent();
-        };
-
-        window.processTireSwap = (plate, fromPos, toPos) => {
-            const tireA = getActiveTireAt(plate, fromPos);
-            const tireB = getActiveTireAt(plate, toPos);
-
-            customConfirm(`ต้องการสลับยางจากตำแหน่ง <b>${fromPos}</b> ไปยัง <b>${toPos}</b> ใช่หรือไม่?${tireB ? '<br><span class="text-xs text-rose-500">(ตำแหน่งปลายทางมียางอยู่แล้ว ระบบจะสลับตำแหน่งให้กันอัตโนมัติ)</span>' : ''}`, () => {
-                const today = formatToThaiShort(getToday());
-                const currentOdo = getEstimatedOdometer(plate);
-
-                if (tireA) {
-                    let hA = JSON.parse(tireA.historyJson || '[]');
-                    hA.push({ type: 'swap_out', from: fromPos, to: toPos, date: today, odo: currentOdo });
-                    tireA.position = toPos;
-                    tireA.historyJson = JSON.stringify(hA);
-                    sendGasAction('editTire', tireA).catch(e=>console.log(e));
-                }
-                if (tireB) {
-                    let hB = JSON.parse(tireB.historyJson || '[]');
-                    hB.push({ type: 'swap_out', from: toPos, to: fromPos, date: today, odo: currentOdo });
-                    tireB.position = fromPos;
-                    tireB.historyJson = JSON.stringify(hB);
-                    sendGasAction('editTire', tireB).catch(e=>console.log(e));
-                }
-
-                cancelSwapMode();
-                showToast(`สลับยางเสร็จสมบูรณ์!`);
-            }, { title: 'ยืนยันการสลับยาง', icon: 'refresh-ccw', confirmLabel: 'ยืนยันสลับยาง', confirmBtnClass: 'bg-navy-800 hover:bg-navy-900' });
-        };
-
-        window.editTireHistoryRecord = (tireId, histIndex) => {
-            const tire = state.tires.find(t => t.id == tireId);
-            if(!tire) return;
-            const history = JSON.parse(tire.historyJson || '[]');
-            const rec = history[histIndex];
-            
-            const newText = prompt(`แก้ไขรายละเอียดประวัติ:`, `สลับมาจากตำแหน่ง ${rec.from} (เมื่อ ${rec.date})`);
-            if (newText !== null && newText.trim() !== '') {
-                rec.customText = newText;
-                tire.historyJson = JSON.stringify(history);
-                sendGasAction('editTire', tire).catch(e=>console.log(e));
-                renderTireModalBody();
-                showToast('อัปเดตประวัติยางเรียบร้อย');
-            }
-        };
-
         window.renderTireModalBody = (formMode) => {
-            window.currentTireImageBase64 = null; // รีเซ็ตรูปทุกครั้งที่เปิดหน้าต่างใหม่
             const { plate, pos } = currentTireCtx;
             const { wheels } = getWheelLayout();
             const wheelInfo = wheels.find(w => w.pos === pos);
@@ -1902,38 +1891,31 @@
             if (formMode === 'add' || formMode === 'edit' || formMode === 'replace') {
                 const editingRec = formMode === 'edit' ? rec : null;
                 const currentOdo = getEstimatedOdometer(plate);
+                window.currentTireImageBase64 = null; 
+                
                 body.innerHTML = `
                     <form id="tire-form" class="space-y-4">
-                        ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
+                        ${formMode === 'replace' ? '<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>' : ''}
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
                             <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
                         </div>
-                        
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
-                            <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">แนบรูปถ่ายซีเรียล/สภาพยาง</label>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial) / รูปถ่าย</label>
                             <div class="flex flex-col gap-2">
                                 <div class="flex items-center gap-2">
-                                    <label for="tire-image-upload" class="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg border border-slate-300 transition-colors text-sm font-medium flex items-center shadow-sm">
-                                        <i data-lucide="image-plus" class="w-4 h-4 mr-2 text-navy-600"></i> เลือกรูปภาพ
+                                    <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
+                                    <label for="tire-image-upload" class="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-lg border border-slate-300 transition-colors" title="แนบรูปถ่ายยาง">
+                                        <i data-lucide="camera" class="h-5 w-5"></i>
                                     </label>
-                                    <input type="file" id="tire-image-upload" accept="image/*" class="hidden" onchange="handleTireImageSelect(event)">
-                                    <span id="tire-image-name" class="text-xs text-slate-500 truncate max-w-[150px]">ยังไม่ได้เลือกรูป</span>
+                                    <input type="file" id="tire-image-upload" accept="image/*" capture="environment" class="hidden" onchange="handleTireImageSelect(event)">
                                 </div>
-                                <div id="tire-image-preview-container" class="hidden relative w-32 h-32 border border-slate-300 rounded-lg overflow-hidden bg-slate-50 shadow-sm mt-1">
+                                <div id="tire-image-preview" class="hidden relative w-32 h-32 border border-slate-300 rounded-lg overflow-hidden bg-slate-50 mt-1 shadow-sm">
                                     <img id="tire-preview-img" src="" class="w-full h-full object-cover">
-                                    <button type="button" onclick="removeTireImage()" class="absolute top-1 right-1 bg-red-500/90 text-white rounded-full p-1 hover:bg-red-600 shadow-sm backdrop-blur-sm">
-                                        <i data-lucide="x" class="h-3 w-3"></i>
-                                    </button>
+                                    <button type="button" onclick="removeTireImage()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"><i data-lucide="x" class="h-3 w-3"></i></button>
                                 </div>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
@@ -1950,7 +1932,7 @@
                         </div>
                         <div class="flex space-x-3 pt-2">
                             <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium flex justify-center items-center">บันทึกข้อมูล</button>
                         </div>
                     </form>
                 `;
@@ -1968,12 +1950,17 @@
                 html += `
                     <div class="p-4 rounded-xl border ${status === 'overdue' ? 'bg-rose-50 border-rose-200' : status === 'warn' ? 'bg-orange-50 border-orange-200' : status === 'monitor' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} mb-4">
                         <div class="flex justify-between items-start mb-2">
-                            <div>
+                            <div class="flex-1 pr-2">
                                 <p class="font-bold text-slate-800">${rec.brand || 'ไม่ระบุยี่ห้อ'}</p>
                                 <p class="text-xs text-slate-500">S/N: ${rec.serial || '-'}</p>
                             </div>
                             <span class="text-xs font-bold px-2 py-1 rounded-full ${style.badge} whitespace-nowrap">${style.label}</span>
                         </div>
+                        ${rec.imageUrl && rec.imageUrl.includes('http') ? `
+                        <div class="w-full h-32 rounded-lg border border-slate-200 overflow-hidden mb-3 bg-slate-100">
+                            <img src="${rec.imageUrl}" class="w-full h-full object-cover" alt="Tire Image" onerror="this.style.display='none'">
+                        </div>
+                        ` : ''}
                         <div class="grid grid-cols-2 gap-2 text-sm mt-3">
                             <div><p class="text-slate-400 text-xs">เริ่มใส่</p><p class="font-semibold text-slate-700">${formatDisplayDate(rec.installDate)}</p></div>
                             <div><p class="text-slate-400 text-xs">เลขไมล์เริ่มต้น</p><p class="font-semibold text-slate-700">${formatNumber(rec.installOdometer).replace(/\.00$/, '')} กม.</p></div>
@@ -1983,7 +1970,6 @@
                     </div>
                 `;
 
-                // ประวัติการสลับยางของเส้นนี้
                 let swapHistory = JSON.parse(rec.historyJson || '[]');
                 if (swapHistory.length > 0) {
                     html += `<div class="mb-4 space-y-2">`;
@@ -2005,14 +1991,14 @@
                         <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
                     </div>
                     <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
-                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
+                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2 font-medium">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
                 `;
             } else {
                 html += `
-                    <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2">
+                    <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2 bg-slate-50/50">
                         <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
                         <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
-                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900">+ บันทึกยางเส้นนี้</button>
+                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900 shadow-sm flex items-center justify-center mx-auto"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> บันทึกยางเส้นนี้</button>
                     </div>
                 `;
             }
@@ -2021,11 +2007,13 @@
                 html += `
                     <div class="border-t border-slate-100 pt-3 mt-2">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">ประวัติยางที่เคยใส่ตำแหน่งนี้ (${historyOld.length})</p>
-                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                        <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
                         ${historyOld.map(h => `
-                            <div class="text-xs bg-slate-50 rounded-lg p-2 border border-slate-100">
-                                <p class="font-semibold text-slate-600">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : '-'})</span></p>
-                                <p class="text-slate-400">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
+                            <div class="text-xs bg-slate-50 rounded-lg p-2.5 border border-slate-100 flex justify-between items-center gap-2">
+                                <div>
+                                    <p class="font-semibold text-slate-700">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400 font-normal">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : '-'})</span></p>
+                                    <p class="text-slate-500 mt-0.5">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
+                                </div>
                             </div>
                         `).join('')}
                         </div>
@@ -2037,117 +2025,128 @@
             lucide.createIcons();
         };
 
-        window.submitTireForm = (e, mode, editingRec) => {
+        window.submitTireForm = async (e, mode, editingRec) => {
             e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
+            lucide.createIcons();
+
             const { plate, pos } = currentTireCtx;
             const getVal = (id) => document.getElementById(id)?.value;
 
-            if (mode === 'replace') {
-                const activeRec = getActiveTireAt(plate, pos);
-                if (activeRec) {
-                    activeRec.status = 'removed';
-                    activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
-                    activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
-                    sendGasAction('editTire', activeRec).catch(e=>console.log(e));
+            try {
+                if (mode === 'replace') {
+                    const activeRec = getActiveTireAt(plate, pos);
+                    if (activeRec) {
+                        activeRec.status = 'removed';
+                        activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
+                        activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
+                        await sendGasAction('editTire', activeRec);
+                    }
                 }
+
+                let rec = (mode === 'edit' && editingRec) ? editingRec : { id: Date.now(), plate: plate, position: pos, historyJson: '[]' };
+                rec.brand = getVal('tf_brand');
+                rec.serial = getVal('tf_serial');
+                rec.installDate = formatToThaiShort(getVal('tf_date'));
+                rec.installOdometer = Number(getVal('tf_odo') || 0);
+                rec.notes = getVal('tf_notes') || '';
+                rec.status = 'active';
+
+                // แนบภาพ Base64 ส่งไปให้ Google Script เพื่อจัดการเซฟลง Drive
+                if (window.currentTireImageBase64) {
+                    rec.imageBase64 = window.currentTireImageBase64; 
+                    rec.imageUrl = window.currentTireImageBase64; // โชว์ในหน้าเว็บชั่วคราวระหว่างส่งข้อมูล
+                }
+
+                if (mode === 'edit') {
+                    state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
+                    await sendGasAction('editTire', rec);
+                } else {
+                    state.tires.unshift(rec);
+                    await sendGasAction('addTire', rec);
+                }
+
+                window.currentTireImageBase64 = null;
+                showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
+                renderTireModalBody();
+                renderContent();
+            } catch (err) {
+                console.error("Submit Tire Error:", err);
+                showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
-
-            let rec = (mode === 'edit' && editingRec) ? editingRec : { id: Date.now(), plate: plate, position: pos, historyJson: '[]' };
-            rec.brand = getVal('tf_brand');
-            rec.serial = getVal('tf_serial');
-            rec.installDate = formatToThaiShort(getVal('tf_date'));
-            rec.installOdometer = Number(getVal('tf_odo') || 0);
-            rec.notes = getVal('tf_notes') || '';
-            rec.status = 'active';
-            
-            // ส่งรูปภาพที่ถูกย่อขนาดเป็น Base64 ไปด้วย
-            rec.imageBase64 = window.currentTireImageBase64 || "";
-
-            if (mode === 'edit') {
-                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
-                sendGasAction('editTire', rec).catch(e=>console.log(e));
-            } else {
-                state.tires.unshift(rec);
-                sendGasAction('addTire', rec).catch(e=>console.log(e));
-            }
-
-            showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
-            renderTireModalBody();
-            renderContent();
         };
 
         window.deleteTireRecord = (id) => {
-            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", () => {
-                sendGasAction('deleteTire', { id }).catch(e=>console.log(e));
+            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", async () => {
                 state.tires = state.tires.filter(t => t.id != id);
                 closeTireModal();
                 renderContent();
                 showToast('ลบข้อมูลยางสำเร็จ!');
+                await sendGasAction('deleteTire', { id });
             });
         };
 
-        window.toggleJobSort = () => {
-            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
+        window.startSwapMode = () => {
+            state.isSwapMode = true;
+            state.swapSourcePos = currentTireCtx.pos;
+            closeTireModal();
+            renderContent();
+            showToast('คลิกตำแหน่งล้อที่ต้องการย้ายยางไปใส่บนแผนผัง');
+        };
+
+        window.cancelSwapMode = () => {
+            state.isSwapMode = false;
+            state.swapSourcePos = null;
+            renderContent();
+        };
+
+        window.processTireSwap = (plate, fromPos, toPos) => {
+            const tireA = getActiveTireAt(plate, fromPos);
+            const tireB = getActiveTireAt(plate, toPos);
+
+            customConfirm(`ต้องการสลับยางจากตำแหน่ง <b>${fromPos}</b> ไปยัง <b>${toPos}</b> ใช่หรือไม่?${tireB ? '<br><span class="text-xs text-rose-500">(ตำแหน่งปลายทางมียางอยู่แล้ว ระบบจะสลับตำแหน่งให้กันอัตโนมัติ)</span>' : ''}`, async () => {
+                const today = formatToThaiShort(getToday());
+                const currentOdo = getEstimatedOdometer(plate);
+
+                if (tireA) {
+                    let hA = JSON.parse(tireA.historyJson || '[]');
+                    hA.push({ type: 'swap_out', from: fromPos, to: toPos, date: today, odo: currentOdo });
+                    tireA.position = toPos;
+                    tireA.historyJson = JSON.stringify(hA);
+                    await sendGasAction('editTire', tireA);
+                }
+                if (tireB) {
+                    let hB = JSON.parse(tireB.historyJson || '[]');
+                    hB.push({ type: 'swap_out', from: toPos, to: fromPos, date: today, odo: currentOdo });
+                    tireB.position = fromPos;
+                    tireB.historyJson = JSON.stringify(hB);
+                    await sendGasAction('editTire', tireB);
+                }
+
+                cancelSwapMode();
+                showToast(`สลับยางเสร็จสมบูรณ์!`);
+            }, { title: 'ยืนยันการสลับยาง', icon: 'refresh-ccw', confirmLabel: 'ยืนยันสลับยาง', confirmBtnClass: 'bg-navy-800 hover:bg-navy-900' });
+        };
+
+        window.editTireHistoryRecord = (tireId, histIndex) => {
+            const tire = state.tires.find(t => t.id == tireId);
+            if(!tire) return;
+            const history = JSON.parse(tire.historyJson || '[]');
+            const rec = history[histIndex];
             
-            const sel = document.getElementById('job_select');
-            if(sel) {
-                const currentValue = sel.value;
-                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
-                
-                if(state.jobSortMode === 'alpha') {
-                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
-                } else {
-                    // เรียงตามล่าสุด
-                    const tripDateMap = new Map();
-                    if (state.trips && state.trips.length > 0) {
-                        for (let i = 0; i < state.trips.length; i++) {
-                            const t = state.trips[i];
-                            const key = (t.origin || '').trim() + '|||' + (t.dest || '').trim();
-                            const d = parseDateForSort(t.date);
-                            if (!tripDateMap.has(key) || d > tripDateMap.get(key)) {
-                                tripDateMap.set(key, d);
-                            }
-                        }
-                    }
-
-                    filteredJobs.sort((a, b) => {
-                        const keyA = (a.origin || '').trim() + '|||' + (a.dest || '');
-                        const keyB = (b.origin || '').trim() + '|||' + (b.dest || '');
-                        const tripTimeA = tripDateMap.get(keyA) || 0;
-                        const tripTimeB = tripDateMap.get(keyB) || 0;
-
-                        const idA = Number(a.id) || 0;
-                        const idB = Number(b.id) || 0;
-
-                        const scoreA = Math.max(tripTimeA, idA > 1000000000000 ? idA : 0);
-                        const scoreB = Math.max(tripTimeB, idB > 1000000000000 ? idB : 0);
-
-                        if (scoreA !== scoreB) {
-                            return scoreB - scoreA; 
-                        }
-                        return idB - idA;
-                    });
-                }
-                
-                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
-                filteredJobs.forEach(j => {
-                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
-                });
-                
-                sel.innerHTML = html;
-                if (currentValue) sel.value = currentValue;
-
-                const btn = document.getElementById('btn-job-sort');
-                if(btn) {
-                    if(state.jobSortMode === 'recent') {
-                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
-                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
-                    } else {
-                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
-                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
-                    }
-                    lucide.createIcons();
-                }
+            const newText = prompt(`แก้ไขรายละเอียดประวัติ:`, `สลับมาจากตำแหน่ง ${rec.from} (เมื่อ ${rec.date})`);
+            if (newText !== null && newText.trim() !== '') {
+                rec.customText = newText;
+                tire.historyJson = JSON.stringify(history);
+                sendGasAction('editTire', tire);
+                renderTireModalBody();
+                showToast('อัปเดตประวัติยางเรียบร้อย');
             }
         };
 
@@ -2206,42 +2205,10 @@
 
                 if (state.activeTab === 'trips') {
                     if (!state.jobSortMode) state.jobSortMode = 'recent';
-                    
                     let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
                     
                     if(state.jobSortMode === 'alpha') {
                         filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
-                    } else {
-                        // เรียงตามล่าสุด
-                        const tripDateMap = new Map();
-                        if (state.trips && state.trips.length > 0) {
-                            for (let i = 0; i < state.trips.length; i++) {
-                                const t = state.trips[i];
-                                const key = (t.origin || '').trim() + '|||' + (t.dest || '').trim();
-                                const d = parseDateForSort(t.date);
-                                if (!tripDateMap.has(key) || d > tripDateMap.get(key)) {
-                                    tripDateMap.set(key, d);
-                                }
-                            }
-                        }
-
-                        filteredJobs.sort((a, b) => {
-                            const keyA = (a.origin || '').trim() + '|||' + (a.dest || '');
-                            const keyB = (b.origin || '').trim() + '|||' + (b.dest || '');
-                            const tripTimeA = tripDateMap.get(keyA) || 0;
-                            const tripTimeB = tripDateMap.get(keyB) || 0;
-
-                            const idA = Number(a.id) || 0;
-                            const idB = Number(b.id) || 0;
-
-                            const scoreA = Math.max(tripTimeA, idA > 1000000000000 ? idA : 0);
-                            const scoreB = Math.max(tripTimeB, idB > 1000000000000 ? idB : 0);
-
-                            if (scoreA !== scoreB) {
-                                return scoreB - scoreA; 
-                            }
-                            return idB - idA;
-                        });
                     }
 
                     let jobOptions = '';
@@ -2540,6 +2507,40 @@
             }
         };
 
+        window.toggleJobSort = () => {
+            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
+            
+            const sel = document.getElementById('job_select');
+            if(sel) {
+                const currentValue = sel.value;
+                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
+                
+                if(state.jobSortMode === 'alpha') {
+                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+                } 
+                
+                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
+                filteredJobs.forEach(j => {
+                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
+                });
+                
+                sel.innerHTML = html;
+                if (currentValue) sel.value = currentValue;
+
+                const btn = document.getElementById('btn-job-sort');
+                if(btn) {
+                    if(state.jobSortMode === 'recent') {
+                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
+                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
+                    } else {
+                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
+                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
+                    }
+                    lucide.createIcons();
+                }
+            }
+        };
+
         window.applyJobSelection = () => {
             const sel = document.getElementById('job_select');
             const opt = sel.options[sel.selectedIndex];
@@ -2698,30 +2699,22 @@
                 else state.maintenanceLogs.unshift(newData);
             }
 
-            let saveOk = true;
-            if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                sendGasAction(actionType, newData).catch(err => console.error("Background save failed:", err));
-            }
+            // UI Optimistic Update: Close modal immediately & show success
+            closeMainModal();
+            renderNav();
+            renderContent();
+            showToast('บันทึกข้อมูลเรียบร้อย!', 'success');
 
-            if (saveOk) {
-                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 mr-2 inline"></i>บันทึกสำเร็จ';
-                btn.classList.remove('bg-navy-800', 'hover:bg-navy-900');
-                btn.classList.add('bg-green-600', 'hover:bg-green-700');
-                lucide.createIcons();
-            }
-
-            setTimeout(() => {
-                closeMainModal();
-                renderNav();
-                renderContent();
-                
-                btn.disabled = false;
-                btn.className = originalClasses;
-                btn.innerText = 'บันทึกข้อมูล';
-                
-                if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+            // Send to GAS in background
+            sendGasAction(actionType, newData).then(saveOk => {
                 if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
-            }, saveOk ? 500 : 0); 
+            }).catch(e => {
+                console.error(e);
+            });
+
+            btn.disabled = false;
+            btn.className = originalClasses;
+            btn.innerText = 'บันทึกข้อมูล';
         }
 
         function promptCascadeJobUpdate(oldJob, newJob) {
@@ -2736,7 +2729,8 @@
 
             customConfirm(
                 `พบรายการวิ่งงานเดิมที่ใช้เส้นทาง "${oldJob.origin} → ${oldJob.dest}" อยู่ <b class="text-slate-700">${matches.length} รายการ</b><br>ต้องการอัปเดตระยะทาง/ยอดรับ/ค่าน้ำมัน/ค่าคนขับของรายการเหล่านี้ให้ตรงกับเรทที่เพิ่งแก้ไขด้วยหรือไม่?<br><span class="text-xs text-slate-400">(วันที่ ทะเบียนรถ และน้ำหนักของแต่ละเที่ยวจะไม่เปลี่ยน)</span>`,
-                () => {
+                async () => {
+                    document.getElementById('loading-spinner').classList.remove('hidden');
                     matches.forEach(t => {
                         t.origin = newJob.origin;
                         t.dest = newJob.dest;
@@ -2747,9 +2741,11 @@
                         t.driverFee = newJob.driverFee;
                         t.revenue = newJob.revenue;
                         t.profit = Number(newJob.revenue || 0) - Number(newJob.fuelCost || 0) - Number(newJob.driverFee || 0);
-                        
-                        sendGasAction('editTrip', t).catch(e=>console.log(e));
                     });
+                    for (const t of matches) {
+                        await sendGasAction('editTrip', t);
+                    }
+                    document.getElementById('loading-spinner').classList.add('hidden');
                     renderNav();
                     renderContent();
                     showToast(`อัปเดตรายการวิ่งงานที่เกี่ยวข้อง ${matches.length} รายการเรียบร้อย!`, 'success');
@@ -2801,7 +2797,7 @@
                 setTimeout(() => {
                     overlay.remove();
                     onConfirm();
-                }, 400); 
+                }, 300);
             };
         };
 
@@ -2838,13 +2834,7 @@
                 renderContent();
                 showToast("ลบข้อมูลสำเร็จ!");
 
-                if(GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("ใส่_URL")) {
-                    fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType }),
-                        mode: 'no-cors'
-                    }).catch(e => console.error("Delete error:", e));
-                }
+                sendGasAction(actionStr, { id: id }).catch(e => console.error(e));
             });
         };
 
@@ -2924,74 +2914,6 @@
                 });
             }
         });
-
-        window.exportTableCSV = (type, plate = null) => {
-            let data = [];
-            let headers = [];
-            let mappedData = [];
-
-            if (type === 'trips') {
-                const filtered = getFiltered(state.trips);
-                data = plate ? filtered.filter(t => t.plate === plate) : filtered;
-                headers = ["วันที่", "ทะเบียน", "ต้นทาง", "ปลายทาง", "ระยะทาง(กม.)", "น้ำหนัก(ตัน)", "ยอดรับ(บ.)", "ค่าน้ำมัน(บ.)", "ค่าคนขับ(บ.)", "กำไร(บ.)"];
-                mappedData = data.map(t => [formatDisplayDate(t.date), t.plate, t.origin, t.dest, t.dist, t.weight||0, t.revenue, t.fuelCost, t.driverFee||0, t.profit]);
-            } else if (type === 'refuels') {
-                const filtered = getFiltered(state.refuels);
-                data = plate ? filtered.filter(r => r.plate === plate) : filtered;
-                headers = ["วันที่", "ทะเบียน", "ราคา/ลิตร", "จำนวนลิตร", "เป็นเงินรวม(บาท)"];
-                mappedData = data.map(r => [formatDisplayDate(r.date), r.plate, r.price, r.liters, r.total]);
-            } else if (type === 'jobs') {
-                data = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
-                headers = ["ต้นทาง", "ปลายทาง", "ระยะทาง(กม.)", "เรทค่าเที่ยว(รับ)", "ค่าน้ำมัน(จ่าย)", "ค่าเที่ยวคนขับ"];
-                mappedData = data.map(j => [j.origin, j.dest, j.dist, j.revenue, j.fuelCost, j.driverFee||0]);
-            } else if (type === 'vehicles') {
-                data = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
-                headers = ["ทะเบียน", "คนขับ", "ประเภทรถ", "รุ่น/ปี", "เลขไมล์ปัจจุบัน(ประเมิน)"];
-                mappedData = data.map(v => [v.plate, v.driver, v.type||'-', (v.model||'') + ' ' + (v.year||''), getEstimatedOdometer(v.plate)]);
-            } else if (type === 'maintenance') {
-                data = state.maintenanceLogs.filter(m => m.plate === plate).sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date));
-                headers = ["วันที่", "ทะเบียน", "ประเภทงาน", "รายละเอียด", "เลขไมล์(กม.)", "ค่าใช้จ่าย(บาท)", "อะไหล่", "ช่าง/ศูนย์"];
-                mappedData = data.map(m => [
-                    formatDisplayDate(m.date), m.plate, 
-                    (maintenanceTypeMap[m.category] || { label: m.category }).label, 
-                    m.description||'-', m.odometer, m.cost, m.partsChanged||'-', m.technician||'-'
-                ]);
-            }
-
-            if (mappedData.length === 0) {
-                showToast('ไม่พบข้อมูลสำหรับดาวน์โหลด', 'error');
-                return;
-            }
-
-            let csvContent = "\uFEFF" + headers.join(",") + "\n"; 
-            mappedData.forEach(rowArray => {
-                let row = rowArray.map(cell => {
-                    let cellStr = cell !== undefined && cell !== null ? String(cell) : "";
-                    cellStr = cellStr.replace(/"/g, '""');
-                    if (cellStr.search(/("|,|\n)/g) >= 0) cellStr = `"${cellStr}"`;
-                    return cellStr;
-                });
-                csvContent += row.join(",") + "\n";
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            
-            let filename = `Fleet_${type}`;
-            if (plate) filename += `_${plate}`;
-            filename += `_${getToday()}.csv`;
-
-            link.setAttribute("download", filename);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            showToast(`ดาวน์โหลดไฟล์สำเร็จ!`, 'success');
-        };
 
         function normalizeLoadedData() {
             const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
