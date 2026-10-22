@@ -11,7 +11,18 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: { 50: '#eef3f8', 100: '#d9e4f0', 200: '#b3c9e0', 300: '#8dadd1', 400: '#6892c1', 500: '#4a76a8', 600: '#395d85', 700: '#2c4868', 800: '#1e3350', 900: '#142338' }
+                        navy: {
+                            50:  '#eef3f8',
+                            100: '#d9e4f0',
+                            200: '#b3c9e0',
+                            300: '#8dadd1',
+                            400: '#6892c1',
+                            500: '#4a76a8',
+                            600: '#395d85',
+                            700: '#2c4868',
+                            800: '#1e3350',
+                            900: '#142338'
+                        }
                     }
                 }
             }
@@ -19,7 +30,7 @@
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -48,18 +59,11 @@
             font-size: 1.125rem;
             font-weight: normal;
         }
-        
-        .sidebar-collapsed {
-            width: 0px !important;
-            overflow: hidden;
-            border-right: none;
-            opacity: 0;
-            padding: 0 !important;
-        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 flex h-screen overflow-hidden relative">
     
+    <!-- PIN Overlay -->
     <div id="pinOverlay" class="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-md hidden">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
             <div class="mb-8">
@@ -80,27 +84,32 @@
         </div>
     </div>
 
-    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="closeMobileNav()" class="hidden fixed inset-0 bg-slate-900/50 z-30 lg:hidden"></div>
 
-    <aside id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-all duration-300 ease-in-out lg:relative lg:translate-x-0">
-        <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0 min-w-[280px]">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-72 max-w-[85vw] bg-white border-r border-slate-200 flex flex-col shadow-sm flex-shrink-0 z-40 fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:transition-none">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center space-x-3">
                 <div class="bg-navy-800 p-2 rounded-lg">
                     <i data-lucide="layout-panel-left" class="h-6 w-6 text-white"></i>
                 </div>
-                <h1 class="text-xl font-bold text-slate-800 whitespace-nowrap">ระบบจัดการรถ</h1>
+                <h1 class="text-xl font-bold text-slate-800">ระบบจัดการรถ</h1>
             </div>
-            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-slate-600 p-1 bg-slate-50 rounded-lg">
-                <i data-lucide="panel-left-close" class="h-5 w-5"></i>
+            <button onclick="closeMobileNav()" class="lg:hidden text-slate-400 hover:text-slate-600 p-1">
+                <i data-lucide="x" class="h-5 w-5"></i>
             </button>
         </div>
-        <nav class="flex-1 p-4 overflow-y-auto min-w-[280px]" id="nav-menu"></nav>
+        <nav class="flex-1 p-4 overflow-y-auto" id="nav-menu">
+            <!-- เมนูสร้างผ่าน JavaScript -->
+        </nav>
     </aside>
 
-    <main class="flex-1 flex flex-col min-w-0 h-screen transition-all duration-300 w-full">
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 h-screen">
         <header class="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-5 flex justify-between items-center z-10 flex-shrink-0 shadow-sm gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                <button onclick="toggleSidebar()" class="flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
+                <button onclick="openMobileNav()" class="lg:hidden flex-shrink-0 text-slate-500 hover:text-navy-800 p-1.5 -ml-1 rounded-lg hover:bg-slate-100">
                     <i data-lucide="menu" class="h-6 w-6"></i>
                 </button>
                 <h2 class="text-lg md:text-2xl font-bold text-slate-800 flex items-center min-w-0 truncate">
@@ -120,7 +129,7 @@
             </div>
         </header>
 
-        <div class="content-scroll relative bg-slate-50" id="main-content">
+        <div class="content-scroll relative" id="main-content">
             <div class="p-4 md:p-8">
                 <div id="loading-spinner" class="absolute inset-0 bg-slate-50/80 z-50 flex flex-col items-center justify-center hidden">
                     <div class="spinner rounded-full h-12 w-12 border-b-2 border-navy-800 mb-4"></div>
@@ -131,6 +140,7 @@
         </div>
     </main>
 
+    <!-- Main Modal (เพิ่ม/แก้ไข ข้อมูล) -->
     <div id="main-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -139,10 +149,11 @@
                     <i data-lucide="x" class="h-5 w-5"></i>
                 </button>
             </div>
-            <form id="main-form" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto"></form>
+            <form id="main-form" class="p-6 space-y-4"></form>
         </div>
     </div>
 
+    <!-- Map Modal -->
     <div id="map-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white z-10 shadow-sm">
@@ -162,6 +173,7 @@
         </div>
     </div>
 
+    <!-- Tire Detail Modal -->
     <div id="tire-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[75] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -174,25 +186,18 @@
         </div>
     </div>
 
-    <div id="barcode-modal" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="text-base font-bold text-slate-800 flex items-center">
-                    <i data-lucide="barcode" class="w-5 h-5 mr-2 text-navy-800"></i> สแกนบาร์โค้ด
-                </h3>
-                <button onclick="closeBarcodeScanner()" class="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 p-1.5 rounded-full">
-                    <i data-lucide="x" class="h-5 w-5"></i>
-                </button>
-            </div>
-            <div class="p-4 bg-slate-900 flex-1 relative flex items-center justify-center min-h-[300px]">
-                <div id="reader" class="w-full rounded-lg overflow-hidden border-2 border-slate-700 bg-black"></div>
-            </div>
-        </div>
+    <!-- Tire Image Lightbox -->
+    <div id="tire-image-lightbox" class="hidden fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4" onclick="closeTireImageLightbox()">
+        <button onclick="closeTireImageLightbox()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <img id="tire-image-lightbox-img" src="" class="max-w-full max-h-full rounded-lg shadow-2xl" onclick="event.stopPropagation()" alt="รูปยางขนาดเต็ม">
     </div>
 
+    <!-- Javascript Core -->
     <script>
-        // 👇👇👇 เอา URL Web App ล่าสุด จาก Google Apps Script มาใส่ตรงนี้ 👇👇👇
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxYT_wd5eczzUVYw9WVp4U-h3PGn1Bl3a3PsoqgsBs3s515SFZENSggkhQwyETDxmPr/exec";
+        // 👇👇👇 URL ของ Google Apps Script 👇👇👇
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby1uJGc3jyUvL2UvQnvhohBTXS_Xt2xepxPZi4_oUt-cKdtdxD5QuGZ4iMPi7JI2Tm8/exec";
 
         const LOGIN_PIN = "8899";
         const ACTION_PIN = "2233";
@@ -204,20 +209,46 @@
             filterMonth: null,
             filterPeriod: null,
             expandedTree: { 'flatbed_y2569': true, 'semidump_y2569': true },
-            trips: [], refuels: [], vehicles: [], jobs: [], maintenanceLogs: [], tires: [],
+            trips: [], refuels: [], vehicles: [], jobs: [], maintenanceLogs: [], tires: [], trailers: [],
             editMode: false, formData: {}, charts: {},
-            jobSortMode: 'recent', 
-            activeVehiclePlate: null, 
+            jobSortMode: 'recent',
+            activeVehiclePlate: null,
+            activeTrailerId: null,
             isSwapMode: false,
             swapSourcePos: null,
-            isDemoData: false,
-            isSidebarOpen: true
+            swapSourceKey: null,
+            isDemoData: false
         };
 
         const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
         const formatCurrency = (num) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', minimumFractionDigits: 0 }).format(num || 0);
         const formatNumber = (num) => new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num || 0);
-        
+
+        function csvEscapeCell(value) {
+            const str = (value === null || value === undefined) ? '' : String(value);
+            if (/[",\n\r]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        function exportRowsToCSV(headers, rows, filename) {
+            const lines = [];
+            lines.push(headers.map(csvEscapeCell).join(','));
+            rows.forEach(row => lines.push(row.map(csvEscapeCell).join(',')));
+            const csvContent = '﻿' + lines.join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            if (window.showToast) showToast('ดาวน์โหลดไฟล์ CSV สำเร็จ!', 'success');
+        }
+
         const getToday = () => {
             const tzoffset = (new Date()).getTimezoneOffset() * 60000;
             return (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
@@ -287,6 +318,7 @@
             return 0;
         };
 
+        // --- PIN & UI Helpers ---
         window.pendingActionFunc = null;
 
         window.showPinModal = (type) => {
@@ -351,62 +383,17 @@
             showPinModal('action');
         };
 
-        window.toggleSidebar = () => {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            
-            if (window.innerWidth < 1024) {
-                if (sidebar.classList.contains('-translate-x-full')) {
-                    sidebar.classList.remove('-translate-x-full');
-                    backdrop.classList.remove('hidden');
-                    state.isSidebarOpen = true;
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    backdrop.classList.add('hidden');
-                    state.isSidebarOpen = false;
-                }
-            } else {
-                if (state.isSidebarOpen) {
-                    sidebar.classList.add('sidebar-collapsed');
-                    state.isSidebarOpen = false;
-                } else {
-                    sidebar.classList.remove('sidebar-collapsed');
-                    state.isSidebarOpen = true;
-                }
-            }
+        window.openMobileNav = () => {
+            document.getElementById('sidebar').classList.remove('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.remove('hidden');
         };
-
-        window.applySidebarState = () => {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            
-            if (window.innerWidth < 1024) {
-                sidebar.classList.add('-translate-x-full');
-                sidebar.classList.remove('sidebar-collapsed'); 
-                backdrop.classList.add('hidden');
-                state.isSidebarOpen = false;
-            } else {
-                sidebar.classList.remove('-translate-x-full');
-                backdrop.classList.add('hidden');
-                if (!state.isSidebarOpen) {
-                    sidebar.classList.add('sidebar-collapsed');
-                } else {
-                    sidebar.classList.remove('sidebar-collapsed');
-                }
-            }
-        };
-
-        window.addEventListener('resize', () => {
-            window.applySidebarState();
-        });
-
         window.closeMobileNav = () => {
-            if (window.innerWidth < 1024) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
-                document.getElementById('sidebar-backdrop').classList.add('hidden');
-                state.isSidebarOpen = false;
-            }
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.add('hidden');
         };
+        function closeMobileNavIfSmallScreen() {
+            if (window.innerWidth < 1024) closeMobileNav();
+        }
 
         window.toggleTree = (key) => {
             const isMonth = key.match(/m\d+$/);
@@ -433,7 +420,20 @@
             state.filterPeriod = null;
             renderNav();
             renderContent();
-            closeMobileNav();
+            closeMobileNavIfSmallScreen();
+        };
+
+        // หน้า "ข้อมูลรถและคนขับ / ซ่อมบำรุงรักษา / ระบบยางรถ" ถูกรวมเป็นหมวดเดียวกัน
+        // ไม่แยกพื้นเรียบ/เซมิดั๊มอีกต่อไป จึงไม่ต้องรับพารามิเตอร์หมวดรถแบบ changeTab()
+        window.changeFleetTab = (tabId, plate) => {
+            state.activeTab = tabId;
+            if (plate) state.activeVehiclePlate = plate;
+            state.filterYear = null;
+            state.filterMonth = null;
+            state.filterPeriod = null;
+            renderNav();
+            renderContent();
+            closeMobileNavIfSmallScreen();
         };
 
         window.changeTabPeriod = (category, tabId, year, month, period) => {
@@ -444,7 +444,7 @@
             state.filterPeriod = period;
             renderNav();
             renderContent();
-            closeMobileNav();
+            closeMobileNavIfSmallScreen();
         };
 
         const categories = [
@@ -452,6 +452,7 @@
             { id: 'semidump', label: 'รถเซมิดั๊ม', icon: 'combine' }
         ];
 
+        // --- Maintenance Config ---
         const TECH_NAME = "ช่างเอก";
         const TECH_TITLE = "ทีมช่างศูนย์บริการ UD Trucks";
         const MAINTENANCE_TYPES = [
@@ -473,6 +474,7 @@
         MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
         const MAINT_SOON_RATIO = 0.85;
 
+        // --- Tire Config ---
         const TIRE_ROTATE_KM = 10000;
         const TIRE_MONITOR_KM = 60000;
         const TIRE_REPLACE_KM = 80000;
@@ -490,19 +492,51 @@
             const wheels = [];
             axleDefs.forEach(axle => {
                 if (!axle.dual) {
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'L', x: 108, y: axle.y, w: 34, h: 62 });
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'R', x: 258, y: axle.y, w: 34, h: 62 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'L', x: 108, y: axle.y, w: 34, h: 62 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'R', x: 258, y: axle.y, w: 34, h: 62 });
                 } else {
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'L', sub: 'นอก', x: 52,  y: axle.y, w: 26, h: 60 });
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'L', sub: 'ใน',  x: 86,  y: axle.y, w: 26, h: 60 });
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'R', sub: 'ใน',  x: 288, y: axle.y, w: 26, h: 60 });
-                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, side: 'R', sub: 'นอก', x: 322, y: axle.y, w: 26, h: 60 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'L', sub: 'นอก', x: 52,  y: axle.y, w: 26, h: 60 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'L', sub: 'ใน',  x: 86,  y: axle.y, w: 26, h: 60 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'R', sub: 'ใน',  x: 288, y: axle.y, w: 26, h: 60 });
+                    wheels.push({ pos: pos++, axleId: axle.id, axleLabel: axle.label, group: axle.group, side: 'R', sub: 'นอก', x: 322, y: axle.y, w: 26, h: 60 });
                 }
             });
             return { axleDefs, wheels };
         }
 
+        // --- Trailer (หาง/พ่วง) Config ---
+        // แต่ละทะเบียนหัวสามารถมีหางพ่วงได้หลายคัน ระบบยางของ "ตำแหน่งหางพ่วง" (เพลาที่ 4-6)
+        // จะผูกกับหางที่เลือกอยู่ แทนที่จะผูกกับทะเบียนหัวตรงๆ โดยใช้ "unit key" เสมือน
+        // ในรูปแบบ TRAILER::<trailerId> เก็บไว้ในฟิลด์ plate ของ record ยาง (ของเดิม) เพื่อไม่ต้องแก้ไข
+        // โครงสร้างข้อมูล/ฟังก์ชันยางอื่นๆ ที่มีอยู่แล้วทั้งหมด
+        function getTrailerUnitKey(trailerId) {
+            return `TRAILER::${trailerId}`;
+        }
+        function isTrailerUnitKey(key) {
+            return typeof key === 'string' && key.startsWith('TRAILER::');
+        }
+        function getTrailerIdFromUnitKey(key) {
+            return isTrailerUnitKey(key) ? key.slice('TRAILER::'.length) : null;
+        }
+        function getTrailerById(trailerId) {
+            return state.trailers.find(t => String(t.id) === String(trailerId)) || null;
+        }
+        function getTrailersForHead(headPlate) {
+            return state.trailers.filter(t => t.headPlate === headPlate);
+        }
+        function saveTrailersLocal() {
+            try { localStorage.setItem('fleetTrailers', JSON.stringify(state.trailers)); } catch (e) {}
+        }
+        function loadTrailersLocal() {
+            try { return JSON.parse(localStorage.getItem('fleetTrailers') || '[]'); } catch (e) { return []; }
+        }
+
         function getEstimatedOdometer(plate) {
+            // ถ้าเป็น unit key ของหางพ่วง ให้อ้างอิงเลขไมล์จากทะเบียนหัวที่หางนั้นผูกอยู่แทน
+            if (isTrailerUnitKey(plate)) {
+                const trailer = getTrailerById(getTrailerIdFromUnitKey(plate));
+                plate = trailer ? trailer.headPlate : null;
+            }
             const v = state.vehicles.find(x => x.plate === plate);
             if (!v) return 0;
             const baseOdo = Number(v.baselineOdometer || 0);
@@ -513,6 +547,7 @@
             return Math.round(baseOdo + extraDist);
         }
 
+        // --- Tire Functions ---
         function getActiveTireAt(plate, pos) {
             return state.tires.find(t => t.plate === plate && Number(t.position) === Number(pos) && t.status === 'active') || null;
         }
@@ -547,6 +582,7 @@
             overdue: { fill: '#1e293b', stroke: '#e11d48', badge: 'bg-rose-100 text-rose-700', label: 'ควรเปลี่ยนยางใหม่' }
         };
 
+        // --- Filter & Maint. Helpers ---
         function getFiltered(dataArr) {
             return dataArr.filter(item => {
                 const itemCat = item.category || 'flatbed';
@@ -675,6 +711,7 @@
             });
         }
 
+        // --- Render UI ---
         function renderNav() {
             const navMenu = document.getElementById('nav-menu');
             let html = '';
@@ -772,30 +809,45 @@
                 html += `</div>`;
 
                 const isJobs = state.activeCategory === cat.id && state.activeTab === 'jobs';
-                const isVehicles = state.activeCategory === cat.id && state.activeTab === 'vehicles';
-                const isMaint = state.activeCategory === cat.id && state.activeTab === 'maintenance';
-                const isTires = state.activeCategory === cat.id && state.activeTab === 'tires';
-                const catAlertCount = getFleetMaintenanceAlerts().filter(a => (a.vehicle.category || 'flatbed') === cat.id && a.status !== 'unknown').length;
-                
+
                 html += `
                     <div class="border-t border-slate-100 pt-4 space-y-1">
                         <button onclick="changeTab('${cat.id}', 'jobs')" class="w-full flex items-center space-x-3 ${isJobs ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
                             <i data-lucide="map" class="h-5 w-5"></i><span>เส้นทางและเรทราคา</span>
                         </button>
-                        <button onclick="changeTab('${cat.id}', 'vehicles')" class="w-full flex items-center space-x-3 ${isVehicles ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
-                            <i data-lucide="users" class="h-5 w-5"></i><span>ข้อมูลรถและคนขับ</span>
-                        </button>
-                        <button onclick="changeTab('${cat.id}', 'maintenance')" class="w-full flex items-center justify-between ${isMaint ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
-                            <span class="flex items-center space-x-3"><i data-lucide="wrench" class="h-5 w-5"></i><span>ซ่อมบำรุงรักษา</span></span>
-                            ${catAlertCount > 0 ? `<span class="bg-rose-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">${catAlertCount}</span>` : ''}
-                        </button>
-                        <button onclick="changeTab('${cat.id}', 'tires')" class="w-full flex items-center space-x-3 ${isTires ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
-                            <i data-lucide="circle-dot" class="h-5 w-5"></i><span>ระบบยางรถ (22 ล้อ)</span>
-                        </button>
                     </div>
                 `;
                 html += `</div>`;
             });
+
+            // --- หมวด "ข้อมูลรถและคนขับ / ซ่อมบำรุงรักษา / ระบบยางรถ" ---
+            // รวมทั้งสามหน้าไว้ในที่เดียวกัน และไม่แยกตามพื้นเรียบ/เซมิดั๊มอีกต่อไป
+            // (รถทุกคันไม่ว่าจะอยู่หมวดไหนจะแสดงรวมกันในสามหน้านี้)
+            const isVehicles = state.activeTab === 'vehicles';
+            const isMaint = state.activeTab === 'maintenance';
+            const isTires = state.activeTab === 'tires';
+            const fleetAlertCount = getFleetMaintenanceAlerts().filter(a => a.status !== 'unknown').length;
+
+            html += `
+                <div class="mb-10">
+                    <h3 class="px-2 text-[17px] font-extrabold text-navy-900 mb-4 flex items-center">
+                        <div class="bg-navy-100 p-1.5 rounded-lg mr-2 flex-shrink-0"><i data-lucide="truck" class="w-5 h-5 text-navy-800"></i></div>
+                        รถและงานซ่อมบำรุง (รวมทุกหมวด)
+                    </h3>
+                    <div class="space-y-1">
+                        <button onclick="changeFleetTab('vehicles')" class="w-full flex items-center space-x-3 ${isVehicles ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
+                            <i data-lucide="users" class="h-5 w-5"></i><span>ข้อมูลรถและคนขับ</span>
+                        </button>
+                        <button onclick="changeFleetTab('maintenance')" class="w-full flex items-center justify-between ${isMaint ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
+                            <span class="flex items-center space-x-3"><i data-lucide="wrench" class="h-5 w-5"></i><span>ซ่อมบำรุงรักษา</span></span>
+                            ${fleetAlertCount > 0 ? `<span class="bg-rose-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">${fleetAlertCount}</span>` : ''}
+                        </button>
+                        <button onclick="changeFleetTab('tires')" class="w-full flex items-center space-x-3 ${isTires ? 'pl-3 border-l-4 border-navy-800 bg-navy-50 text-navy-900 font-bold shadow-sm' : 'pl-4 text-slate-600 hover:bg-slate-100'} pr-4 py-3 rounded-xl transition-all">
+                            <i data-lucide="circle-dot" class="h-5 w-5"></i><span>ระบบยางรถ (22 ล้อ)</span>
+                        </button>
+                    </div>
+                </div>
+            `;
 
             navMenu.innerHTML = html;
 
@@ -809,7 +861,11 @@
                 'maintenance': `ซ่อมบำรุงรักษา & แจ้งเตือน`,
                 'tires': `ระบบยางรถ 22 ตำแหน่ง`
             };
-            document.getElementById('page-title').innerHTML = `${titleObj[state.activeTab]} <span class="text-navy-800 text-lg font-bold ml-3 bg-navy-50 border border-navy-200 px-3 py-1 rounded-lg">${catName}</span>`;
+            const fleetTabs = ['vehicles', 'maintenance', 'tires'];
+            const catBadgeHtml = fleetTabs.includes(state.activeTab)
+                ? `<span class="text-navy-800 text-lg font-bold ml-3 bg-navy-50 border border-navy-200 px-3 py-1 rounded-lg">รวมทุกหมวด</span>`
+                : `<span class="text-navy-800 text-lg font-bold ml-3 bg-navy-50 border border-navy-200 px-3 py-1 rounded-lg">${catName}</span>`;
+            document.getElementById('page-title').innerHTML = `${titleObj[state.activeTab]} ${catBadgeHtml}`;
             
             const btnAdd = document.getElementById('btn-add-new');
             const tabsWithAdd = ['trips', 'refuels', 'jobs', 'vehicles', 'maintenance'];
@@ -915,7 +971,7 @@
                             <div class="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl p-5 shadow-sm">
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-xl bg-navy-50 flex items-center justify-center flex-shrink-0"><i data-lucide="wrench" class="w-5 h-5 text-navy-800"></i></div><p class="text-slate-800 font-bold text-sm">ประวัติซ่อมบำรุงล่าสุด</p></div>
-                                    <button onclick="changeTab('${state.activeCategory}','maintenance'); renderNav(); renderContent();" class="text-slate-400 hover:text-navy-800 transition-colors"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                                    <button onclick="changeFleetTab('maintenance')" class="text-slate-400 hover:text-navy-800 transition-colors"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
                                 </div>
                                 <div class="space-y-2.5">
                                     ${activity.length === 0 ? `<p class="text-slate-400 text-xs">ยังไม่มีข้อมูล</p>` : activity.map(a => `
@@ -983,39 +1039,39 @@
             let html = `
                 <div class="space-y-6">
                     ${buildHeroBanner()}
-                    <div class="grid grid-cols-1 md:grid-cols-2 ${state.activeCategory === 'semidump' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-6">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${state.activeCategory === 'semidump' ? 'xl:grid-cols-5' : 'xl:grid-cols-4'} gap-4 sm:gap-6">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-green-100 p-4 rounded-xl text-green-600 flex-shrink-0"><i data-lucide="dollar-sign" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">กำไรสุทธิรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalProfit)}</p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">กำไรสุทธิรวม</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatCurrency(totalProfit)}</p></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-navy-100 p-4 rounded-xl text-navy-800 flex-shrink-0"><i data-lucide="truck" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ยอดรับสุทธิรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalRevenue)}</p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">ยอดรับสุทธิรวม</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatCurrency(totalRevenue)}</p></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-orange-100 p-4 rounded-xl text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ยอดจ่ายค่าน้ำมันรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalRefuelAmount)}</p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">ยอดจ่ายค่าน้ำมันรวม</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatCurrency(totalRefuelAmount)}</p></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-purple-100 p-4 rounded-xl text-purple-600 flex-shrink-0"><i data-lucide="map-pin" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">จำนวนเที่ยววิ่ง</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${tripsCount} <span class="text-base font-normal">เที่ยว</span></p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">จำนวนเที่ยววิ่ง</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${tripsCount} <span class="text-sm sm:text-base font-normal">เที่ยว</span></p></div>
                         </div>
                         ${state.activeCategory === 'semidump' ? `
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-amber-100 p-4 rounded-xl text-amber-600 flex-shrink-0"><i data-lucide="package" class="w-8 h-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">น้ำหนักบรรทุกรวม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatNumber(totalWeight).replace(/\.00$/, '')} <span class="text-base font-normal">ตัน</span></p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">น้ำหนักบรรทุกรวม</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatNumber(totalWeight).replace(/\.00$/, '')} <span class="text-sm sm:text-base font-normal">ตัน</span></p></div>
                         </div>
                         ` : ''}
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-red-100 p-4 rounded-xl text-red-600 flex-shrink-0"><i data-lucide="wrench" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatCurrency(totalMaintCost)}</p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">ค่าซ่อมบำรุงสะสม</p><p class="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatCurrency(totalMaintCost)}</p></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                        <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
                             <div class="bg-teal-100 p-4 rounded-xl text-teal-700 flex-shrink-0"><i data-lucide="shield-check" class="h-8 w-8"></i></div>
-                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium">กำไรสุทธิหลังหักค่าซ่อมบำรุง</p><p class="text-2xl font-bold ${netAfterMaint >= 0 ? 'text-slate-800' : 'text-red-600'} break-words w-full">${formatCurrency(netAfterMaint)}</p></div>
+                            <div class="min-w-0 flex-1"><p class="text-sm text-slate-500 font-medium truncate">กำไรสุทธิหลังหักค่าซ่อมบำรุง</p><p class="text-xl sm:text-2xl font-bold ${netAfterMaint >= 0 ? 'text-slate-800' : 'text-red-600'} tabular-nums whitespace-nowrap">${formatCurrency(netAfterMaint)}</p></div>
                         </div>
                     </div>
 
@@ -1030,7 +1086,7 @@
                                     <i data-lucide="${a.type.icon}" class="w-4 h-4 ${a.status === 'overdue' ? 'text-rose-700' : a.status === 'soon' ? 'text-amber-700' : 'text-slate-500'}"></i>
                                     <span class="font-semibold text-slate-700">${a.plate}</span><span class="text-slate-500 text-sm">${a.type.label}</span>
                                 </div>
-                                <button onclick="changeTab('${a.vehicle.category || 'flatbed'}','maintenance'); state.activeVehiclePlate='${a.plate}'; renderNav(); renderContent();" class="text-xs font-bold ${a.status === 'overdue' ? 'text-rose-700' : 'text-amber-700'} hover:underline whitespace-nowrap">ดูรายละเอียด →</button>
+                                <button onclick="changeFleetTab('maintenance', '${a.plate}')" class="text-xs font-bold ${a.status === 'overdue' ? 'text-rose-700' : 'text-amber-700'} hover:underline whitespace-nowrap">ดูรายละเอียด →</button>
                             </div>
                         `).join('')}
                         </div>
@@ -1093,32 +1149,32 @@
             });
 
             let html = `
-                <div class="grid grid-cols-2 ${state.activeCategory === 'semidump' ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-4 mb-6">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-purple-100 p-1.5 rounded-lg text-purple-600 flex-shrink-0"><i data-lucide="map-pin" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">จำนวนเที่ยวรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${data.length} <span class="text-sm font-normal text-slate-500">เที่ยว</span></p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 ${state.activeCategory === 'semidump' ? 'xl:grid-cols-6' : 'xl:grid-cols-5'} gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-purple-100 p-1.5 rounded-lg text-purple-600 flex-shrink-0"><i data-lucide="map-pin" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">จำนวนเที่ยวรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${data.length} <span class="text-sm font-normal text-slate-500">เที่ยว</span></p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600 flex-shrink-0"><i data-lucide="route" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ระยะทางรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalDist).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">กม.</span></p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600 flex-shrink-0"><i data-lucide="route" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">ระยะทางรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatNumber(grandTotalDist).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">กม.</span></p>
                     </div>
                     ${state.activeCategory === 'semidump' ? `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-amber-100 p-1.5 rounded-lg text-amber-600 flex-shrink-0"><i data-lucide="package" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">น้ำหนักรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalWeight).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ตัน</span></p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-amber-100 p-1.5 rounded-lg text-amber-600 flex-shrink-0"><i data-lucide="package" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">น้ำหนักรวม</p></div>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatNumber(grandTotalWeight).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ตัน</span></p>
                     </div>
                     ` : ''}
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดรับรวม</p></div>
-                        <p class="text-xl font-bold text-navy-900 break-words w-full">${formatCurrency(grandTotalRevenue)}</p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">ยอดรับรวม</p></div>
+                        <p class="text-xl font-bold text-navy-900 tabular-nums whitespace-nowrap">${formatCurrency(grandTotalRevenue)}</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ค่าน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-orange-600 break-words w-full">${formatCurrency(grandTotalFuel)}</p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">ค่าน้ำมันรวม</p></div>
+                        <p class="text-xl font-bold text-orange-600 tabular-nums whitespace-nowrap">${formatCurrency(grandTotalFuel)}</p>
                     </div>
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
-                        <div class="flex items-center space-x-2 mb-2"><div class="bg-green-100 p-1.5 rounded-lg text-green-600 flex-shrink-0"><i data-lucide="trending-up" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">กำไรสุทธิรวม</p></div>
-                        <p class="text-xl font-bold text-green-600 break-words w-full">${formatCurrency(grandTotalProfit)}</p>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start min-w-0">
+                        <div class="flex items-center space-x-2 mb-2"><div class="bg-green-100 p-1.5 rounded-lg text-green-600 flex-shrink-0"><i data-lucide="trending-up" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase truncate">กำไรสุทธิรวม</p></div>
+                        <p class="text-xl font-bold text-green-600 tabular-nums whitespace-nowrap">${formatCurrency(grandTotalProfit)}</p>
                     </div>
                 </div>
                 <div class="space-y-6">
@@ -1259,8 +1315,13 @@
                                     (${trips.length} เที่ยว ${state.activeCategory === 'semidump' ? ` | น้ำหนักรวม <span class="font-bold text-navy-900">${formatNumber(sumWeight).replace(/\.00$/, '')}</span> ตัน` : ''})
                                 </span>
                             </div>
-                            <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
-                                <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <button onclick="exportTripsCSV('${plate.replace(/'/g, "\\'")}')" class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-full text-sm font-bold flex items-center transition-colors">
+                                    <i data-lucide="download" class="w-4 h-4 mr-2"></i>Export (CSV)
+                                </button>
+                                <div class="text-sm font-bold text-navy-800 bg-navy-100/80 px-4 py-1.5 rounded-full border border-navy-200 shadow-sm flex items-center">
+                                    <i data-lucide="wallet" class="w-4 h-4 mr-2 text-navy-600"></i> รวมค่าเที่ยวคนขับ: <span class="text-navy-900 ml-2 text-base">${formatCurrency(sumDriverFee)}</span>
+                                </div>
                             </div>
                         </div>
                         ${driverFeeDetailsHtml}
@@ -1296,7 +1357,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
                         <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="map" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">เส้นทางมาตรฐานรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${filteredJobs.length} <span class="text-sm font-normal text-slate-500">เส้นทาง</span></p>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${filteredJobs.length} <span class="text-sm font-normal text-slate-500">เส้นทาง</span></p>
                     </div>
                 </div>
             `;
@@ -1328,6 +1389,12 @@
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+                        <h3 class="text-lg font-bold text-slate-800">ตารางเส้นทางและเรทราคา</h3>
+                        <button onclick="exportJobsCSV()" class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-full text-sm font-bold flex items-center transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-2"></i>Export (CSV)
+                        </button>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[800px] text-left border-collapse whitespace-nowrap table-fixed">
                             <thead>
@@ -1349,6 +1416,48 @@
             container.innerHTML = html;
         }
 
+        window.exportJobsCSV = () => {
+            const filteredJobs = state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory);
+            if (filteredJobs.length === 0) {
+                showToast('ไม่มีข้อมูลเส้นทางให้ดาวน์โหลด', 'error');
+                return;
+            }
+            const headers = ['ต้นทาง', 'ปลายทาง', 'ระยะทาง(กม.)', 'เรทค่าเที่ยว(บาท)', 'ค่าน้ำมัน(บาท)', 'ค่าเที่ยวคนขับ(บาท)'];
+            const rowsOut = filteredJobs.map(j => {
+                let displayFuelCost = Number(j.fuelCost || 0);
+                if (displayFuelCost === 0 && j.dist) {
+                    let rate = Number(j.fuelRate) > 0 ? Number(j.fuelRate) : 2.5;
+                    let price = Number(j.currentFuelPrice) > 0 ? Number(j.currentFuelPrice) : 36.0;
+                    displayFuelCost = ((Number(j.dist) * 2) / rate) * price;
+                }
+                return [j.origin, j.dest, j.dist, Number(j.revenue || 0), displayFuelCost.toFixed(2), Number(j.driverFee || 0)];
+            });
+            const catName = state.activeCategory === 'flatbed' ? 'รถพื้นเรียบ' : 'รถเซมิดั๊ม';
+            exportRowsToCSV(headers, rowsOut, `เส้นทางและเรทราคา_${catName}_${getToday()}.csv`);
+        };
+
+        window.exportTripsCSV = (plate) => {
+            const data = getFiltered(state.trips).filter(t => t.plate === plate);
+            if (data.length === 0) {
+                showToast('ไม่มีข้อมูลการวิ่งงานให้ดาวน์โหลด', 'error');
+                return;
+            }
+            data.sort((a, b) => parseDateForSort(a.date) - parseDateForSort(b.date));
+
+            const headers = ['วันที่', 'ต้นทาง', 'ปลายทาง', 'ระยะทาง(กม.)'];
+            if (state.activeCategory === 'semidump') headers.push('น้ำหนัก(ตัน)');
+            headers.push('ยอดรับ(บาท)', 'ค่าน้ำมัน(บาท)', 'ค่าคนขับ(บาท)', 'กำไร(บาท)');
+
+            const rowsOut = data.map(t => {
+                const row = [formatDisplayDate(t.date), t.origin, t.dest, Number(t.dist || 0)];
+                if (state.activeCategory === 'semidump') row.push(Number(t.weight || 0));
+                row.push(Number(t.revenue || 0), Number(t.fuelCost || 0), Number(t.driverFee || 0), Number(t.profit || 0));
+                return row;
+            });
+
+            exportRowsToCSV(headers, rowsOut, `รายการวิ่งงาน_${plate}_${getToday()}.csv`);
+        };
+
         function renderRefuels(container) {
             const data = getFiltered(state.refuels);
             if (data.length === 0) {
@@ -1365,15 +1474,15 @@
                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
                         <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="droplet" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รายการเติมน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${data.length} <span class="text-sm font-normal text-slate-500">รายการ</span></p>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${data.length} <span class="text-sm font-normal text-slate-500">รายการ</span></p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
                         <div class="flex items-center space-x-2 mb-2"><div class="bg-navy-100 p-1.5 rounded-lg text-navy-800 flex-shrink-0"><i data-lucide="database" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ปริมาณน้ำมันรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${formatNumber(grandTotalLiters).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ลิตร</span></p>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatNumber(grandTotalLiters).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-500">ลิตร</span></p>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
                         <div class="flex items-center space-x-2 mb-2"><div class="bg-orange-100 p-1.5 rounded-lg text-orange-600 flex-shrink-0"><i data-lucide="banknote" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">ยอดเงินรวม</p></div>
-                        <p class="text-xl font-bold text-orange-600 break-words w-full">${formatCurrency(grandTotalCost)}</p>
+                        <p class="text-xl font-bold text-orange-600 tabular-nums whitespace-nowrap">${formatCurrency(grandTotalCost)}</p>
                     </div>
                 </div>
                 <div class="space-y-6">
@@ -1442,12 +1551,13 @@
         }
 
         function renderVehicles(container) {
-            const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+            // รวมรถทุกหมวด (พื้นเรียบ + เซมิดั๊ม) ไว้ในตารางเดียวกัน
+            const filteredVehicles = state.vehicles.slice();
             let html = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-start">
                         <div class="flex items-center space-x-2 mb-2"><div class="bg-indigo-100 p-1.5 rounded-lg text-indigo-600 flex-shrink-0"><i data-lucide="users" class="w-4 h-4"></i></div><p class="text-xs text-slate-500 font-bold uppercase">รถและคนขับรวม</p></div>
-                        <p class="text-xl font-bold text-slate-800 break-words w-full">${filteredVehicles.length} <span class="text-sm font-normal text-slate-500">คัน</span></p>
+                        <p class="text-xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${filteredVehicles.length} <span class="text-sm font-normal text-slate-500">คัน</span></p>
                     </div>
                 </div>
             `;
@@ -1455,15 +1565,18 @@
             filteredVehicles.forEach(v => {
                 const alertCount = getVehicleMaintenanceSummary(v.plate).filter(s => s.status !== 'ok').length;
                 const odo = getEstimatedOdometer(v.plate);
+                const catLabel = (v.category || 'flatbed') === 'semidump' ? 'เซมิดั๊ม' : 'พื้นเรียบ';
+                const catBadgeClass = (v.category || 'flatbed') === 'semidump' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
                 rows += `
                     <tr class="hover:bg-slate-50 transition-colors">
                         <td class="p-4 font-medium text-navy-800"><span class="bg-navy-50 px-3 py-1.5 rounded-md border border-navy-100">${v.plate}</span></td>
+                        <td class="p-4"><span class="${catBadgeClass} border text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap">${catLabel}</span></td>
                         <td class="p-4 text-slate-800 font-medium">${v.driver}</td>
                         <td class="p-4 text-slate-600">${v.type || '-'}</td>
                         <td class="p-4 text-slate-600">${v.model || '-'} ${v.year ? `<span class="text-xs text-slate-400">(ปี ${v.year})</span>` : ''}</td>
                         <td class="p-4 text-right tabular-nums text-slate-700">${formatNumber(odo).replace(/\.00$/, '')} <span class="text-xs text-slate-400">กม.</span></td>
                         <td class="p-4 text-center">
-                            <button onclick="changeTab('${v.category || 'flatbed'}','maintenance'); state.activeVehiclePlate='${v.plate}'; renderNav(); renderContent();" class="${alertCount > 0 ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-green-100 text-green-700 border-green-200'} border px-3 py-1 rounded-full text-xs font-bold inline-flex items-center hover:opacity-80">
+                            <button onclick="changeFleetTab('maintenance', '${v.plate}')" class="${alertCount > 0 ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-green-100 text-green-700 border-green-200'} border px-3 py-1 rounded-full text-xs font-bold inline-flex items-center hover:opacity-80">
                                 <i data-lucide="${alertCount > 0 ? 'alert-triangle' : 'check-circle-2'}" class="w-3.5 h-3.5 mr-1"></i>
                                 ${alertCount > 0 ? alertCount + ' รายการต้องดูแล' : 'สภาพปกติ'}
                             </button>
@@ -1475,15 +1588,16 @@
                     </tr>
                 `;
             });
-            if(filteredVehicles.length === 0) rows = '<tr><td colSpan="7" class="p-8 text-center text-slate-500">ไม่มีข้อมูลรถในระบบ</td></tr>';
+            if(filteredVehicles.length === 0) rows = '<tr><td colSpan="8" class="p-8 text-center text-slate-500">ไม่มีข้อมูลรถในระบบ</td></tr>';
 
             html += `
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
+                        <table class="w-full min-w-[980px] text-left border-collapse whitespace-nowrap">
                             <thead>
                                 <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider border-b border-slate-200">
                                     <th class="p-4 font-semibold">ทะเบียนรถ</th>
+                                    <th class="p-4 font-semibold">หมวดรถ</th>
                                     <th class="p-4 font-semibold">ชื่อคนขับ</th>
                                     <th class="p-4 font-semibold">ประเภทรถ</th>
                                     <th class="p-4 font-semibold">รุ่น/ปี</th>
@@ -1501,14 +1615,36 @@
         }
 
         function renderMaintenance(container) {
-            const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+            // รวมรถทุกหมวด (พื้นเรียบ + เซมิดั๊ม) ไว้ในหน้าเดียวกัน
+            const filteredVehicles = state.vehicles.slice();
             const detailVehicle = filteredVehicles.find(v => v.plate === state.activeVehiclePlate) || null;
 
             let html = '';
 
-            html += `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">`;
+            // ช่องค้นหารายการซ่อมบำรุงแบบรวม (ค้นหาข้ามหมวดรถพื้นเรียบ/เซมิดั๊มทั้งหมด) พร้อมป๊อบอัพผลการค้นหา
+            if (!detailVehicle && state.vehicles.length > 0) {
+                html += `
+                    <div class="mb-6 relative max-w-lg" id="maint-search-wrapper">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                            <input type="text" id="maint-search-input" autocomplete="off"
+                                oninput="onMaintSearchInput(this.value)"
+                                onfocus="onMaintSearchInput(this.value)"
+                                onkeydown="onMaintSearchKeydown(event)"
+                                class="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-navy-800 shadow-sm transition-all"
+                                placeholder="พิมพ์ค้นหารายการซ่อม เช่น กรองอากาศ, แบตเตอรี่, ทะเบียนรถ...">
+                            <button type="button" onclick="clearMaintSearch()" id="maint-search-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i data-lucide="x-circle" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div id="maint-search-dropdown" class="hidden absolute z-50 left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-96 overflow-y-auto"></div>
+                    </div>
+                `;
+            }
+
+            html += `<div id="maint-vehicle-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">`;
             if (filteredVehicles.length === 0) {
-                html += `<div class="col-span-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">ยังไม่มีข้อมูลรถในหมวดนี้ กรุณาเพิ่มรถที่แท็บ "ข้อมูลรถและคนขับ" ก่อน</div>`;
+                html += `<div class="col-span-full bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">ยังไม่มีข้อมูลรถในระบบ กรุณาเพิ่มรถที่แท็บ "ข้อมูลรถและคนขับ" ก่อน</div>`;
             }
             filteredVehicles.forEach(v => {
                 const summary = getVehicleMaintenanceSummary(v.plate);
@@ -1516,6 +1652,8 @@
                 const soonCount = summary.filter(s => s.status === 'soon').length;
                 const unknownCount = summary.filter(s => s.status === 'unknown').length;
                 const isActive = detailVehicle && detailVehicle.plate === v.plate;
+                const catLabel = (v.category || 'flatbed') === 'semidump' ? 'เซมิดั๊ม' : 'พื้นเรียบ';
+                const catBadgeClass = (v.category || 'flatbed') === 'semidump' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
                 let badgeHtml = `<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full flex items-center whitespace-nowrap"><i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i>สภาพปกติ</span>`;
                 if (overdueCount > 0) badgeHtml = `<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2 py-1 rounded-full flex items-center whitespace-nowrap"><i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i>เกินกำหนด ${overdueCount}</span>`;
                 else if (soonCount > 0) badgeHtml = `<span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-full flex items-center whitespace-nowrap"><i data-lucide="clock" class="w-3 h-3 mr-1"></i>ใกล้ถึงรอบ ${soonCount}</span>`;
@@ -1525,8 +1663,9 @@
                     <button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="text-left bg-white p-5 rounded-2xl shadow-sm border ${isActive ? 'border-navy-400 ring-2 ring-navy-200' : 'border-slate-200'} hover:border-navy-300 transition-all">
                         <div class="flex items-center justify-between mb-3 gap-2">
                             <span class="font-bold text-navy-900 bg-navy-50 px-2.5 py-1 rounded-lg border border-navy-100">${v.plate}</span>
-                            ${badgeHtml}
+                            <span class="${catBadgeClass} border text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">${catLabel}</span>
                         </div>
+                        <div class="mb-3">${badgeHtml}</div>
                         <p class="text-sm text-slate-500">${v.model || '-'} ${v.year ? `(ปี ${v.year})` : ''}</p>
                         <p class="text-sm text-slate-500">คนขับ: ${v.driver || '-'}</p>
                         <p class="text-lg font-bold text-slate-800 mt-2">${formatNumber(getEstimatedOdometer(v.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal text-slate-400">กม.</span></p>
@@ -1536,7 +1675,7 @@
             html += `</div>`;
 
             if (!detailVehicle) {
-                const catAlerts = getFleetMaintenanceAlerts().filter(a => (a.vehicle.category || 'flatbed') === state.activeCategory);
+                const catAlerts = getFleetMaintenanceAlerts();
                 if (catAlerts.length > 0) {
                     html += `
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
@@ -1558,6 +1697,8 @@
                 } else if (filteredVehicles.length > 0) {
                     html += `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">เลือกรถจากการ์ดด้านบนเพื่อดูคำแนะนำจากช่างศูนย์และประวัติการซ่อม</div>`;
                 }
+                html += `</div>`;
+
                 container.innerHTML = html;
                 return;
             }
@@ -1581,8 +1722,8 @@
                             </div>
                         </div>
                         <div class="flex space-x-6">
-                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">เลขไมล์ปัจจุบัน (ประเมิน)</p><p class="text-2xl font-bold text-slate-800 break-words w-full">${formatNumber(getEstimatedOdometer(detailVehicle.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal">กม.</span></p></div>
-                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-orange-600 break-words w-full">${formatCurrency(totalCost)}</p></div>
+                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">เลขไมล์ปัจจุบัน (ประเมิน)</p><p class="text-2xl font-bold text-slate-800 tabular-nums whitespace-nowrap">${formatNumber(getEstimatedOdometer(detailVehicle.plate)).replace(/\.00$/, '')} <span class="text-sm font-normal">กม.</span></p></div>
+                            <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">ค่าซ่อมบำรุงสะสม</p><p class="text-2xl font-bold text-orange-600 tabular-nums whitespace-nowrap">${formatCurrency(totalCost)}</p></div>
                         </div>
                     </div>
                 </div>
@@ -1665,29 +1806,289 @@
             openFormModal(false);
         };
 
+        // 🌟 ฟังก์ชันกรองการค้นหารายการซ่อมแบบ Global
+        const MAINT_SEARCH_MAX_RESULTS = 25;
+
+        function maintSearchCollectResults(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) return [];
+
+            const results = [];
+
+            // 1) รายการที่ควรติดตาม (เกินกำหนด / ใกล้ถึงรอบ / ยังไม่มีประวัติ) — ครอบคลุมรถทุกหมวดอยู่แล้ว
+            getFleetMaintenanceAlerts().forEach(a => {
+                const label = (a.type.label || '').toLowerCase();
+                const plate = (a.plate || '').toLowerCase();
+                const driver = (a.vehicle.driver || '').toLowerCase();
+                const model = (a.vehicle.model || '').toLowerCase();
+                if (label.includes(q) || plate.includes(q) || driver.includes(q) || model.includes(q)) {
+                    results.push({
+                        kind: 'alert',
+                        plate: a.plate,
+                        category: a.vehicle.category || 'flatbed',
+                        driver: a.vehicle.driver || '',
+                        icon: a.type.icon,
+                        label: a.type.label,
+                        status: a.status,
+                        currentOdo: a.currentOdo,
+                        kmSince: a.lastLog ? a.kmSince : null,
+                        hasLog: !!a.lastLog,
+                        sortKey: ({ overdue: 0, soon: 1, unknown: 2 })[a.status] ?? 3,
+                        sortTime: -(a.ratio || 0)
+                    });
+                }
+            });
+
+            // 2) ประวัติงานซ่อมที่เคยบันทึกไว้แล้ว — ค้นหาข้ามหมวดรถพื้นเรียบ/เซมิดั๊มทั้งหมด
+            state.maintenanceLogs.forEach(m => {
+                const vehicle = state.vehicles.find(v => v.plate === m.plate) || {};
+                const typeInfo = maintenanceTypeMap[m.category] || { label: m.category, icon: 'wrench' };
+                const typeLabel = (typeInfo.label || '').toLowerCase();
+                const desc = (m.description || '').toLowerCase();
+                const parts = (m.partsChanged || '').toLowerCase();
+                const plate = (m.plate || '').toLowerCase();
+                const tech = (m.technician || '').toLowerCase();
+                const driver = (vehicle.driver || '').toLowerCase();
+                if (typeLabel.includes(q) || desc.includes(q) || parts.includes(q) || plate.includes(q) || tech.includes(q) || driver.includes(q)) {
+                    const currentOdo = getEstimatedOdometer(m.plate);
+                    const serviceOdo = Number(m.odometer || 0);
+                    results.push({
+                        kind: 'log',
+                        plate: m.plate,
+                        category: vehicle.category || 'flatbed',
+                        driver: vehicle.driver || '',
+                        icon: typeInfo.icon || 'wrench',
+                        label: typeInfo.label || m.category,
+                        detail: m.description || m.partsChanged || '',
+                        date: m.date,
+                        cost: m.cost,
+                        serviceOdo: serviceOdo,
+                        currentOdo: currentOdo,
+                        kmSinceService: serviceOdo > 0 ? Math.max(0, currentOdo - serviceOdo) : null,
+                        sortKey: 10,
+                        sortTime: -parseDateForSort(m.date)
+                    });
+                }
+            });
+
+            results.sort((a, b) => (a.sortKey - b.sortKey) || (a.sortTime - b.sortTime));
+            return results;
+        }
+
+        function maintSearchStatusBadge(r) {
+            if (r.kind === 'log') return `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">เสร็จแล้ว</span>`;
+            if (r.status === 'overdue') return `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 whitespace-nowrap">เกินกำหนด</span>`;
+            if (r.status === 'soon') return `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">ใกล้ถึงรอบ</span>`;
+            return `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 whitespace-nowrap">ยังไม่มีประวัติ</span>`;
+        }
+
+        function maintSearchCategoryBadge(category) {
+            const isFlatbed = (category || 'flatbed') === 'flatbed';
+            return `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${isFlatbed ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'} whitespace-nowrap">${isFlatbed ? 'พื้นเรียบ' : 'เซมิดั๊ม'}</span>`;
+        }
+
+        function maintSearchOdoDetail(r) {
+            const fmtKm = (n) => formatNumber(n).replace(/\.00$/, '');
+            if (r.kind === 'log') {
+                let text = `เลขไมล์ตอนซ่อม ${fmtKm(r.serviceOdo)} กม.`;
+                if (r.kmSinceService !== null) text += ` · ใช้มาแล้ว ${fmtKm(r.kmSinceService)} กม.`;
+                return text;
+            }
+            // alert
+            let text = `เลขไมล์ปัจจุบัน ${fmtKm(r.currentOdo)} กม.`;
+            if (r.hasLog && r.kmSince !== null) text += ` · ใช้มาแล้ว ${fmtKm(r.kmSince)} กม.`;
+            else text += ` · ยังไม่มีประวัติเลขไมล์ล่าสุด`;
+            return text;
+        }
+
+        function renderMaintSearchDropdown(query) {
+            const dd = document.getElementById('maint-search-dropdown');
+            const clearBtn = document.getElementById('maint-search-clear');
+            if (!dd) return;
+
+            if (clearBtn) clearBtn.classList.toggle('hidden', !query);
+
+            if (!query.trim()) {
+                dd.classList.add('hidden');
+                dd.innerHTML = '';
+                return;
+            }
+
+            const results = maintSearchCollectResults(query);
+            state.maintSearchResults = results;
+            state.maintSearchActiveIndex = results.length > 0 ? 0 : -1;
+
+            const shown = results.slice(0, MAINT_SEARCH_MAX_RESULTS);
+
+            let itemsHtml = `
+                <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">ผลการค้นหา</span>
+                    <span class="text-xs font-bold text-navy-700 bg-navy-50 px-2 py-0.5 rounded-full">พบ ${results.length} รายการ</span>
+                </div>
+            `;
+
+            if (shown.length === 0) {
+                itemsHtml += `
+                    <div class="px-4 py-8 text-center text-slate-400">
+                        <i data-lucide="search-x" class="w-6 h-6 mx-auto mb-2"></i>
+                        <p class="text-sm">ไม่พบรายการซ่อมที่ตรงกับ "${query}"</p>
+                    </div>
+                `;
+            } else {
+                itemsHtml += shown.map((r, idx) => `
+                    <div data-idx="${idx}" onmousedown="event.preventDefault(); selectMaintSearchResult(${idx})"
+                         class="maint-search-item px-4 py-3 cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50 flex items-start justify-between gap-3 ${idx === 0 ? 'bg-slate-50' : ''}">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="w-8 h-8 rounded-lg bg-navy-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i data-lucide="${r.icon}" class="w-4 h-4 text-navy-700"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-navy-900 text-sm">${r.plate}</span>
+                                    ${maintSearchCategoryBadge(r.category)}
+                                </div>
+                                <p class="text-sm text-slate-600 truncate">${r.kind === 'log' ? (r.detail || r.label) : r.label}${r.kind === 'log' ? ` <span class="text-slate-400">· ${formatDisplayDate(r.date)}</span>` : ''}</p>
+                                <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <i data-lucide="gauge" class="w-3 h-3 flex-shrink-0"></i>${maintSearchOdoDetail(r)}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 mt-0.5">${maintSearchStatusBadge(r)}</div>
+                    </div>
+                `).join('');
+
+                if (results.length > shown.length) {
+                    itemsHtml += `<div class="px-4 py-2 text-center text-xs text-slate-400 bg-slate-50/60">และอีก ${results.length - shown.length} รายการ พิมพ์ให้เจาะจงมากขึ้นเพื่อจำกัดผลลัพธ์</div>`;
+                }
+            }
+
+            dd.innerHTML = itemsHtml;
+            dd.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.onMaintSearchInput = (value) => {
+            renderMaintSearchDropdown(value || '');
+        };
+
+        window.hideMaintSearchDropdown = () => {
+            const dd = document.getElementById('maint-search-dropdown');
+            if (dd) dd.classList.add('hidden');
+        };
+
+        function highlightMaintSearchActive() {
+            const dd = document.getElementById('maint-search-dropdown');
+            if (!dd) return;
+            dd.querySelectorAll('.maint-search-item').forEach(el => {
+                const isActive = Number(el.getAttribute('data-idx')) === state.maintSearchActiveIndex;
+                el.classList.toggle('bg-slate-50', isActive);
+                if (isActive) el.scrollIntoView({ block: 'nearest' });
+            });
+        }
+
+        window.onMaintSearchKeydown = (e) => {
+            const dd = document.getElementById('maint-search-dropdown');
+            const results = (state.maintSearchResults || []).slice(0, MAINT_SEARCH_MAX_RESULTS);
+            if (!dd || dd.classList.contains('hidden') || results.length === 0) {
+                if (e.key === 'Escape') { e.target.value = ''; clearMaintSearch(); }
+                return;
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                state.maintSearchActiveIndex = (state.maintSearchActiveIndex + 1) % results.length;
+                highlightMaintSearchActive();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                state.maintSearchActiveIndex = (state.maintSearchActiveIndex - 1 + results.length) % results.length;
+                highlightMaintSearchActive();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (state.maintSearchActiveIndex >= 0) selectMaintSearchResult(state.maintSearchActiveIndex);
+            } else if (e.key === 'Escape') {
+                hideMaintSearchDropdown();
+            }
+        };
+
+        window.clearMaintSearch = () => {
+            const input = document.getElementById('maint-search-input');
+            if (input) input.value = '';
+            hideMaintSearchDropdown();
+            const clearBtn = document.getElementById('maint-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+        };
+
+        window.selectMaintSearchResult = (idx) => {
+            const r = (state.maintSearchResults || [])[idx];
+            if (!r) return;
+            const vehicle = state.vehicles.find(v => v.plate === r.plate);
+            if (!vehicle) return;
+            state.activeTab = 'maintenance';
+            state.activeVehiclePlate = r.plate;
+            hideMaintSearchDropdown();
+            renderNav();
+            renderContent();
+        };
+
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('maint-search-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                hideMaintSearchDropdown();
+            }
+        });
+
         function renderTires(container) {
-            const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+            // รวมรถทุกหมวด (พื้นเรียบ + เซมิดั๊ม) ไว้ในหน้าเดียวกัน
+            const filteredVehicles = state.vehicles.slice();
             if (filteredVehicles.length === 0) {
-                container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">ยังไม่มีข้อมูลรถในหมวดนี้ กรุณาเพิ่มรถที่แท็บ "ข้อมูลรถและคนขับ" ก่อน</div>`;
+                container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-center text-slate-500">ยังไม่มีข้อมูลรถในระบบ กรุณาเพิ่มรถที่แท็บ "ข้อมูลรถและคนขับ" ก่อน</div>`;
                 return;
             }
             if (!filteredVehicles.find(v => v.plate === state.activeVehiclePlate)) {
                 state.activeVehiclePlate = filteredVehicles[0].plate;
+                state.activeTrailerId = null;
             }
             const plate = state.activeVehiclePlate;
 
-            let html = `<div class="flex flex-wrap gap-2 mb-6">`;
+            let html = `<div class="flex flex-wrap gap-2 mb-4">`;
             filteredVehicles.forEach(v => {
                 const active = v.plate === plate;
-                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors ${active ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">${v.plate}</button>`;
+                const catLabel = (v.category || 'flatbed') === 'semidump' ? 'เซมิดั๊ม' : 'พื้นเรียบ';
+                html += `<button onclick="state.activeVehiclePlate='${v.plate}'; state.activeTrailerId=null; renderContent();" class="px-4 py-2 rounded-full text-sm font-bold border transition-colors inline-flex items-center gap-1.5 ${active ? 'bg-navy-800 text-white border-navy-800' : 'bg-white text-slate-600 border-slate-200 hover:border-navy-300'}">${v.plate} <span class="text-[10px] font-normal ${active ? 'text-navy-200' : 'text-slate-400'}">(${catLabel})</span></button>`;
             });
             html += `</div>`;
 
+            // --- แถบจัดการหางพ่วง (หาง) ของทะเบียนหัวที่เลือกอยู่ ---
+            const trailersForHead = getTrailersForHead(plate);
+            if (!trailersForHead.find(t => String(t.id) === String(state.activeTrailerId))) {
+                state.activeTrailerId = trailersForHead[0] ? trailersForHead[0].id : null;
+            }
+            const activeTrailerId = state.activeTrailerId;
+            const activeTrailer = activeTrailerId ? getTrailerById(activeTrailerId) : null;
+
+            html += `<div class="flex flex-wrap items-center gap-2 mb-6 pb-5 border-b border-slate-100">
+                <span class="text-xs font-bold text-slate-400 mr-1 inline-flex items-center"><i data-lucide="truck" class="w-3.5 h-3.5 mr-1"></i>หางพ่วงของทะเบียนหัว ${plate}:</span>`;
+            if (trailersForHead.length === 0) {
+                html += `<span class="text-xs text-slate-400 italic">ยังไม่มีหางพ่วงที่บันทึกไว้</span>`;
+            } else {
+                trailersForHead.forEach(t => {
+                    const active = String(t.id) === String(activeTrailerId);
+                    html += `<button onclick="selectTrailer('${t.id}')" class="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${active ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'}">${t.label}</button>`;
+                });
+            }
+            html += `<button onclick="promptAddTrailer('${plate}')" class="px-3 py-1.5 rounded-full text-xs font-bold border border-dashed border-navy-300 text-navy-700 hover:bg-navy-50 inline-flex items-center"><i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i>เพิ่มหาง</button>`;
+            if (activeTrailer) {
+                html += `<button onclick="promptRenameTrailer('${activeTrailer.id}')" title="แก้ไขชื่อ/ทะเบียนหาง" class="p-1.5 rounded-full text-slate-400 hover:text-navy-700 hover:bg-navy-50"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>`;
+                html += `<button onclick="promptDeleteTrailer('${activeTrailer.id}')" title="ลบหางนี้" class="p-1.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`;
+            }
+            html += `</div>`;
+
+            const trailerKey = activeTrailerId ? getTrailerUnitKey(activeTrailerId) : null;
             const { wheels } = getWheelLayout();
             let goodCount = 0, monitorCount = 0, warnCount = 0, overdueCount = 0, emptyCount = 0;
             wheels.forEach(w => {
-                const rec = getActiveTireAt(plate, w.pos);
-                const st = getTireStatus(plate, rec);
+                const key = w.group === 'trailer' ? trailerKey : plate;
+                const rec = key ? getActiveTireAt(key, w.pos) : null;
+                const st = key ? getTireStatus(key, rec) : 'empty';
                 if (st === 'good') goodCount++;
                 else if (st === 'monitor') monitorCount++;
                 else if (st === 'warn') warnCount++;
@@ -1697,21 +2098,21 @@
 
             html += `
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ปกติ</p><p class="text-xl font-bold text-emerald-600 break-words w-full">${goodCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรสลับยาง</p><p class="text-xl font-bold text-amber-600 break-words w-full">${monitorCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">จับตาความสึก</p><p class="text-xl font-bold text-orange-600 break-words w-full">${warnCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรเปลี่ยน</p><p class="text-xl font-bold text-rose-600 break-words w-full">${overdueCount}</p></div>
-                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ยังไม่บันทึก</p><p class="text-xl font-bold text-slate-400 break-words w-full">${emptyCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ปกติ</p><p class="text-xl font-bold text-emerald-600 tabular-nums whitespace-nowrap">${goodCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรสลับยาง</p><p class="text-xl font-bold text-amber-600 tabular-nums whitespace-nowrap">${monitorCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">จับตาความสึก</p><p class="text-xl font-bold text-orange-600 tabular-nums whitespace-nowrap">${warnCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ควรเปลี่ยน</p><p class="text-xl font-bold text-rose-600 tabular-nums whitespace-nowrap">${overdueCount}</p></div>
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 text-center"><p class="text-xs text-slate-400 font-bold">ยังไม่บันทึก</p><p class="text-xl font-bold text-slate-400 tabular-nums whitespace-nowrap">${emptyCount}</p></div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col items-center">
                         <div class="w-full flex justify-between items-center mb-1">
-                            <h3 class="text-lg font-bold text-slate-800 flex items-center"><i data-lucide="circle-dot" class="h-5 w-5 mr-2 text-navy-800"></i>ผังตำแหน่งยาง — ${plate}</h3>
+                            <h3 class="text-lg font-bold text-slate-800 flex items-center"><i data-lucide="circle-dot" class="h-5 w-5 mr-2 text-navy-800"></i>ผังตำแหน่งยาง — ${plate}${activeTrailer ? ` <span class="text-slate-300 mx-1">+</span> <span class="text-amber-600">${activeTrailer.label}</span>` : ''}</h3>
                             ${state.isSwapMode ? `<button onclick="cancelSwapMode()" class="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-full">ยกเลิกการสลับยาง</button>` : ''}
                         </div>
-                        <p class="text-xs text-slate-400 mb-2 self-start w-full">${state.isSwapMode ? '🎯 กรุณาคลิกเลือกตำแหน่งล้อที่ต้องการย้ายยางไปใส่' : 'คลิกที่ล้อเพื่อดู/บันทึกรายละเอียดยางแต่ละเส้น (22 ตำแหน่ง: หัวลาก 10 + หางพ่วง 12)'}</p>
-                        ${buildWheelSvg(plate)}
+                        <p class="text-xs text-slate-400 mb-2 self-start w-full">${state.isSwapMode ? '🎯 กรุณาคลิกเลือกตำแหน่งล้อที่ต้องการย้ายยางไปใส่' : (trailerKey ? 'คลิกที่ล้อเพื่อดู/บันทึกรายละเอียดยางแต่ละเส้น (22 ตำแหน่ง: หัวลาก 10 + หางพ่วง 12)' : 'คลิกที่ล้อตำแหน่งหัวลากเพื่อดู/บันทึกรายละเอียดยาง — ตำแหน่งหางพ่วง (11-22) จะใช้งานได้หลังกด "เพิ่มหาง" และเลือกหางด้านบน')}</p>
+                        ${buildWheelSvg(plate, trailerKey)}
                     </div>
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                         <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center"><i data-lucide="list" class="h-5 w-5 mr-2 text-navy-800"></i>คำอธิบายสัญลักษณ์</h3>
@@ -1732,7 +2133,7 @@
             container.innerHTML = html;
         }
 
-        function buildWheelSvg(plate) {
+        function buildWheelSvg(plate, trailerKey) {
             const { axleDefs, wheels } = getWheelLayout();
             let svg = `<svg viewBox="0 0 380 760" class="w-full max-w-sm mx-auto select-none">`;
 
@@ -1745,25 +2146,29 @@
 
             axleDefs.forEach((axle, idx) => {
                 const xs = axle.dual ? [65, 315] : [125, 255];
-                svg += `<line x1="${xs[0]}" y1="${axle.y}" x2="${xs[1]}" y2="${axle.y}" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" />`;
+                const noTrailer = axle.group === 'trailer' && !trailerKey;
+                svg += `<line x1="${xs[0]}" y1="${axle.y}" x2="${xs[1]}" y2="${axle.y}" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" ${noTrailer ? 'opacity="0.35"' : ''} />`;
                 svg += `<text x="12" y="${axle.y + 4}" font-size="9" fill="#94a3b8" font-weight="700">${idx + 1}</text>`;
             });
 
             wheels.forEach(w => {
-                const rec = getActiveTireAt(plate, w.pos);
-                const status = getTireStatus(plate, rec);
+                const key = w.group === 'trailer' ? trailerKey : plate;
+                const rec = key ? getActiveTireAt(key, w.pos) : null;
+                const status = key ? getTireStatus(key, rec) : 'empty';
                 const style = TIRE_STATUS_STYLE[status];
-                const dash = status === 'empty' ? 'stroke-dasharray="5 4"' : '';
-                
-                let isTargetSource = state.isSwapMode && state.swapSourcePos === w.pos;
+                const dash = (status === 'empty') ? 'stroke-dasharray="5 4"' : '';
+                const noTrailer = w.group === 'trailer' && !trailerKey;
+
+                let isTargetSource = state.isSwapMode && state.swapSourcePos === w.pos && state.swapSourceKey === key;
                 let strokeAnim = isTargetSource ? `stroke="#ef4444" stroke-width="4" stroke-dasharray="8 4"` : `stroke="${style.stroke}" stroke-width="3" ${dash}`;
 
+                const clickAction = key ? `handleWheelClick('${key}', ${w.pos})` : `promptAddTrailer('${plate}')`;
+                const hoverHandlers = key ? `onmouseenter="showTireTooltip('${key}', ${w.pos}, event)" onmousemove="moveTireTooltip(event)" onmouseleave="hideTireTooltip()"` : '';
+
                 svg += `
-                    <g onclick="handleWheelClick('${plate}', ${w.pos})" 
-                       onmouseenter="showTireTooltip('${plate}', ${w.pos}, event)" 
-                       onmousemove="moveTireTooltip(event)" 
-                       onmouseleave="hideTireTooltip()" 
-                       style="cursor:pointer">
+                    <g onclick="${clickAction}"
+                       ${hoverHandlers}
+                       style="cursor:pointer" ${noTrailer ? 'opacity="0.4"' : ''}>
                         <rect x="${w.x - w.w / 2}" y="${w.y - w.h / 2}" width="${w.w}" height="${w.h}" rx="8" fill="${style.fill}" ${strokeAnim} />
                         <circle cx="${w.x}" cy="${w.y}" r="12" fill="#ffffff" stroke="${isTargetSource ? '#ef4444' : style.stroke}" stroke-width="2.5" />
                         <text x="${w.x}" y="${w.y + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="${isTargetSource ? '#ef4444' : style.stroke}">${w.pos}</text>
@@ -1801,7 +2206,6 @@
                     else if (status === 'overdue') badgeClass = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
                     
                     let imgHtml = '';
-                    // 🌟 รองรับทั้งลิงก์ http และ Base64 
                     if (rec.imageUrl && (String(rec.imageUrl).includes('http') || String(rec.imageUrl).startsWith('data:image'))) {
                         imgHtml = `
                             <div class="mt-3 mb-3 w-full h-28 rounded-lg border border-slate-600 overflow-hidden bg-slate-800 shadow-inner">
@@ -1870,12 +2274,17 @@
             }
         };
 
+        // --- Tire Handlers ---
         let currentTireCtx = { plate: null, pos: null };
 
         window.handleWheelClick = (plate, pos) => {
-            hideTireTooltip(); 
+            hideTireTooltip();
             if (state.isSwapMode) {
-                if (pos === state.swapSourcePos) return cancelSwapMode();
+                if (pos === state.swapSourcePos && plate === state.swapSourceKey) return cancelSwapMode();
+                if (plate !== state.swapSourceKey) {
+                    showToast('ไม่สามารถสลับยางข้ามชุดหัวลาก/หางพ่วง หรือข้ามหางคนละคันกันได้', 'error');
+                    return;
+                }
                 processTireSwap(plate, state.swapSourcePos, pos);
             } else {
                 openTireModal(plate, pos);
@@ -1884,7 +2293,6 @@
 
         window.openTireModal = (plate, pos) => {
             currentTireCtx = { plate, pos };
-            window.currentTireImageBase64 = null;
             renderTireModalBody();
             document.getElementById('tire-modal').classList.remove('hidden');
         };
@@ -1893,285 +2301,208 @@
             document.getElementById('tire-modal').classList.add('hidden');
         };
 
-        window.handleTireImageSelect = (event) => {
+        // --- รูปภาพยาง: ดูขนาดเต็ม (Lightbox) ---
+        window.openTireImageLightbox = (url) => {
+            const img = document.getElementById('tire-image-lightbox-img');
+            if (img) img.src = url;
+            document.getElementById('tire-image-lightbox').classList.remove('hidden');
+        };
+
+        window.closeTireImageLightbox = () => {
+            document.getElementById('tire-image-lightbox').classList.add('hidden');
+            const img = document.getElementById('tire-image-lightbox-img');
+            if (img) img.src = '';
+        };
+
+        // --- รูปภาพยาง: อัปโหลด/พรีวิวในฟอร์มเพิ่ม-แก้ไข ---
+        window.previewTireImageUpload = (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const maxDim = 1200;
-
-                    if (width > maxDim || height > maxDim) {
-                        if (width > height) {
-                            height = Math.round((height * maxDim) / width);
-                            width = maxDim;
-                        } else {
-                            width = Math.round((width * maxDim) / height);
-                            height = maxDim;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
-                    window.currentTireImageBase64 = compressedBase64;
-
-                    const previewContainer = document.getElementById('tire-image-preview');
-                    const previewImg = document.getElementById('tire-preview-img');
-                    if (previewContainer && previewImg) {
-                        previewImg.src = compressedBase64;
-                        previewContainer.classList.remove('hidden');
-                    }
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.removeTireImage = () => {
-            window.currentTireImageBase64 = null;
-            const previewContainer = document.getElementById('tire-image-preview');
-            const previewImg = document.getElementById('tire-preview-img');
-            const fileInput = document.getElementById('tire-image-upload');
-            if (previewContainer) previewContainer.classList.add('hidden');
-            if (previewImg) previewImg.src = '';
-            if (fileInput) fileInput.value = '';
-            if (window.currentEditingTireRec) {
-                window.currentEditingTireRec.imageUrl = '';
-            }
-        };
-
-        window.renderTireModalBody = (formMode) => {
-            const { plate, pos } = currentTireCtx;
-            const { wheels } = getWheelLayout();
-            const wheelInfo = wheels.find(w => w.pos === pos);
-            const rec = getActiveTireAt(plate, pos);
-            const historyOld = getTireHistoryAt(plate, pos);
-            const sideLabel = wheelInfo.side === 'L' ? 'ซ้าย' : 'ขวา';
-            document.getElementById('tire-modal-title').innerText = `ล้อตำแหน่งที่ ${pos} — ${wheelInfo.axleLabel} (${sideLabel}${wheelInfo.sub ? ' ' + wheelInfo.sub : ''})`;
-            const body = document.getElementById('tire-modal-body');
-
-            if (formMode === 'add' || formMode === 'edit' || formMode === 'replace') {
-                const editingRec = formMode === 'edit' ? rec : null;
-                window.currentEditingTireRec = editingRec;
-                const currentOdo = getEstimatedOdometer(plate);
-                window.currentTireImageBase64 = null; 
-                
-                const hasExistingImg = editingRec && editingRec.imageUrl && (String(editingRec.imageUrl).includes('http') || String(editingRec.imageUrl).startsWith('data:image'));
-
-                body.innerHTML = `
-                    <form id="tire-form" class="space-y-4">
-                        ${formMode === 'replace' ? '<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>' : ''}
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
-                            <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial) / รูปถ่าย</label>
-                            <div class="flex flex-col gap-2">
-                                <div class="flex items-center gap-2">
-                                    <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
-                                    <label for="tire-image-upload" class="flex-shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-lg border border-slate-300 transition-colors" title="แนบรูปถ่ายยาง">
-                                        <i data-lucide="camera" class="h-5 w-5"></i>
-                                    </label>
-                                    <input type="file" id="tire-image-upload" accept="image/*" capture="environment" class="hidden" onchange="handleTireImageSelect(event)">
-                                </div>
-                                <div id="tire-image-preview" class="${hasExistingImg ? '' : 'hidden'} relative w-32 h-32 border border-slate-300 rounded-lg overflow-hidden bg-slate-50 mt-1 shadow-sm">
-                                    <img id="tire-preview-img" src="${hasExistingImg ? editingRec.imageUrl : ''}" class="w-full h-full object-cover">
-                                    <button type="button" onclick="removeTireImage()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"><i data-lucide="x" class="h-3 w-3"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
-                                <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
-                                <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
-                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
-                        </div>
-                        <div class="flex space-x-3 pt-2">
-                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
-                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium flex justify-center items-center">บันทึกข้อมูล</button>
-                        </div>
-                    </form>
-                `;
-                document.getElementById('tire-form').onsubmit = (e) => submitTireForm(e, formMode, editingRec);
-                lucide.createIcons();
+            if (!file.type.startsWith('image/')) {
+                showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'error');
+                event.target.value = '';
                 return;
             }
 
-            const status = getTireStatus(plate, rec);
-            const style = TIRE_STATUS_STYLE[status];
-            const km = rec ? getTireRunKm(plate, rec) : 0;
-
-            let html = '';
-            if (rec) {
-                html += `
-                    <div class="p-4 rounded-xl border ${status === 'overdue' ? 'bg-rose-50 border-rose-200' : status === 'warn' ? 'bg-orange-50 border-orange-200' : status === 'monitor' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} mb-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex-1 pr-2">
-                                <p class="font-bold text-slate-800">${rec.brand || 'ไม่ระบุยี่ห้อ'}</p>
-                                <p class="text-xs text-slate-500">S/N: ${rec.serial || '-'}</p>
-                            </div>
-                            <span class="text-xs font-bold px-2 py-1 rounded-full ${style.badge} whitespace-nowrap">${style.label}</span>
-                        </div>
-                        ${rec.imageUrl && (String(rec.imageUrl).includes('http') || String(rec.imageUrl).startsWith('data:image')) ? `
-                        <div class="w-full h-36 rounded-lg border border-slate-200 overflow-hidden mb-3 bg-slate-100 relative group cursor-pointer" onclick="window.open('${rec.imageUrl}', '_blank')">
-                            <img src="${rec.imageUrl}" class="w-full h-full object-cover transition-transform group-hover:scale-105" alt="Tire Image" onerror="this.parentElement.style.display='none'">
-                            <span class="absolute bottom-2 right-2 bg-slate-900/70 text-white text-[10px] px-2 py-1 rounded-md flex items-center gap-1 backdrop-blur-sm"><i data-lucide="external-link" class="w-3 h-3"></i>คลิกดูรูปขนาดเต็ม</span>
-                        </div>
-                        ` : ''}
-                        <div class="grid grid-cols-2 gap-2 text-sm mt-3">
-                            <div><p class="text-slate-400 text-xs">เริ่มใส่</p><p class="font-semibold text-slate-700">${formatDisplayDate(rec.installDate)}</p></div>
-                            <div><p class="text-slate-400 text-xs">เลขไมล์เริ่มต้น</p><p class="font-semibold text-slate-700">${formatNumber(rec.installOdometer).replace(/\.00$/, '')} กม.</p></div>
-                            <div class="col-span-2"><p class="text-slate-400 text-xs">ระยะทางที่ใช้งานมาแล้ว</p><p class="font-bold text-slate-800 text-lg">${formatNumber(km).replace(/\.00$/, '')} กม.</p></div>
-                        </div>
-                        ${rec.notes ? `<p class="text-xs text-slate-500 mt-2 border-t border-slate-200/60 pt-2">📝 ${rec.notes}</p>` : ''}
-                    </div>
-                `;
-
-                let swapHistory = JSON.parse(rec.historyJson || '[]');
-                if (swapHistory.length > 0) {
-                    html += `<div class="mb-4 space-y-2">`;
-                    swapHistory.forEach((h, idx) => {
-                        let text = h.customText ? h.customText : `สลับมาจากตำแหน่ง ${h.from} (เมื่อ ${h.date})`;
-                        html += `
-                            <div class="flex items-center justify-between bg-sky-50 border border-sky-100 p-2 rounded-lg text-xs">
-                                <span class="text-sky-800 flex items-center"><i data-lucide="refresh-cw" class="w-3 h-3 mr-1.5"></i> ${text}</span>
-                                <button onclick="editTireHistoryRecord('${rec.id}', ${idx})" class="text-sky-500 hover:text-sky-700 p-1"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
-                            </div>
-                        `;
-                    });
-                    html += `</div>`;
-                }
-
-                html += `
-                    <div class="flex space-x-2 mb-3">
-                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
-                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
-                    </div>
-                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
-                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2 font-medium">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
-                `;
-            } else {
-                html += `
-                    <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2 bg-slate-50/50">
-                        <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
-                        <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
-                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900 shadow-sm flex items-center justify-center mx-auto"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> บันทึกยางเส้นนี้</button>
-                    </div>
-                `;
-            }
-
-            if (historyOld.length > 0) {
-                html += `
-                    <div class="border-t border-slate-100 pt-3 mt-2">
-                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">ประวัติยางที่เคยใส่ตำแหน่งนี้ (${historyOld.length})</p>
-                        <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
-                        ${historyOld.map(h => `
-                            <div class="text-xs bg-slate-50 rounded-lg p-2.5 border border-slate-100 flex justify-between items-center gap-2">
-                                <div>
-                                    <p class="font-semibold text-slate-700">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400 font-normal">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : '-'})</span></p>
-                                    <p class="text-slate-500 mt-0.5">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
-                                </div>
-                            </div>
-                        `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-
-            body.innerHTML = html;
-            lucide.createIcons();
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = reader.result;
+                const hidden = document.getElementById('tf_imageUrl');
+                if (hidden) hidden.value = dataUrl;
+                const wrap = document.getElementById('tf-image-preview-wrap');
+                if (wrap) wrap.innerHTML = `<img src="${dataUrl}" class="w-full h-full object-cover" alt="พรีวิวรูปยาง">`;
+                const removeBtn = document.getElementById('tf-image-remove-btn');
+                if (removeBtn) removeBtn.classList.remove('hidden');
+                const uploadBtnLabel = document.getElementById('tf-image-upload-label');
+                if (uploadBtnLabel) uploadBtnLabel.innerText = 'เปลี่ยนรูป';
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
         };
 
-        window.submitTireForm = async (e, mode, editingRec) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 inline spinner"></i>กำลังบันทึก...';
-            lucide.createIcons();
-
-            const { plate, pos } = currentTireCtx;
-            const getVal = (id) => document.getElementById(id)?.value;
-
-            try {
-                if (mode === 'replace') {
-                    const activeRec = getActiveTireAt(plate, pos);
-                    if (activeRec) {
-                        activeRec.status = 'removed';
-                        activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
-                        activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
-                        await sendGasAction('editTire', activeRec);
-                    }
-                }
-
-                let rec = (mode === 'edit' && editingRec) ? { ...editingRec } : { id: Date.now(), plate: plate, position: pos, historyJson: '[]' };
-                rec.category = state.activeCategory || 'flatbed';
-                rec.brand = getVal('tf_brand');
-                rec.serial = getVal('tf_serial');
-                rec.installDate = formatToThaiShort(getVal('tf_date'));
-                rec.installOdometer = Number(getVal('tf_odo') || 0);
-                rec.notes = getVal('tf_notes') || '';
-                rec.status = 'active';
-
-                if (window.currentTireImageBase64) {
-                    rec.imageBase64 = window.currentTireImageBase64; 
-                    rec.imageUrl = window.currentTireImageBase64; 
-                } else if (editingRec && editingRec.imageUrl) {
-                    rec.imageUrl = editingRec.imageUrl;
-                }
-
-                if (mode === 'edit') {
-                    state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
-                    await sendGasAction('editTire', rec);
-                } else {
-                    state.tires.unshift(rec);
-                    await sendGasAction('addTire', rec);
-                }
-
-                window.currentTireImageBase64 = null;
-                showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
-                renderTireModalBody();
-                renderContent();
-            } catch (err) {
-                console.error("Submit Tire Error:", err);
-                showToast('เกิดข้อผิดพลาดในการบันทึก', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
+        window.removeTireImagePreview = () => {
+            const hidden = document.getElementById('tf_imageUrl');
+            if (hidden) hidden.value = '';
+            const wrap = document.getElementById('tf-image-preview-wrap');
+            if (wrap) wrap.innerHTML = `<i data-lucide="image" class="w-6 h-6 text-slate-300"></i>`;
+            const removeBtn = document.getElementById('tf-image-remove-btn');
+            if (removeBtn) removeBtn.classList.add('hidden');
+            const uploadBtnLabel = document.getElementById('tf-image-upload-label');
+            if (uploadBtnLabel) uploadBtnLabel.innerText = 'อัปโหลดรูป';
+            if (window.lucide) lucide.createIcons();
         };
 
-        window.deleteTireRecord = (id) => {
-            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", async () => {
-                state.tires = state.tires.filter(t => t.id != id);
-                closeTireModal();
-                renderContent();
-                showToast('ลบข้อมูลยางสำเร็จ!');
-                await sendGasAction('deleteTire', { id });
+        // --- ระบบสแกนรูปภาพเป็นตัวอักษร/ตัวเลข (OCR ด้วย Tesseract.js ทำงานในเบราว์เซอร์ล้วนๆ ไม่ต้องใช้ API key) ---
+        // ป้ายยาง/สติกเกอร์ซีเรียลมักเป็นพื้นขาวตัวหนังสือดำ แต่ถ่ายมาได้ทุกทิศทาง (แนวตั้ง/แนวนอน/หัวกลับ)
+        // และพื้นหลังรอบๆ มักเป็นยาง/พื้นถนนสีเข้ม จึงต้อง "ปรับภาพให้คมขึ้น + ลองหมุนหลายมุม" ก่อนส่งให้ OCR อ่าน
+
+        function loadImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
             });
+        }
+
+        // หมุนรูปตามองศาที่กำหนด แล้วคืนเป็น canvas ใหม่
+        function rotateImageToCanvas(img, angleDeg) {
+            const canvas = document.createElement('canvas');
+            const swap = (angleDeg === 90 || angleDeg === 270);
+            canvas.width = swap ? img.naturalHeight : img.naturalWidth;
+            canvas.height = swap ? img.naturalWidth : img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(angleDeg * Math.PI / 180);
+            ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+            return canvas;
+        }
+
+        // แปลงเป็นขาว-ดำด้วยเกณฑ์แบบ Otsu (หาค่า threshold ที่เหมาะกับภาพนั้นๆ อัตโนมัติ)
+        // ช่วยให้ตัวหนังสือดำบนป้ายขาวเด่นขึ้น ตัดพื้นหลังยาง/ถนนสีเข้มที่รบกวนออกไป
+        function binarizeCanvasOtsu(canvas) {
+            const ctx = canvas.getContext('2d');
+            const { width, height } = canvas;
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const px = imgData.data;
+            const hist = new Array(256).fill(0);
+            const gray = new Uint8ClampedArray(width * height);
+
+            for (let i = 0, p = 0; i < px.length; i += 4, p++) {
+                const g = Math.round(0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]);
+                gray[p] = g;
+                hist[g]++;
+            }
+
+            const total = width * height;
+            let sum = 0;
+            for (let i = 0; i < 256; i++) sum += i * hist[i];
+            let sumB = 0, wB = 0, varMax = 0, threshold = 128;
+            for (let i = 0; i < 256; i++) {
+                wB += hist[i];
+                if (wB === 0) continue;
+                const wF = total - wB;
+                if (wF === 0) break;
+                sumB += i * hist[i];
+                const mB = sumB / wB;
+                const mF = (sum - sumB) / wF;
+                const varBetween = wB * wF * (mB - mF) * (mB - mF);
+                if (varBetween > varMax) { varMax = varBetween; threshold = i; }
+            }
+
+            for (let i = 0, p = 0; i < px.length; i += 4, p++) {
+                const v = gray[p] >= threshold ? 255 : 0;
+                px[i] = px[i + 1] = px[i + 2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+            return canvas;
+        }
+
+        // ให้คะแนนข้อความที่ OCR อ่านได้ว่า "น่าจะเป็นเลขซีเรียล/DOT" แค่ไหน
+        // เน้นแพทเทิร์นที่พบบ่อย เช่น ขึ้นต้นด้วยตัวอักษรตามด้วยตัวเลขยาวๆ (เช่น C315011875, C310012841)
+        function scoreSerialCandidate(token) {
+            let score = token.length;
+            if (/^[A-Z]\d{6,}$/.test(token)) score += 8;
+            else if (/\d{5,}/.test(token)) score += 4;
+            if (/^\d+$/.test(token)) score -= 2; // ตัวเลขล้วนยาวๆ มักเป็นบาร์โค้ด/เลขอื่น ให้คะแนนน้อยกว่าที่มีตัวอักษรปน
+            return score;
+        }
+
+        async function ocrCanvasBestToken(worker, canvas) {
+            const { data } = await worker.recognize(canvas);
+            const rawText = (data && data.text) ? data.text : '';
+            const tokens = (rawText.match(/[A-Za-z0-9]{5,}/g) || []).map(t => t.toUpperCase());
+            if (tokens.length === 0) return null;
+            tokens.sort((a, b) => scoreSerialCandidate(b) - scoreSerialCandidate(a));
+            return { token: tokens[0], score: scoreSerialCandidate(tokens[0]) };
+        }
+
+        window.processTireImage = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const btn = document.getElementById('btn-scan-serial');
+            const input = document.getElementById('tf_serial');
+            const originalIcon = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 spinner text-navy-600"></i>';
+            lucide.createIcons();
+            input.placeholder = "กำลังสแกนรูปภาพ...";
+            input.disabled = true;
+
+            let worker = null;
+            try {
+                if (typeof Tesseract === 'undefined') {
+                    throw new Error("โหลดระบบสแกนภาพไม่สำเร็จ (ต้องมีอินเทอร์เน็ตตอนเปิดหน้านี้ครั้งแรก)");
+                }
+
+                const img = await loadImageFromFile(file);
+
+                worker = await Tesseract.createWorker('eng');
+                await worker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                    tessedit_pageseg_mode: '11' // sparse text — เหมาะกับป้ายสติกเกอร์ที่มีข้อความสั้นๆ
+                });
+
+                // ป้ายซีเรียลอาจถูกถ่ายมาในแนวไหนก็ได้ (แนวนอน/แนวตั้ง/หัวกลับ) จึงลองทุกมุม แล้วเลือกผลที่ดีที่สุด
+                const angles = [0, 90, 180, 270];
+                let best = null;
+                for (let i = 0; i < angles.length; i++) {
+                    input.placeholder = `กำลังสแกนรูปภาพ... (มุมที่ ${i + 1}/${angles.length})`;
+                    const rotated = rotateImageToCanvas(img, angles[i]);
+                    binarizeCanvasOtsu(rotated);
+                    const result = await ocrCanvasBestToken(worker, rotated);
+                    if (result && (!best || result.score > best.score)) best = result;
+                }
+
+                if (best && best.token) {
+                    input.value = best.token;
+                    window.showToast("สแกนตัวอักษร/ตัวเลขสำเร็จ! ตรวจสอบความถูกต้องอีกครั้งก่อนบันทึก", "success");
+                } else {
+                    window.showToast("ไม่พบตัวอักษร/ตัวเลขที่ชัดเจนในรูป โปรดถ่ายให้ใกล้ ชัด และเห็นป้ายเต็มๆ", "error");
+                }
+
+            } catch (error) {
+                console.error("OCR Scan Error:", error);
+                window.showToast(error && error.message ? error.message : "สแกนรูปภาพไม่สำเร็จ กรุณาลองใหม่", "error");
+            } finally {
+                if (worker) { try { await worker.terminate(); } catch (e) {} }
+                btn.disabled = false;
+                btn.innerHTML = originalIcon;
+                lucide.createIcons();
+                input.placeholder = "เช่น 1224XXXX";
+                input.disabled = false;
+                event.target.value = '';
+            }
         };
+
 
         window.startSwapMode = () => {
             state.isSwapMode = true;
             state.swapSourcePos = currentTireCtx.pos;
+            state.swapSourceKey = currentTireCtx.plate;
             closeTireModal();
             renderContent();
             showToast('คลิกตำแหน่งล้อที่ต้องการย้ายยางไปใส่บนแผนผัง');
@@ -2180,6 +2511,7 @@
         window.cancelSwapMode = () => {
             state.isSwapMode = false;
             state.swapSourcePos = null;
+            state.swapSourceKey = null;
             renderContent();
         };
 
@@ -2227,45 +2559,429 @@
             }
         };
 
-        let html5QrCode = null;
-
-        window.startBarcodeScanner = () => {
-            document.getElementById('barcode-modal').classList.remove('hidden');
-            setTimeout(() => {
-                if (!html5QrCode) {
-                    html5QrCode = new Html5Qrcode("reader");
-                }
-                const config = { fps: 10, qrbox: { width: 280, height: 120 } };
-                html5QrCode.start(
-                    { facingMode: "environment" }, 
-                    config,
-                    (decodedText, decodedResult) => {
-                        document.getElementById('tf_serial').value = decodedText.toUpperCase();
-                        window.showToast("สแกนบาร์โค้ดสำเร็จ!", "success");
-                        closeBarcodeScanner();
-                    },
-                    (errorMessage) => {}
-                ).catch((err) => {
-                    console.error("Scanner Error:", err);
-                    window.showToast("ไม่สามารถเปิดกล้องได้ กรุณาตรวจสอบสิทธิ์การเข้าถึงกล้อง", "error");
-                    closeBarcodeScanner();
-                });
-            }, 150);
+        // --- จัดการหางพ่วง (เพิ่ม/แก้ไข/ลบ หางสำหรับทะเบียนหัว) ---
+        window.selectTrailer = (trailerId) => {
+            state.activeTrailerId = trailerId;
+            renderContent();
         };
 
-        window.closeBarcodeScanner = () => {
-            document.getElementById('barcode-modal').classList.add('hidden');
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                }).catch(err => {
-                    console.error("Failed to stop scanner", err);
-                    html5QrCode.clear();
-                    html5QrCode = null;
-                });
+        window.promptAddTrailer = (headPlate) => {
+            const plateInput = prompt('ระบุทะเบียนหางพ่วง (ถ้ามี) หรือชื่อเรียกหาง เช่น "70-1234" หรือ "หางคันที่ 2":');
+            if (plateInput === null || plateInput.trim() === '') return;
+            const existingCount = getTrailersForHead(headPlate).length;
+            const newTrailer = {
+                id: Date.now(),
+                headPlate: headPlate,
+                label: plateInput.trim() || `หางคันที่ ${existingCount + 1}`,
+                createdAt: getToday()
+            };
+            state.trailers.push(newTrailer);
+            state.activeTrailerId = newTrailer.id;
+            saveTrailersLocal();
+            sendGasAction('addTrailer', newTrailer);
+            renderNav();
+            renderContent();
+            showToast(`เพิ่มหางพ่วง "${newTrailer.label}" ให้ทะเบียนหัว ${headPlate} เรียบร้อย!`, 'success');
+        };
+
+        window.promptRenameTrailer = (trailerId) => {
+            const trailer = getTrailerById(trailerId);
+            if (!trailer) return;
+            const newLabel = prompt('แก้ไขทะเบียน/ชื่อเรียกหางพ่วง:', trailer.label);
+            if (newLabel === null || newLabel.trim() === '') return;
+            trailer.label = newLabel.trim();
+            saveTrailersLocal();
+            sendGasAction('editTrailer', trailer);
+            renderContent();
+            showToast('แก้ไขชื่อหางพ่วงเรียบร้อย', 'success');
+        };
+
+        window.promptDeleteTrailer = (trailerId) => {
+            const trailer = getTrailerById(trailerId);
+            if (!trailer) return;
+            const trailerKey = getTrailerUnitKey(trailerId);
+            const tireCount = state.tires.filter(t => t.plate === trailerKey).length;
+            customConfirm(
+                `ต้องการลบหางพ่วง "<b>${trailer.label}</b>" ใช่หรือไม่?${tireCount > 0 ? `<br><span class="text-xs text-rose-500">ข้อมูลยางที่บันทึกไว้ของหางนี้ ${tireCount} ตำแหน่ง จะถูกลบไปด้วย</span>` : ''}`,
+                () => {
+                    state.trailers = state.trailers.filter(t => String(t.id) !== String(trailerId));
+                    state.tires = state.tires.filter(t => t.plate !== trailerKey);
+                    if (String(state.activeTrailerId) === String(trailerId)) state.activeTrailerId = null;
+                    saveTrailersLocal();
+                    sendGasAction('deleteTrailer', { id: trailerId });
+                    renderNav();
+                    renderContent();
+                    showToast('ลบหางพ่วงเรียบร้อย', 'success');
+                },
+                { title: 'ยืนยันการลบหางพ่วง', icon: 'trash-2', confirmLabel: 'ลบหางพ่วง' }
+            );
+        };
+
+        window.renderTireModalBody = (formMode) => {
+            const { plate, pos } = currentTireCtx;
+            const { wheels } = getWheelLayout();
+            const wheelInfo = wheels.find(w => w.pos === pos);
+            const rec = getActiveTireAt(plate, pos);
+            const historyOld = getTireHistoryAt(plate, pos);
+            const sideLabel = wheelInfo.side === 'L' ? 'ซ้าย' : 'ขวา';
+            document.getElementById('tire-modal-title').innerText = `ล้อตำแหน่งที่ ${pos} — ${wheelInfo.axleLabel} (${sideLabel}${wheelInfo.sub ? ' ' + wheelInfo.sub : ''})`;
+            const body = document.getElementById('tire-modal-body');
+
+            if (formMode === 'add' || formMode === 'edit' || formMode === 'replace') {
+                const editingRec = formMode === 'edit' ? rec : null;
+                const currentOdo = getEstimatedOdometer(plate);
+                body.innerHTML = `
+                    <form id="tire-form" class="space-y-4">
+                        ${formMode === 'replace' ? `<div class="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs border border-amber-200">กำลังถอดยางเส้นเดิมออก และบันทึกยางเส้นใหม่ที่ตำแหน่งนี้</div>` : ''}
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">ยี่ห้อ/รุ่นยาง</label>
+                            <input required type="text" id="tf_brand" value="${editingRec ? (editingRec.brand || '') : ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น Bridgestone R150" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">เลขซีเรียลยาง (DOT/Serial)</label>
+                            <div class="relative flex items-center mb-1">
+                                <input type="text" id="tf_serial" value="${editingRec ? (editingRec.serial || '') : ''}" class="w-full border border-slate-300 rounded-lg pl-3 pr-12 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 1224XXXX" />
+                                <div class="absolute right-1 flex bg-white p-0.5 rounded-md border border-slate-100 shadow-sm">
+                                    <button type="button" onclick="document.getElementById('tire-serial-upload').click()" id="btn-scan-serial" class="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-navy-800 rounded transition-colors" title="สแกนรูปภาพเป็นตัวอักษร/ตัวเลข">
+                                        <i data-lucide="camera" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                                <input type="file" id="tire-serial-upload" accept="image/*" capture="environment" class="hidden" onchange="processTireImage(event)">
+                            </div>
+                            <p class="text-[10px] text-slate-400">✨ เคล็ดลับ: ถ่ายหรือเลือกรูปเลขซีเรียลให้ระบบช่วยอ่านตัวอักษร/ตัวเลขให้อัตโนมัติ</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">รูปถ่ายยาง (ถ้ามี)</label>
+                            <div class="flex items-center gap-3">
+                                <div id="tf-image-preview-wrap" class="w-20 h-20 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                    ${editingRec && editingRec.imageUrl ? `<img src="${editingRec.imageUrl}" class="w-full h-full object-cover" alt="พรีวิวรูปยาง">` : `<i data-lucide="image" class="w-6 h-6 text-slate-300"></i>`}
+                                </div>
+                                <div class="flex-1 space-y-1.5">
+                                    <button type="button" onclick="document.getElementById('tf_image_upload').click()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold text-slate-700 flex items-center">
+                                        <i data-lucide="upload" class="w-3.5 h-3.5 mr-1.5"></i><span id="tf-image-upload-label">${editingRec && editingRec.imageUrl ? 'เปลี่ยนรูป' : 'อัปโหลดรูป'}</span>
+                                    </button>
+                                    <button type="button" id="tf-image-remove-btn" onclick="removeTireImagePreview()" class="block text-xs text-slate-400 hover:text-red-500 ${editingRec && editingRec.imageUrl ? '' : 'hidden'}">ลบรูปนี้</button>
+                                </div>
+                                <input type="file" id="tf_image_upload" accept="image/*" class="hidden" onchange="previewTireImageUpload(event)">
+                            </div>
+                            <input type="hidden" id="tf_imageUrl" value="${editingRec ? (editingRec.imageUrl || '') : ''}">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">วันที่เริ่มใส่ยาง</label>
+                                <input required type="date" id="tf_date" value="${editingRec && editingRec.installDate ? reverseThaiToISO(editingRec.installDate) : getToday()}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">เลขไมล์ขณะใส่ยาง</label>
+                                <input required type="number" id="tf_odo" value="${editingRec ? editingRec.installOdometer : currentOdo}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">หมายเหตุ</label>
+                            <textarea id="tf_notes" rows="2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">${editingRec ? (editingRec.notes || '') : ''}</textarea>
+                        </div>
+                        <div class="flex space-x-3 pt-2">
+                            <button type="button" onclick="renderTireModalBody()" class="flex-1 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium">ยกเลิก</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-navy-800 text-white rounded-lg hover:bg-navy-900 font-medium">บันทึก</button>
+                        </div>
+                    </form>
+                `;
+                document.getElementById('tire-form').onsubmit = (e) => submitTireForm(e, formMode, editingRec);
+                lucide.createIcons();
+                return;
+            }
+
+            const status = getTireStatus(plate, rec);
+            const style = TIRE_STATUS_STYLE[status];
+            const km = rec ? getTireRunKm(plate, rec) : 0;
+
+            let html = '';
+            if (rec) {
+                const imgBlock = rec.imageUrl ? `
+                    <div class="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 mt-3 cursor-pointer" onclick="openTireImageLightbox('${String(rec.imageUrl).replace(/'/g, "\\'")}')">
+                        <img src="${rec.imageUrl}" class="w-full h-full object-cover" alt="รูปยาง" onerror="this.parentElement.classList.add('hidden')">
+                        <span class="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center">
+                            <i data-lucide="external-link" class="w-3 h-3 mr-1"></i>คลิกดูรูปขนาดเต็ม
+                        </span>
+                    </div>
+                ` : '';
+                html += `
+                    <div class="p-4 rounded-xl border ${status === 'overdue' ? 'bg-rose-50 border-rose-200' : status === 'warn' ? 'bg-orange-50 border-orange-200' : status === 'monitor' ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'} mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-bold text-slate-800">${rec.brand || 'ไม่ระบุยี่ห้อ'}</p>
+                                <p class="text-xs text-slate-500">S/N: ${rec.serial || '-'}</p>
+                            </div>
+                            <span class="text-xs font-bold px-2 py-1 rounded-full ${style.badge} whitespace-nowrap">${style.label}</span>
+                        </div>
+                        ${imgBlock}
+                        <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+                            <div><p class="text-slate-400 text-xs">เริ่มใส่</p><p class="font-semibold text-slate-700">${formatDisplayDate(rec.installDate)}</p></div>
+                            <div><p class="text-slate-400 text-xs">เลขไมล์เริ่มต้น</p><p class="font-semibold text-slate-700">${formatNumber(rec.installOdometer).replace(/\.00$/, '')} กม.</p></div>
+                            <div class="col-span-2"><p class="text-slate-400 text-xs">ระยะทางที่ใช้งานมาแล้ว</p><p class="font-bold text-slate-800 text-lg">${formatNumber(km).replace(/\.00$/, '')} กม.</p></div>
+                        </div>
+                        ${rec.notes ? `<p class="text-xs text-slate-500 mt-2 border-t border-slate-200/60 pt-2">📝 ${rec.notes}</p>` : ''}
+                    </div>
+                `;
+
+                // ประวัติการสลับยางของเส้นนี้
+                let swapHistory = JSON.parse(rec.historyJson || '[]');
+                if (swapHistory.length > 0) {
+                    html += `<div class="mb-4 space-y-2">`;
+                    swapHistory.forEach((h, idx) => {
+                        let text = h.customText ? h.customText : `สลับมาจากตำแหน่ง ${h.from} (เมื่อ ${h.date})`;
+                        html += `
+                            <div class="flex items-center justify-between bg-sky-50 border border-sky-100 p-2 rounded-lg text-xs">
+                                <span class="text-sky-800 flex items-center"><i data-lucide="refresh-cw" class="w-3 h-3 mr-1.5"></i> ${text}</span>
+                                <button onclick="editTireHistoryRecord('${rec.id}', ${idx})" class="text-sky-500 hover:text-sky-700 p-1"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                html += `
+                    <div class="flex space-x-2 mb-3">
+                        <button onclick="startSwapMode()" class="flex-1 px-3 py-2 bg-sky-100 hover:bg-sky-200 rounded-lg text-sm font-bold text-sky-800 flex items-center justify-center"><i data-lucide="arrow-left-right" class="w-4 h-4 mr-1"></i>สลับยาง</button>
+                        <button onclick="requestActionPin('renderTireModalBody(\\'edit\\')')" class="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 flex items-center justify-center"><i data-lucide="edit" class="w-4 h-4 mr-1"></i>แก้ไข</button>
+                    </div>
+                    <button onclick="requestActionPin('renderTireModalBody(\\'replace\\')')" class="w-full px-3 py-2 bg-navy-100 hover:bg-navy-200 rounded-lg text-sm font-bold text-navy-800 flex items-center justify-center mb-3"><i data-lucide="refresh-cw" class="w-4 h-4 mr-1"></i>เปลี่ยนเป็นยางเส้นใหม่</button>
+                    <button onclick="requestActionPin('deleteTireRecord(\\'${rec.id}\\')')" class="w-full text-center text-xs text-slate-400 hover:text-red-500 mb-2">ลบข้อมูลเส้นนี้ทั้งหมด (กู้คืนไม่ได้)</button>
+                `;
+            } else {
+                html += `
+                    <div class="p-6 rounded-xl border border-dashed border-slate-300 text-center mb-2">
+                        <i data-lucide="circle-dot" class="w-8 h-8 mx-auto text-slate-300 mb-2"></i>
+                        <p class="text-slate-500 text-sm mb-4">ยังไม่มีข้อมูลยางที่ตำแหน่งนี้</p>
+                        <button onclick="renderTireModalBody('add')" class="px-4 py-2 bg-navy-800 text-white rounded-lg text-sm font-bold hover:bg-navy-900">+ บันทึกยางเส้นนี้</button>
+                    </div>
+                `;
+            }
+
+            if (historyOld.length > 0) {
+                html += `
+                    <div class="border-t border-slate-100 pt-3 mt-2">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-2">ประวัติยางที่เคยใส่ตำแหน่งนี้ (${historyOld.length})</p>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                        ${historyOld.map(h => `
+                            <div class="text-xs bg-slate-50 rounded-lg p-2 border border-slate-100">
+                                <p class="font-semibold text-slate-600">${h.brand || 'ไม่ระบุยี่ห้อ'} <span class="text-slate-400">(${formatDisplayDate(h.installDate)} — ${h.removeDate ? formatDisplayDate(h.removeDate) : '-'})</span></p>
+                                <p class="text-slate-400">ใช้งาน ${formatNumber(getTireRunKm(plate, h)).replace(/\.00$/, '')} กม.</p>
+                            </div>
+                        `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            body.innerHTML = html;
+            lucide.createIcons();
+        };
+
+        window.submitTireForm = (e, mode, editingRec) => {
+            e.preventDefault();
+            const { plate, pos } = currentTireCtx;
+            const getVal = (id) => document.getElementById(id)?.value;
+
+            if (mode === 'replace') {
+                const activeRec = getActiveTireAt(plate, pos);
+                if (activeRec) {
+                    activeRec.status = 'removed';
+                    activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
+                    activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
+                    sendGasAction('editTire', activeRec);
+                }
+            }
+
+            let rec = (mode === 'edit' && editingRec) ? editingRec : { id: Date.now(), plate: plate, position: pos, historyJson: '[]' };
+            rec.brand = getVal('tf_brand');
+            rec.serial = getVal('tf_serial');
+            rec.installDate = formatToThaiShort(getVal('tf_date'));
+            rec.installOdometer = Number(getVal('tf_odo') || 0);
+            rec.notes = getVal('tf_notes') || '';
+            rec.imageUrl = getVal('tf_imageUrl') || '';
+            rec.status = 'active';
+
+            if (mode === 'edit') {
+                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
+                sendGasAction('editTire', rec);
+            } else {
+                state.tires.unshift(rec);
+                sendGasAction('addTire', rec);
+            }
+
+            showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
+            renderTireModalBody();
+            renderContent();
+        };
+
+        window.deleteTireRecord = (id) => {
+            customConfirm("ยืนยันการลบข้อมูลยางเส้นนี้ทั้งหมด (ลบแล้วกู้คืนไม่ได้)", async () => {
+                sendGasAction('deleteTire', { id });
+                state.tires = state.tires.filter(t => t.id != id);
+                closeTireModal();
+                renderContent();
+                showToast('ลบข้อมูลยางสำเร็จ!');
+            });
+        };
+
+        window.toggleJobSort = () => {
+            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
+
+            let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
+            if(state.jobSortMode === 'alpha') {
+                filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
+            }
+            state.currentJobOptions = filteredJobs;
+
+            const input = document.getElementById('job_combo_input');
+            const dd = document.getElementById('job_combo_dropdown');
+            if(input && dd && !dd.classList.contains('hidden')) {
+                renderJobCombo(input.value);
+            }
+
+            const btn = document.getElementById('btn-job-sort');
+            if(btn) {
+                if(state.jobSortMode === 'recent') {
+                    btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
+                    btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
+                } else {
+                    btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
+                    btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
+                }
+                lucide.createIcons();
             }
         };
+
+        function jobComboFilteredList(filterText) {
+            const options = state.currentJobOptions || [];
+            const q = (filterText || '').trim().toLowerCase();
+            const filtered = q
+                ? options.filter(j => `${j.origin || ''} ${j.dest || ''}`.toLowerCase().includes(q))
+                : options;
+            state.currentJobFiltered = filtered;
+            return filtered;
+        }
+
+        function renderJobCombo(filterText) {
+            const dd = document.getElementById('job_combo_dropdown');
+            if(!dd) return;
+            const filtered = jobComboFilteredList(filterText);
+            state.jobComboActiveIndex = filtered.length > 0 ? 0 : -1;
+
+            let itemsHtml = '';
+            if(!filterText) {
+                itemsHtml += `<div onmousedown="event.preventDefault(); clearJobComboSelection()" class="px-3 py-2 text-sm cursor-pointer bg-navy-50 text-navy-800 font-semibold border-b border-slate-100 flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-2"></i>-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</div>`;
+            }
+            if(filtered.length === 0) {
+                itemsHtml += `<div class="px-3 py-3 text-sm text-slate-400 text-center">ไม่พบเส้นทางที่ตรงกับคำค้นหา</div>`;
+            } else {
+                itemsHtml += filtered.map((j, idx) => `
+                    <div data-idx="${idx}" onmousedown="event.preventDefault(); selectJobComboByIndex(${idx})"
+                         class="job-combo-item px-3 py-2 text-sm cursor-pointer hover:bg-navy-50 border-b border-slate-100 last:border-b-0 flex justify-between items-center gap-2 ${idx === 0 ? 'bg-navy-50/60' : ''}">
+                        <span class="text-slate-800 truncate">${j.origin} <span class="text-slate-400">➔</span> ${j.dest}</span>
+                        <span class="text-navy-700 font-bold text-xs whitespace-nowrap">${formatCurrency(j.revenue)}</span>
+                    </div>
+                `).join('');
+            }
+            dd.innerHTML = itemsHtml;
+            dd.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.openJobCombo = () => {
+            const input = document.getElementById('job_combo_input');
+            renderJobCombo('');
+            if(input) input.select();
+        };
+
+        window.onJobComboInput = (text) => {
+            renderJobCombo(text);
+        };
+
+        window.hideJobCombo = () => {
+            const dd = document.getElementById('job_combo_dropdown');
+            if(dd) dd.classList.add('hidden');
+        };
+
+        function highlightJobComboActive() {
+            const dd = document.getElementById('job_combo_dropdown');
+            if(!dd) return;
+            dd.querySelectorAll('.job-combo-item').forEach(el => {
+                const isActive = Number(el.getAttribute('data-idx')) === state.jobComboActiveIndex;
+                el.classList.toggle('bg-navy-50/60', isActive);
+                if(isActive) el.scrollIntoView({ block: 'nearest' });
+            });
+        }
+
+        window.onJobComboKeydown = (e) => {
+            const dd = document.getElementById('job_combo_dropdown');
+            if(!dd || dd.classList.contains('hidden')) {
+                if(e.key === 'ArrowDown') { e.preventDefault(); openJobCombo(); }
+                return;
+            }
+            const filtered = state.currentJobFiltered || [];
+            if(e.key === 'ArrowDown') {
+                e.preventDefault();
+                if(filtered.length === 0) return;
+                state.jobComboActiveIndex = (state.jobComboActiveIndex + 1) % filtered.length;
+                highlightJobComboActive();
+            } else if(e.key === 'ArrowUp') {
+                e.preventDefault();
+                if(filtered.length === 0) return;
+                state.jobComboActiveIndex = (state.jobComboActiveIndex - 1 + filtered.length) % filtered.length;
+                highlightJobComboActive();
+            } else if(e.key === 'Enter') {
+                e.preventDefault();
+                if(state.jobComboActiveIndex >= 0 && filtered[state.jobComboActiveIndex]) {
+                    selectJobComboByIndex(state.jobComboActiveIndex);
+                }
+            } else if(e.key === 'Escape') {
+                hideJobCombo();
+            }
+        };
+
+        window.clearJobComboSelection = () => {
+            const input = document.getElementById('job_combo_input');
+            if(input) input.value = '';
+            hideJobCombo();
+        };
+
+        window.selectJobComboByIndex = (idx) => {
+            const job = (state.currentJobFiltered || [])[idx];
+            if(!job) return;
+
+            const input = document.getElementById('job_combo_input');
+            if(input) input.value = `${job.origin} ➔ ${job.dest} (${formatCurrency(job.revenue)})`;
+
+            if(document.getElementById('f_origin')) document.getElementById('f_origin').value = job.origin || '';
+            if(document.getElementById('f_dest')) document.getElementById('f_dest').value = job.dest || '';
+            if(document.getElementById('f_dist')) document.getElementById('f_dist').value = job.dist || '';
+            if(document.getElementById('f_revenue')) document.getElementById('f_revenue').value = job.revenue || '';
+
+            if(document.getElementById('f_fuelRate')) {
+                const rate = parseFloat(job.fuelRate);
+                document.getElementById('f_fuelRate').value = (!isNaN(rate) && rate > 0) ? rate : 2.5;
+            }
+            if(document.getElementById('f_currentFuelPrice')) {
+                const price = parseFloat(job.currentFuelPrice);
+                document.getElementById('f_currentFuelPrice').value = (!isNaN(price) && price > 0) ? price : 36.0;
+            }
+            if(document.getElementById('f_driverFee')) {
+                const fee = parseFloat(job.driverFee);
+                document.getElementById('f_driverFee').value = !isNaN(fee) ? fee : 0;
+            }
+
+            calcFuelCost();
+            hideJobCombo();
+        };
+
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('job_combo_wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                hideJobCombo();
+            }
+        });
 
         window.openNewFormModal = () => {
             state.formData = {};
@@ -2282,7 +2998,9 @@
             const form = document.getElementById('main-form');
             const catName = state.activeCategory === 'flatbed' ? 'รถพื้นเรียบ' : 'รถเซมิดั๊ม';
             const titleObj = { trips: 'รายการวิ่งงาน', refuels: 'รายการเติมน้ำมัน', vehicles: 'ข้อมูลรถ/คนขับ', jobs: 'ตั้งค่าเส้นทางและเรทราคา', maintenance: 'บันทึกงานซ่อมบำรุง' };
-            document.getElementById('modal-title').innerHTML = (isEdit ? 'แก้ไข' : 'เพิ่ม') + titleObj[state.activeTab] + ` <span class="text-sm font-normal text-slate-500 ml-1">(${catName})</span>`;
+            // ข้อมูลรถ/ซ่อมบำรุงรวมทุกหมวดแล้ว จึงไม่ต้องแสดงหมวดในหัวข้อป๊อบอัพของสองแท็บนี้
+            const catSuffix = (state.activeTab === 'vehicles' || state.activeTab === 'maintenance') ? '' : ` <span class="text-sm font-normal text-slate-500 ml-1">(${catName})</span>`;
+            document.getElementById('modal-title').innerHTML = (isEdit ? 'แก้ไข' : 'เพิ่ม') + titleObj[state.activeTab] + catSuffix;
             
             let html = '';
             if (state.activeTab === 'trips' || state.activeTab === 'refuels') {
@@ -2328,14 +3046,13 @@
                         filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
                     }
 
-                    let jobOptions = '';
-                    filteredJobs.forEach(j => {
-                        jobOptions += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
-                    });
+                    state.currentJobOptions = filteredJobs;
+                    state.currentJobFiltered = filteredJobs;
 
-                    let sortBtnHtml = state.jobSortMode === 'recent' 
+                    let sortBtnHtml = state.jobSortMode === 'recent'
                         ? `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors"><i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด</button>`
                         : `<button type="button" id="btn-job-sort" onclick="toggleJobSort()" class="text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors"><i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ</button>`;
+
 
                     html += `
                         <div class="col-span-2 mt-4">
@@ -2343,10 +3060,19 @@
                                 <span>📍 เลือกเส้นทางมาตรฐาน (ดึงข้อมูลค่าเที่ยว/ค่าน้ำมันอัตโนมัติ)</span>
                                 ${sortBtnHtml}
                             </label>
-                            <select id="job_select" onchange="applyJobSelection()" class="w-full border border-navy-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-navy-50 text-navy-900 font-semibold shadow-sm">
-                                <option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>
-                                ${jobOptions}
-                            </select>
+                            <div class="relative" id="job_combo_wrapper">
+                                <div class="relative">
+                                    <input type="text" id="job_combo_input" autocomplete="off"
+                                           placeholder="-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --"
+                                           oninput="onJobComboInput(this.value)"
+                                           onclick="openJobCombo()"
+                                           onfocus="openJobCombo()"
+                                           onkeydown="onJobComboKeydown(event)"
+                                           class="w-full border border-navy-300 rounded-lg pl-3 pr-8 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800 bg-navy-50 text-navy-900 font-semibold shadow-sm" />
+                                    <i data-lucide="chevron-down" class="w-4 h-4 text-navy-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                </div>
+                                <div id="job_combo_dropdown" class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-96 overflow-y-auto"></div>
+                            </div>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-slate-700 mb-2 flex justify-between items-center">
@@ -2496,10 +3222,18 @@
                     </div>
                 `;
             } else if (state.activeTab === 'vehicles') {
+                const vCat = state.formData.category || 'flatbed';
                 html += `
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ทะเบียนรถ</label>
                         <input required type="text" id="f_plate" value="${state.formData.plate || ''}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800" placeholder="เช่น 88-2059" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">หมวดรถ</label>
+                        <select required id="f_v_category" class="w-full border border-navy-300 bg-navy-50 text-navy-900 font-semibold rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-navy-800">
+                            <option value="flatbed" ${vCat === 'flatbed' ? 'selected' : ''}>รถพื้นเรียบ</option>
+                            <option value="semidump" ${vCat === 'semidump' ? 'selected' : ''}>รถเซมิดั๊ม</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อคนขับ</label>
@@ -2537,7 +3271,8 @@
                 `;
             } else if (state.activeTab === 'maintenance') {
                 let plateOptions = '';
-                const filteredVehicles = state.vehicles.filter(v => (v.category || 'flatbed') === state.activeCategory);
+                // หน้าซ่อมบำรุงรวมทุกหมวดแล้ว ให้เลือกทะเบียนรถได้จากทุกหมวด
+                const filteredVehicles = state.vehicles.slice();
                 filteredVehicles.forEach(v => { plateOptions += `<option value="${v.plate}">${v.plate} — ${v.driver}${v.model ? ' ('+v.model+')' : ''}</option>`; });
 
                 const selPlate = state.formData.plate || state.activeVehiclePlate || (filteredVehicles[0] ? filteredVehicles[0].plate : '');
@@ -2623,66 +3358,6 @@
             }
         };
 
-        window.toggleJobSort = () => {
-            state.jobSortMode = state.jobSortMode === 'recent' ? 'alpha' : 'recent';
-            
-            const sel = document.getElementById('job_select');
-            if(sel) {
-                const currentValue = sel.value;
-                let filteredJobs = [...state.jobs.filter(j => (j.category || 'flatbed') === state.activeCategory)];
-                
-                if(state.jobSortMode === 'alpha') {
-                    // เรียงตามตัวอักษร ก-ฮ (ต้นทาง -> ปลายทาง)
-                    filteredJobs.sort((a,b) => (a.origin+' '+a.dest).localeCompare(b.origin+' '+b.dest, 'th'));
-                } 
-                
-                let html = '<option value="">-- พิมพ์เอง หรือเลือกจากฐานข้อมูล --</option>';
-                filteredJobs.forEach(j => {
-                    html += `<option value="${j.id}" data-ori="${j.origin}" data-dest="${j.dest}" data-dist="${j.dist}" data-rev="${j.revenue}" data-fuelrate="${j.fuelRate||''}" data-fuelprice="${j.currentFuelPrice||''}" data-fuelcost="${j.fuelCost||0}" data-driverfee="${j.driverFee||0}">${j.origin} ➔ ${j.dest} (${formatCurrency(j.revenue)})</option>`;
-                });
-                
-                sel.innerHTML = html;
-                if (currentValue) sel.value = currentValue; // คงค่าเดิมที่เคยเลือกไว้
-
-                const btn = document.getElementById('btn-job-sort');
-                if(btn) {
-                    if(state.jobSortMode === 'recent') {
-                        btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3 mr-1"></i>เรียงตามล่าสุด';
-                        btn.className = "text-slate-600 bg-slate-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-slate-200 transition-colors";
-                    } else {
-                        btn.innerHTML = '<i data-lucide="a-z" class="w-3 h-3 mr-1"></i>เรียงตาม ก-ฮ';
-                        btn.className = "text-navy-700 bg-navy-100 px-2 py-1 rounded text-xs font-bold flex items-center hover:bg-navy-200 transition-colors";
-                    }
-                    lucide.createIcons();
-                }
-            }
-        };
-
-        window.applyJobSelection = () => {
-            const sel = document.getElementById('job_select');
-            const opt = sel.options[sel.selectedIndex];
-            if(opt && opt.value) {
-                document.getElementById('f_origin').value = opt.getAttribute('data-ori') || '';
-                document.getElementById('f_dest').value = opt.getAttribute('data-dest') || '';
-                document.getElementById('f_dist').value = opt.getAttribute('data-dist') || '';
-                document.getElementById('f_revenue').value = opt.getAttribute('data-rev') || '';
-                
-                if(document.getElementById('f_fuelRate')) {
-                    const rate = parseFloat(opt.getAttribute('data-fuelrate'));
-                    document.getElementById('f_fuelRate').value = (!isNaN(rate) && rate > 0) ? rate : 2.5;
-                }
-                if(document.getElementById('f_currentFuelPrice')) {
-                    const price = parseFloat(opt.getAttribute('data-fuelprice'));
-                    document.getElementById('f_currentFuelPrice').value = (!isNaN(price) && price > 0) ? price : 36.0;
-                }
-                if(document.getElementById('f_driverFee')) {
-                    const fee = parseFloat(opt.getAttribute('data-driverfee'));
-                    document.getElementById('f_driverFee').value = !isNaN(fee) ? fee : 0;
-                }
-
-                calcFuelCost(); 
-            }
-        };
 
         window.calcFuelCost = () => {
             const distInput = document.getElementById('f_dist');
@@ -2776,9 +3451,10 @@
                 else state.refuels.unshift(newData);
             } else if (state.activeTab === 'vehicles') {
                 actionType = state.editMode ? 'editVehicle' : 'addVehicle';
-                Object.assign(newData, { 
+                Object.assign(newData, {
                     plate: getVal('f_plate'), driver: getVal('f_driver'), type: getVal('f_type'),
                     model: getVal('f_model') || '', year: getVal('f_year') || '',
+                    category: getVal('f_v_category') || 'flatbed',
                     baselineOdometer: Number(getVal('f_baselineOdometer') || 0),
                     baselineDate: formatToThaiShort(getVal('f_baselineDate') || getToday())
                 });
@@ -2929,8 +3605,7 @@
         window.showToast = (message, type = "success") => {
             const toast = document.createElement('div');
             const isError = type === "error";
-            // เลื่อนต่ำแหน่งจาก top-6 (ขอบบน) เป็น top-24 (เลื่อนลงมาด้านล่างให้พ้นแถบเมนู)
-            toast.className = `fixed top-24 right-4 md:right-8 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
+            toast.className = `fixed top-6 right-6 px-6 py-3 rounded-xl shadow-lg border flex items-center space-x-3 transition-all transform translate-x-full z-[10000] font-medium ${isError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`;
             
             toast.innerHTML = `
                 <i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-5 h-5"></i>
@@ -2955,7 +3630,15 @@
                         method: 'POST',
                         body: JSON.stringify({ action: actionStr, id: id, sheetType: sheetType })
                     });
-                    const result = await res.json();
+                    
+                    const text = await res.text();
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (parseErr) {
+                        throw new Error("เซิร์ฟเวอร์ไม่ได้ส่งข้อมูล JSON กลับมา: " + text.substring(0, 50));
+                    }
+
                     if (result.status !== 'success') {
                         throw new Error(result.message || 'เซิร์ฟเวอร์ปฏิเสธการลบ');
                     }
@@ -2972,7 +3655,7 @@
                     showToast("ลบข้อมูลสำเร็จ!");
                 } catch (e) {
                     console.error(e);
-                    showToast("เกิดข้อผิดพลาดในการลบข้อมูล", "error");
+                    showToast("เกิดข้อผิดพลาดในการลบข้อมูล: " + e.message, "error");
                 } finally {
                     document.getElementById('loading-spinner').classList.add('hidden');
                 }
@@ -3056,6 +3739,43 @@
             }
         });
 
+        // ย้ายข้อมูลยางเก่าของ "ตำแหน่งหางพ่วง" (11-22) ที่เคยบันทึกไว้ใต้ทะเบียนหัวโดยตรง
+        // (ก่อนมีระบบหางพ่วงแยกต่างหาก) มาใส่ไว้ใต้ "หางชั่วคราว" ที่สร้างให้อัตโนมัติ
+        // เพื่อไม่ให้ข้อมูลยางเดิมหายไปจากหน้าจอ — ทำงานซ้ำได้โดยไม่สร้างหางซ้ำ (ใช้หางชั่วคราวเดิมถ้ามีอยู่แล้ว)
+        function migrateOldTrailerTireData() {
+            let migratedAny = false;
+            state.vehicles.forEach(v => {
+                const headPlate = v.plate;
+                if (!headPlate) return;
+                const oldTrailerTires = state.tires.filter(t => t.plate === headPlate && Number(t.position) >= 11 && Number(t.position) <= 22);
+                if (oldTrailerTires.length === 0) return;
+
+                let trailer = state.trailers.find(tr => tr.headPlate === headPlate && tr.isMigratedPlaceholder);
+                if (!trailer) {
+                    trailer = {
+                        id: Date.now() + Math.floor(Math.random() * 100000),
+                        headPlate: headPlate,
+                        label: `หางชั่วคราว (${headPlate})`,
+                        createdAt: getToday(),
+                        isMigratedPlaceholder: true
+                    };
+                    state.trailers.push(trailer);
+                    sendGasAction('addTrailer', trailer);
+                }
+                const trailerKey = getTrailerUnitKey(trailer.id);
+                oldTrailerTires.forEach(t => {
+                    t.plate = trailerKey;
+                    sendGasAction('editTire', t);
+                });
+                migratedAny = true;
+            });
+            if (migratedAny) {
+                saveTrailersLocal();
+                showToast('พบข้อมูลยางหางพ่วงเดิม ย้ายมาไว้ใต้ "หางชั่วคราว" ให้อัตโนมัติ — แก้ไขทะเบียนได้จากปุ่มดินสอข้างชื่อหาง', 'success');
+            }
+            return migratedAny;
+        }
+
         function normalizeLoadedData() {
             const cleanPlate = (v) => (v === undefined || v === null) ? '' : String(v).trim();
             state.vehicles.forEach(v => { v.plate = cleanPlate(v.plate); v.category = v.category || 'flatbed'; });
@@ -3063,12 +3783,15 @@
             state.refuels.forEach(r => { r.plate = cleanPlate(r.plate); });
             state.maintenanceLogs.forEach(m => { m.plate = cleanPlate(m.plate); });
             state.tires.forEach(t => { t.plate = cleanPlate(t.plate); t.position = Number(t.position); });
+            migrateOldTrailerTireData();
         }
 
         async function initApp() {
             renderNav();
+            state.trailers = loadTrailersLocal();
             if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) {
                 seedDemoDataIfEmpty();
+                normalizeLoadedData();
                 renderNav();
                 renderContent();
                 return;
@@ -3077,7 +3800,16 @@
             try {
                 document.getElementById('loading-spinner').classList.remove('hidden');
                 const res = await fetch(GAS_WEB_APP_URL + "?t=" + new Date().getTime());
-                const data = await res.json();
+
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.warn("ไม่สามารถอ่าน JSON ได้ (อาจติดหน้า Login หรือ 404):", text.substring(0, 100));
+                    throw new Error("เซิร์ฟเวอร์ตอบกลับมาเป็น HTML (ตรวจสอบการตั้งค่า Deploy ของ Google Apps Script)");
+                }
+
                 if(data.status === 'success') {
                     state.trips = data.trips || [];
                     state.refuels = data.refuels || [];
@@ -3085,9 +3817,12 @@
                     state.jobs = data.jobs || [];
                     state.maintenanceLogs = data.maintenance || data.maintenanceLogs || [];
                     state.tires = data.tires || [];
+                    if (Array.isArray(data.trailers) && data.trailers.length) state.trailers = data.trailers;
                     normalizeLoadedData();
                 }
-            } catch (e) { console.error("Load error", e); }
+            } catch (e) {
+                console.error("Load error:", e);
+            }
             finally {
                 seedDemoDataIfEmpty();
                 renderNav();
