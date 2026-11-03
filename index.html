@@ -118,6 +118,10 @@
                 </h2>
             </div>
             <div class="flex space-x-2 md:space-x-3 flex-shrink-0">
+                <button id="btn-maint-config" onclick="openMaintConfigModal()" class="hidden items-center space-x-2 px-3 md:px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm font-medium">
+                    <i data-lucide="list-plus" class="h-4 w-4 text-slate-500"></i>
+                    <span class="hidden sm:inline">จัดการรายการตรวจเช็ค</span>
+                </button>
                 <button onclick="initApp()" class="flex items-center space-x-2 px-3 md:px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm font-medium">
                     <i data-lucide="refresh-cw" class="h-4 w-4 text-slate-500"></i>
                     <span class="hidden sm:inline">รีเฟรชข้อมูล</span>
@@ -186,6 +190,32 @@
         </div>
     </div>
 
+    <!-- Maintenance Checklist Config Modal -->
+    <div id="maint-config-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[76] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center"><i data-lucide="list-plus" class="h-5 w-5 mr-2 text-navy-800"></i>จัดการรายการตรวจเช็ค/ซ่อมบำรุง</h3>
+                <button onclick="closeMaintConfigModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <div id="maint-config-modal-body" class="p-6 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Monthly Expense Summary Modal -->
+    <div id="expense-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[76] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 flex-shrink-0">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center"><i data-lucide="pie-chart" class="h-5 w-5 mr-2 text-navy-800"></i>สรุปค่าใช้จ่ายรายเดือนแยกทะเบียน</h3>
+                <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            <div id="expense-modal-body" class="p-6 overflow-y-auto"></div>
+        </div>
+    </div>
+
     <!-- Tire Image Lightbox -->
     <div id="tire-image-lightbox" class="hidden fixed inset-0 bg-black/90 z-[90] flex items-center justify-center p-4" onclick="closeTireImageLightbox()">
         <button onclick="closeTireImageLightbox()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
@@ -197,7 +227,7 @@
     <!-- Javascript Core -->
     <script>
         // 👇👇👇 URL ของ Google Apps Script 👇👇👇
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby1uJGc3jyUvL2UvQnvhohBTXS_Xt2xepxPZi4_oUt-cKdtdxD5QuGZ4iMPi7JI2Tm8/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbztctXLBfoFWruu6ePvZmh_cTIwduMYucJK4OgNsekVb9IQIQyByEhlxu163d4AREsB/exec";
 
         const LOGIN_PIN = "8899";
         const ACTION_PIN = "2233";
@@ -217,7 +247,9 @@
             isSwapMode: false,
             swapSourcePos: null,
             swapSourceKey: null,
-            isDemoData: false
+            isDemoData: false,
+            expenseModalMonth: null,
+            expenseModalPlate: null
         };
 
         const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
@@ -473,6 +505,42 @@
         const maintenanceTypeMap = {};
         MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
         const MAINT_SOON_RATIO = 0.85;
+
+        // --- Maintenance Checklist Config (รายการตรวจเช็คที่เพิ่มเอง + ระยะแจ้งเตือนที่ปรับเอง) ---
+        // บันทึกไว้ที่เครื่อง (localStorage) เท่านั้น ไม่ผ่าน Google Apps Script
+        // เพื่อไม่ให้ขึ้นกับความสมบูรณ์ของฝั่งเซิร์ฟเวอร์ และใช้งานได้ทันทีแม้ออฟไลน์
+        function saveMaintConfigLocal() {
+            try {
+                const overrides = {};
+                MAINTENANCE_TYPES.forEach(t => { if (!t.isCustom) overrides[t.key] = { km: t.km, months: t.months }; });
+                const customTypes = MAINTENANCE_TYPES.filter(t => t.isCustom).map(t => ({ key: t.key, label: t.label, icon: t.icon, km: t.km, months: t.months, tip: t.tip || '', isCustom: true }));
+                localStorage.setItem('fleetMaintConfig', JSON.stringify({ overrides, customTypes }));
+            } catch (e) {}
+        }
+        function loadMaintConfigLocal() {
+            try { return JSON.parse(localStorage.getItem('fleetMaintConfig') || 'null'); } catch (e) { return null; }
+        }
+        function applyMaintConfigFromStorage() {
+            const cfg = loadMaintConfigLocal();
+            if (!cfg) return;
+            if (cfg.overrides) {
+                MAINTENANCE_TYPES.forEach(t => {
+                    const ov = cfg.overrides[t.key];
+                    if (ov) { t.km = Number(ov.km || 0); t.months = Number(ov.months || 0); }
+                });
+            }
+            if (Array.isArray(cfg.customTypes)) {
+                cfg.customTypes.forEach(ct => {
+                    if (!maintenanceTypeMap[ct.key]) {
+                        const otherIdx = MAINTENANCE_TYPES.findIndex(t => t.key === 'other');
+                        const newType = { key: ct.key, label: ct.label, icon: ct.icon || 'wrench', km: Number(ct.km || 0), months: Number(ct.months || 0), tip: ct.tip || '', isCustom: true };
+                        if (otherIdx > -1) MAINTENANCE_TYPES.splice(otherIdx, 0, newType); else MAINTENANCE_TYPES.push(newType);
+                        maintenanceTypeMap[ct.key] = newType;
+                    }
+                });
+            }
+        }
+        applyMaintConfigFromStorage();
 
         // --- Tire Config ---
         const TIRE_ROTATE_KM = 10000;
@@ -878,6 +946,15 @@
                 btnAdd.classList.remove('flex');
             }
 
+            const btnMaintConfig = document.getElementById('btn-maint-config');
+            if (state.activeTab === 'maintenance') {
+                btnMaintConfig.classList.remove('hidden');
+                btnMaintConfig.classList.add('flex');
+            } else {
+                btnMaintConfig.classList.add('hidden');
+                btnMaintConfig.classList.remove('flex');
+            }
+
             const subTitle = document.getElementById('page-subtitle');
             if (state.filterYear && state.filterMonth && state.filterPeriod) {
                 const periodText = state.filterPeriod === 1 ? '1-15' : '16-สิ้นเดือน';
@@ -1075,6 +1152,17 @@
                         </div>
                     </div>
 
+                    <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-4 flex-wrap">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <div class="bg-indigo-100 p-4 rounded-xl text-indigo-600 flex-shrink-0"><i data-lucide="pie-chart" class="h-8 w-8"></i></div>
+                            <div class="min-w-0">
+                                <p class="font-bold text-slate-800">สรุปค่าใช้จ่ายรายเดือนแยกทะเบียน</p>
+                                <p class="text-sm text-slate-500 truncate">ค่าน้ำมัน + ค่าซ่อมบำรุงของแต่ละทะเบียน แยกเป็นรายเดือน กดดูรายละเอียดรายคันได้</p>
+                            </div>
+                        </div>
+                        <button onclick="openExpenseModal()" class="px-4 py-2.5 bg-navy-800 text-white rounded-lg font-bold hover:bg-navy-900 whitespace-nowrap flex items-center gap-2 flex-shrink-0"><i data-lucide="bar-chart-3" class="w-4 h-4"></i>เปิดสรุปค่าใช้จ่าย</button>
+                    </div>
+
                     ${catAlerts.length > 0 ? `
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-navy-100">
                         <h3 class="text-lg font-bold text-slate-800 mb-1 flex items-center"><i data-lucide="bell-ring" class="h-5 w-5 mr-2 text-navy-800"></i>แจ้งเตือนซ่อมบำรุง</h3>
@@ -1130,6 +1218,169 @@
                 data: { labels: labels, datasets: [ { label: 'ยอดรับ', data: revenue, borderColor: '#1e3350', backgroundColor: '#1e3350', tension: 0.3, borderWidth: 3 }, { label: 'กำไร', data: profit, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.3, borderWidth: 3 } ] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
             });
+        }
+
+        // =====================================================================
+        // 🆕 ป็อบอัพสรุปค่าใช้จ่ายรายเดือน (ค่าน้ำมัน + ซ่อมบำรุง) แยกตามทะเบียน
+        // =====================================================================
+        function getExpenseDataForCategory(category) {
+            // หมายเหตุ: ฟิลด์ "category" ของ maintenanceLogs ถูกใช้เก็บ "ประเภทงานซ่อม" (เช่น oil_engine)
+            // ไม่ใช่ประเภทรถ (flatbed/semidump) แบบ trips/refuels จึงต้องเทียบประเภทรถจากทะเบียนรถแทน
+            const plateCategoryMap = {};
+            state.vehicles.forEach(v => { plateCategoryMap[v.plate] = v.category || 'flatbed'; });
+            const refuels = state.refuels.filter(r => (r.category || 'flatbed') === category);
+            const maints = state.maintenanceLogs.filter(m => (plateCategoryMap[m.plate] || 'flatbed') === category);
+            return { refuels, maints };
+        }
+
+        function getMonthKeyFromDateStr(dStr) {
+            const disp = formatDisplayDate(dStr);
+            const parts = String(disp).split('/');
+            if (parts.length !== 3) return null;
+            const m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+            if (!m || !y) return null;
+            return { key: `${y}-${String(m).padStart(2, '0')}`, label: `${monthNames[m - 1] || m} ${y}`, order: y * 100 + m };
+        }
+
+        function buildExpenseMonths(category) {
+            const { refuels, maints } = getExpenseDataForCategory(category);
+            const map = {};
+            [...refuels, ...maints].forEach(item => {
+                const mk = getMonthKeyFromDateStr(item.date);
+                if (mk && !map[mk.key]) map[mk.key] = mk;
+            });
+            return Object.values(map).sort((a, b) => b.order - a.order);
+        }
+
+        function getExpenseSummaryForMonth(category, monthKey) {
+            const { refuels, maints } = getExpenseDataForCategory(category);
+            const byPlate = {};
+            const ensure = (plate) => {
+                if (!byPlate[plate]) byPlate[plate] = { plate, fuel: 0, maint: 0, fuelItems: [], maintItems: [] };
+                return byPlate[plate];
+            };
+            refuels.forEach(r => {
+                const mk = getMonthKeyFromDateStr(r.date);
+                if (!mk || mk.key !== monthKey) return;
+                const p = ensure(r.plate);
+                p.fuel += Number(r.total || 0);
+                p.fuelItems.push(r);
+            });
+            maints.forEach(m => {
+                const mk = getMonthKeyFromDateStr(m.date);
+                if (!mk || mk.key !== monthKey) return;
+                const p = ensure(m.plate);
+                p.maint += Number(m.cost || 0);
+                p.maintItems.push(m);
+            });
+            return Object.values(byPlate).map(p => ({ ...p, total: p.fuel + p.maint })).sort((a, b) => b.total - a.total);
+        }
+
+        window.openExpenseModal = () => {
+            const months = buildExpenseMonths(state.activeCategory);
+            state.expenseModalMonth = months.length ? months[0].key : null;
+            state.expenseModalPlate = null;
+            renderExpenseModalBody();
+            document.getElementById('expense-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        window.closeExpenseModal = () => {
+            document.getElementById('expense-modal').classList.add('hidden');
+        };
+        window.setExpenseModalMonth = (key) => {
+            state.expenseModalMonth = key;
+            state.expenseModalPlate = null;
+            renderExpenseModalBody();
+        };
+        window.openExpenseModalPlateDetail = (plate) => {
+            state.expenseModalPlate = plate;
+            renderExpenseModalBody();
+        };
+        window.backExpenseModalList = () => {
+            state.expenseModalPlate = null;
+            renderExpenseModalBody();
+        };
+
+        function renderExpenseModalBody() {
+            const body = document.getElementById('expense-modal-body');
+            if (!body) return;
+            const months = buildExpenseMonths(state.activeCategory);
+
+            if (months.length === 0) {
+                body.innerHTML = `<div class="text-center text-slate-500 py-10">ยังไม่มีข้อมูลค่าน้ำมัน/ค่าซ่อมบำรุงในหมวดนี้</div>`;
+                return;
+            }
+            if (!state.expenseModalMonth || !months.some(m => m.key === state.expenseModalMonth)) state.expenseModalMonth = months[0].key;
+
+            let html = `<div class="flex flex-wrap gap-2 mb-5">`;
+            months.forEach(m => {
+                const active = m.key === state.expenseModalMonth;
+                html += `<button onclick="setExpenseModalMonth('${m.key}')" class="px-3 py-1.5 rounded-lg text-sm font-bold whitespace-nowrap ${active ? 'bg-navy-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${m.label}</button>`;
+            });
+            html += `</div>`;
+
+            const summary = getExpenseSummaryForMonth(state.activeCategory, state.expenseModalMonth);
+            const grandTotal = summary.reduce((s, p) => s + p.total, 0);
+
+            if (!state.expenseModalPlate) {
+                html += `<div class="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between"><span class="font-bold text-slate-700">ยอดรวมทุกทะเบียนเดือนนี้</span><span class="font-bold text-xl text-navy-900 tabular-nums">${formatCurrency(grandTotal)}</span></div>`;
+                if (summary.length === 0) {
+                    html += `<div class="text-center text-slate-500 py-8">ไม่มีค่าใช้จ่ายในเดือนนี้</div>`;
+                } else {
+                    html += `<div class="space-y-2">`;
+                    summary.forEach(p => {
+                        html += `
+                            <button onclick="openExpenseModalPlateDetail('${p.plate}')" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-navy-300 hover:bg-navy-50/50 transition-colors text-left">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="bg-navy-100 text-navy-800 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"><i data-lucide="truck" class="w-5 h-5"></i></div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-slate-800 truncate">${p.plate}</p>
+                                        <p class="text-xs text-slate-400">น้ำมัน ${formatCurrency(p.fuel)} · ซ่อมบำรุง ${formatCurrency(p.maint)}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    <span class="font-bold text-orange-600 tabular-nums">${formatCurrency(p.total)}</span>
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                                </div>
+                            </button>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            } else {
+                const plateData = summary.find(p => p.plate === state.expenseModalPlate) || { plate: state.expenseModalPlate, fuel: 0, maint: 0, fuelItems: [], maintItems: [], total: 0 };
+                html += `
+                    <button onclick="backExpenseModalList()" class="flex items-center text-sm text-slate-500 hover:text-navy-800 mb-4"><i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>กลับไปดูทุกทะเบียน</button>
+                    <div class="bg-slate-50 rounded-xl p-4 mb-4">
+                        <p class="font-bold text-lg text-slate-800">${plateData.plate}</p>
+                        <div class="flex gap-6 mt-2">
+                            <div><p class="text-xs text-slate-400">ค่าน้ำมัน</p><p class="font-bold text-orange-600">${formatCurrency(plateData.fuel)}</p></div>
+                            <div><p class="text-xs text-slate-400">ค่าซ่อมบำรุง</p><p class="font-bold text-red-600">${formatCurrency(plateData.maint)}</p></div>
+                            <div><p class="text-xs text-slate-400">รวม</p><p class="font-bold text-navy-900">${formatCurrency(plateData.total)}</p></div>
+                        </div>
+                    </div>
+                `;
+                if (plateData.maintItems.length > 0) {
+                    html += `<h4 class="font-bold text-slate-700 text-sm mb-2 mt-4">รายการซ่อมบำรุง</h4><div class="space-y-1 mb-4">`;
+                    [...plateData.maintItems].sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date)).forEach(m => {
+                        html += `<div class="flex items-center justify-between text-sm p-2.5 rounded-lg bg-white border border-slate-100"><span class="text-slate-600">${formatDisplayDate(m.date)} · ${(maintenanceTypeMap[m.category] || { label: m.category }).label}</span><span class="font-bold text-red-600 tabular-nums">${formatCurrency(m.cost)}</span></div>`;
+                    });
+                    html += `</div>`;
+                }
+                if (plateData.fuelItems.length > 0) {
+                    html += `<h4 class="font-bold text-slate-700 text-sm mb-2">รายการเติมน้ำมัน</h4><div class="space-y-1">`;
+                    [...plateData.fuelItems].sort((a, b) => parseDateForSort(b.date) - parseDateForSort(a.date)).forEach(r => {
+                        html += `<div class="flex items-center justify-between text-sm p-2.5 rounded-lg bg-white border border-slate-100"><span class="text-slate-600">${formatDisplayDate(r.date)} · ${formatNumber(r.liters).replace(/\.00$/, '')} ลิตร</span><span class="font-bold text-orange-600 tabular-nums">${formatCurrency(r.total)}</span></div>`;
+                    });
+                    html += `</div>`;
+                }
+                if (plateData.maintItems.length === 0 && plateData.fuelItems.length === 0) {
+                    html += `<div class="text-center text-slate-400 py-6">ไม่มีรายการในเดือนนี้</div>`;
+                }
+            }
+
+            body.innerHTML = html;
+            lucide.createIcons();
         }
 
         function renderTrips(container) {
@@ -1614,6 +1865,138 @@
             container.innerHTML = html;
         }
 
+        // =====================================================================
+        // 🆕 จัดการรายการตรวจเช็ค/ซ่อมบำรุง (เพิ่มรายการเอง + กำหนดระยะแจ้งเตือนเอง)
+        // =====================================================================
+        window._maintConfigEditingKey = null;
+
+        window.openMaintConfigModal = () => {
+            window._maintConfigEditingKey = null;
+            renderMaintConfigModalBody();
+            document.getElementById('maint-config-modal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+        window.closeMaintConfigModal = () => {
+            document.getElementById('maint-config-modal').classList.add('hidden');
+        };
+
+        window.startEditMaintInterval = (key) => {
+            window._maintConfigEditingKey = key;
+            renderMaintConfigModalBody();
+        };
+        window.cancelEditMaintInterval = () => {
+            window._maintConfigEditingKey = null;
+            renderMaintConfigModalBody();
+        };
+        window.saveMaintInterval = (key) => {
+            const t = maintenanceTypeMap[key];
+            if (!t) return;
+            const kmVal = Number(document.getElementById('mc_edit_km')?.value || 0);
+            const monthsVal = Number(document.getElementById('mc_edit_months')?.value || 0);
+            t.km = kmVal;
+            t.months = monthsVal;
+            saveMaintConfigLocal();
+            window._maintConfigEditingKey = null;
+            renderMaintConfigModalBody();
+            renderContent();
+            showToast('อัปเดตระยะแจ้งเตือนสำเร็จ!', 'success');
+        };
+
+        window.deleteCustomMaintType = (key) => {
+            customConfirm("ต้องการลบรายการตรวจเช็คนี้ใช่หรือไม่? (ประวัติงานซ่อมเก่าที่เคยบันทึกด้วยรายการนี้จะยังคงอยู่ แต่จะไม่มีการแจ้งเตือนรอบถัดไปอีก)", () => {
+                const idx = MAINTENANCE_TYPES.findIndex(t => t.key === key);
+                if (idx > -1) MAINTENANCE_TYPES.splice(idx, 1);
+                delete maintenanceTypeMap[key];
+                saveMaintConfigLocal();
+                renderMaintConfigModalBody();
+                renderContent();
+                showToast('ลบรายการตรวจเช็คแล้ว', 'success');
+            });
+        };
+
+        window.submitNewMaintType = (e) => {
+            e.preventDefault();
+            const label = document.getElementById('mc_new_label').value.trim();
+            const km = Number(document.getElementById('mc_new_km').value || 0);
+            const months = Number(document.getElementById('mc_new_months').value || 0);
+            const tip = document.getElementById('mc_new_tip').value.trim();
+            if (!label) { showToast('กรุณาระบุชื่อรายการ', 'error'); return; }
+            if (km <= 0 && months <= 0) { showToast('กรุณาระบุระยะแจ้งเตือนอย่างน้อย 1 อย่าง (กม. หรือ เดือน)', 'error'); return; }
+
+            const key = 'custom_' + Date.now();
+            const otherIdx = MAINTENANCE_TYPES.findIndex(t => t.key === 'other');
+            const newType = { key, label, icon: 'wrench', km, months, tip, isCustom: true };
+            if (otherIdx > -1) MAINTENANCE_TYPES.splice(otherIdx, 0, newType); else MAINTENANCE_TYPES.push(newType);
+            maintenanceTypeMap[key] = newType;
+            saveMaintConfigLocal();
+            renderMaintConfigModalBody();
+            renderContent();
+            showToast('เพิ่มรายการตรวจเช็คใหม่สำเร็จ!', 'success');
+        };
+
+        function renderMaintConfigModalBody() {
+            const body = document.getElementById('maint-config-modal-body');
+            if (!body) return;
+            const items = MAINTENANCE_TYPES.filter(t => t.key !== 'other');
+
+            const intervalText = (t) => {
+                const parts = [];
+                if (t.km > 0) parts.push(`ทุก ${formatNumber(t.km).replace(/\.00$/, '')} กม.`);
+                if (t.months > 0) parts.push(`ทุก ${t.months} เดือน`);
+                return parts.length ? parts.join(' หรือ ') : 'ไม่ได้กำหนดระยะ (ไม่แจ้งเตือนอัตโนมัติ)';
+            };
+
+            let html = `<p class="text-xs text-slate-400 mb-4">กำหนดระยะทาง (กม.) และ/หรือระยะเวลา (เดือน) ที่ควรเปลี่ยน/ตรวจเช็คของแต่ละรายการ ระบบจะแจ้งเตือนอัตโนมัติเมื่อใกล้ถึงหรือเกินกำหนด — บันทึกไว้ที่เครื่องนี้เท่านั้น</p>`;
+            html += `<div class="space-y-2 mb-6">`;
+            items.forEach(t => {
+                const isEditing = window._maintConfigEditingKey === t.key;
+                html += `
+                    <div class="border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center space-x-3 min-w-0">
+                                <i data-lucide="${t.icon || 'wrench'}" class="w-4 h-4 text-slate-500 flex-shrink-0"></i>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-sm text-slate-700 truncate">${t.label} ${t.isCustom ? '<span class="text-[10px] font-bold ml-1 px-1.5 py-0.5 rounded bg-navy-100 text-navy-700">เพิ่มเอง</span>' : ''}</p>
+                                    ${!isEditing ? `<p class="text-xs text-slate-400">${intervalText(t)}</p>` : ''}
+                                </div>
+                            </div>
+                            ${!isEditing ? `
+                            <div class="flex items-center space-x-1 flex-shrink-0">
+                                <button onclick="startEditMaintInterval('${t.key}')" class="text-slate-400 hover:text-navy-700 p-1.5 rounded-lg hover:bg-navy-50"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                                ${t.isCustom ? `<button onclick="deleteCustomMaintType('${t.key}')" class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                            </div>` : ''}
+                        </div>
+                        ${isEditing ? `
+                        <div class="mt-3 flex flex-wrap items-end gap-3 bg-slate-50 p-3 rounded-lg">
+                            <div><label class="block text-xs font-bold text-slate-500 mb-1">ระยะ (กม.)</label><input id="mc_edit_km" type="number" min="0" value="${t.km || 0}" class="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-sm"></div>
+                            <div><label class="block text-xs font-bold text-slate-500 mb-1">ระยะเวลา (เดือน)</label><input id="mc_edit_months" type="number" min="0" value="${t.months || 0}" class="w-28 border border-slate-300 rounded-lg px-2 py-1.5 text-sm"></div>
+                            <button onclick="saveMaintInterval('${t.key}')" class="px-3 py-1.5 bg-navy-800 text-white text-xs font-bold rounded-lg hover:bg-navy-900">บันทึก</button>
+                            <button onclick="cancelEditMaintInterval()" class="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300">ยกเลิก</button>
+                        </div>` : ''}
+                    </div>
+                `;
+            });
+            html += `</div>`;
+
+            html += `
+                <div class="border-t border-slate-200 pt-5">
+                    <h4 class="font-bold text-slate-800 mb-3 flex items-center"><i data-lucide="plus-circle" class="w-4 h-4 mr-2 text-navy-800"></i>เพิ่มรายการตรวจเช็คใหม่</h4>
+                    <form onsubmit="submitNewMaintType(event)" class="space-y-3">
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">ชื่อรายการ</label><input id="mc_new_label" type="text" placeholder="เช่น เปลี่ยนสายพานไทม์มิ่ง" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required></div>
+                        <div class="flex gap-3">
+                            <div class="flex-1"><label class="block text-xs font-bold text-slate-500 mb-1">ระยะ (กม.)</label><input id="mc_new_km" type="number" min="0" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></div>
+                            <div class="flex-1"><label class="block text-xs font-bold text-slate-500 mb-1">ระยะเวลา (เดือน)</label><input id="mc_new_months" type="number" min="0" placeholder="0" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></div>
+                        </div>
+                        <div><label class="block text-xs font-bold text-slate-500 mb-1">คำแนะนำสั้นๆ (ถ้ามี)</label><input id="mc_new_tip" type="text" placeholder="เช่น ฟังเสียงยางหรือลมยางก่อนออกรถทุกเช้า" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></div>
+                        <button type="submit" class="w-full py-2.5 bg-navy-800 text-white font-bold rounded-lg hover:bg-navy-900 transition-colors">+ เพิ่มรายการนี้</button>
+                    </form>
+                </div>
+            `;
+
+            body.innerHTML = html;
+            lucide.createIcons();
+        }
+
         function renderMaintenance(container) {
             // รวมรถทุกหมวด (พื้นเรียบ + เซมิดั๊ม) ไว้ในหน้าเดียวกัน
             const filteredVehicles = state.vehicles.slice();
@@ -1778,6 +2161,8 @@
         function renderAdvisorRow(plate, s) {
             const border = { overdue: 'bg-rose-500/20 border-rose-400/40', soon: 'bg-amber-500/20 border-amber-400/40', unknown: 'bg-slate-500/20 border-slate-400/40', ok: 'bg-white/5 border-white/10' };
             const badge = { overdue: 'bg-rose-500 text-white', soon: 'bg-amber-400 text-slate-900', unknown: 'bg-slate-400 text-slate-900', ok: 'bg-emerald-500 text-white' };
+            // 🆕 สีตัวหนังสือ "ระยะที่เหลือ/เกิน" ให้ตรงกับสีของสถานะ (badge) แต่ละอัน
+            const kmColor = { overdue: 'text-rose-400', soon: 'text-amber-300', unknown: 'text-slate-400', ok: 'text-emerald-400' };
             const label = { overdue: 'เกินกำหนด', soon: 'ใกล้ถึงรอบ', unknown: 'ไร้ประวัติ', ok: 'ปกติ' };
             const getAdvisorMessage = (statusItem) => {
                 const { type, status, kmSince, kmToGo, daysSince } = statusItem;
@@ -1786,12 +2171,23 @@
                 if (status === 'soon') return `ใกล้ถึงรอบแล้ว${kmToGo !== null && kmToGo > 0 ? ' อีกประมาณ ' + formatNumber(kmToGo).replace(/\.00$/, '') + ' กม.' : ''} วางแผนจองคิวศูนย์ล่วงหน้าได้เลย — ${type.tip}`;
                 return `สภาพยังปกติ ยังไม่ถึงรอบ — ${type.tip}`;
             };
+            // 🆕 ข้อความระยะที่เหลือ/เกิน (กม.) ต่อท้ายป้ายสถานะ — ถ้ายังไม่ถึงรอบ ขึ้น "เหลืออีก x กม." สีตามสถานะ
+            // ถ้าเกินรอบมาแล้ว ขึ้นเป็นตัวเลขติดลบ เช่น "-10,000 กม." สีตามสถานะเช่นกัน
+            const getKmRemainingHtml = (statusItem) => {
+                const { type, status, kmToGo } = statusItem;
+                if (!type.km || type.km <= 0 || status === 'unknown' || kmToGo === null) return '';
+                const colorClass = kmColor[status] || 'text-slate-400';
+                const text = kmToGo >= 0
+                    ? `เหลืออีก ${formatNumber(kmToGo).replace(/\.00$/, '')} กม.`
+                    : `${formatNumber(kmToGo).replace(/\.00$/, '')} กม.`; // kmToGo ติดลบอยู่แล้ว จะขึ้นเครื่องหมาย - ให้เองจาก toLocaleString
+                return `<span class="text-xs font-bold ${colorClass} ml-2 whitespace-nowrap">${text}</span>`;
+            };
             return `
                 <div class="flex items-start justify-between gap-4 p-3 rounded-xl border ${border[s.status]}">
                     <div class="flex items-start space-x-3">
                         <i data-lucide="${s.type.icon}" class="w-4 h-4 mt-1 text-slate-300 flex-shrink-0"></i>
                         <div>
-                            <p class="font-semibold text-sm">${s.type.label} <span class="text-[10px] font-bold ml-1 px-1.5 py-0.5 rounded ${badge[s.status]}">${label[s.status]}</span></p>
+                            <p class="font-semibold text-sm">${s.type.label} <span class="text-[10px] font-bold ml-1 px-1.5 py-0.5 rounded ${badge[s.status]}">${label[s.status]}</span>${getKmRemainingHtml(s)}</p>
                             <p class="text-xs text-slate-300 mt-0.5">${getAdvisorMessage(s)}</p>
                         </div>
                     </div>
@@ -2778,7 +3174,7 @@
             lucide.createIcons();
         };
 
-        window.submitTireForm = (e, mode, editingRec) => {
+        window.submitTireForm = async (e, mode, editingRec) => {
             e.preventDefault();
             const { plate, pos } = currentTireCtx;
             const getVal = (id) => document.getElementById(id)?.value;
@@ -2789,7 +3185,7 @@
                     activeRec.status = 'removed';
                     activeRec.removeDate = formatToThaiShort(getVal('tf_date'));
                     activeRec.removeOdometer = Number(getVal('tf_odo') || 0);
-                    sendGasAction('editTire', activeRec);
+                    await sendGasAction('editTire', activeRec);
                 }
             }
 
@@ -2802,15 +3198,27 @@
             rec.imageUrl = getVal('tf_imageUrl') || '';
             rec.status = 'active';
 
-            if (mode === 'edit') {
-                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
-                sendGasAction('editTire', rec);
-            } else {
-                state.tires.unshift(rec);
-                sendGasAction('addTire', rec);
+            // ถ้ารูปเป็น base64 (data:image...) ให้ส่งแยกเป็น imageBase64 ให้ฝั่งเซิร์ฟเวอร์อัปโหลดขึ้น Google Drive
+            // (ไม่ส่งก้อน base64 ดิบไปเขียนลง cell ของ Sheet ตรงๆ เพราะจะเกินขีดจำกัดความยาวของ Google Sheets ทำให้บันทึกพัง)
+            const payload = { ...rec };
+            if (payload.imageUrl && payload.imageUrl.startsWith('data:image')) {
+                payload.imageBase64 = payload.imageUrl;
             }
 
-            showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
+            let saveOk;
+            if (mode === 'edit') {
+                state.tires = state.tires.map(t => t.id == rec.id ? rec : t);
+                saveOk = await sendGasAction('editTire', payload);
+            } else {
+                state.tires.unshift(rec);
+                saveOk = await sendGasAction('addTire', payload);
+            }
+
+            if (saveOk) {
+                showToast('บันทึกข้อมูลยางสำเร็จ!', 'success');
+            } else {
+                showToast('บันทึกไม่สำเร็จ! ข้อมูลยางยังไม่ถูกบันทึกลงฐานข้อมูลกลาง (รีเฟรชแล้วจะหาย) กรุณาลองใหม่อีกครั้ง', 'error');
+            }
             renderTireModalBody();
             renderContent();
         };
@@ -3392,15 +3800,45 @@
 
         async function sendGasAction(actionType, newData) {
              if(!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("ใส่_URL")) return true;
+             // ใช้ Content-Type: text/plain เพื่อเลี่ยง CORS preflight (Apps Script ไม่รองรับ OPTIONS โดยปริยาย)
+             // แต่ยังคงอ่าน response จริงได้ (ไม่ใช่ mode:'no-cors' ที่มองไม่เห็นผลลัพธ์เลย)
+             // เพื่อให้แอปรู้ได้จริงว่าบันทึกสำเร็จหรือพัง แทนที่จะขึ้น "บันทึกสำเร็จ" หลอกๆ ทั้งที่ฝั่งเซิร์ฟเวอร์ error
              try {
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: actionType, data: newData }),
-                    mode: 'no-cors'
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: actionType, data: newData })
                 });
+                if (!response.ok) {
+                    console.error('GAS save failed (HTTP ' + response.status + ')');
+                    return false;
+                }
+                let result;
+                try {
+                    result = JSON.parse(await response.text());
+                } catch (parseErr) {
+                    // เซิร์ฟเวอร์ตอบกลับมาไม่ใช่ JSON (เช่นหน้า login ของ Google) ถือว่าไม่สำเร็จ
+                    console.error('GAS response was not JSON:', parseErr);
+                    return false;
+                }
+                if (result && result.status === 'error') {
+                    console.error('GAS reported error:', result.message);
+                    return false;
+                }
                 return true;
              } catch(e) {
-                console.error(e);
+                // เบราว์เซอร์บล็อกคำขอข้ามโดเมน (CORS) หรือเครือข่ายขัดข้อง — ลองส่งแบบ no-cors เป็นทางสำรอง
+                // (จะได้อย่างน้อยมีโอกาสบันทึกได้ แม้จะไม่รู้ผลลัพธ์จริงก็ตาม)
+                console.error('sendGasAction fetch error, falling back to no-cors:', e);
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: actionType, data: newData }),
+                        mode: 'no-cors'
+                    });
+                } catch (e2) {
+                    console.error(e2);
+                }
                 return false;
              }
         }
@@ -3505,17 +3943,27 @@
             }
 
             setTimeout(() => {
+                // หมายเหตุ: ถ้าบันทึกขึ้นฐานข้อมูลกลาง (Google Sheet) ไม่สำเร็จ จะไม่ปิดป๊อบอัพและไม่ลบข้อมูลที่กรอกไว้
+                // เพื่อไม่ให้ต้องพิมพ์ใหม่ทั้งหมด — ผู้ใช้สามารถกด "บันทึกข้อมูล" ซ้ำได้หลังแก้ปัญหาการเชื่อมต่อ
+                if (!saveOk) {
+                    btn.disabled = false;
+                    btn.className = originalClasses;
+                    btn.innerText = 'บันทึกข้อมูล';
+                    showToast('บันทึกไม่สำเร็จ! ข้อมูลยังไม่ถูกบันทึกลงฐานข้อมูลกลาง (รีเฟรชแล้วจะหาย) กรุณาลองกดบันทึกอีกครั้ง หรือแจ้งผู้ดูแลระบบตรวจสอบ Google Apps Script', 'error');
+                    return;
+                }
+
                 closeMainModal();
                 renderNav();
                 renderContent();
-                
+
                 btn.disabled = false;
                 btn.className = originalClasses;
                 btn.innerText = 'บันทึกข้อมูล';
-                
-                if (saveOk) showToast('บันทึกข้อมูลสำเร็จ!', 'success');
-                if (saveOk && cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
-            }, saveOk ? 800 : 0); 
+
+                showToast('บันทึกข้อมูลสำเร็จ!', 'success');
+                if (cascadeJobEdit) promptCascadeJobUpdate(cascadeJobEdit.oldJob, cascadeJobEdit.newJob);
+            }, saveOk ? 800 : 0);
         }
 
         function promptCascadeJobUpdate(oldJob, newJob) {
