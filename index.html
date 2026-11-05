@@ -502,26 +502,36 @@
             { key: 'inspection', label: 'ตรวจสภาพ/ต่อภาษี', icon: 'file-check', km: 0, months: 12, tip: 'ต่อภาษี/พรบ. ให้ตรงกำหนด' },
             { key: 'other', label: 'งานซ่อมอื่น ๆ (ระบุเอง)', icon: 'hammer', km: 0, months: 0, tip: 'ระบุในรายละเอียดงาน' }
         ];
+        // สำเนาค่าเริ่มต้นดั้งเดิมของรายการตรวจเช็ค (เก็บไว้ใช้รีเซ็ต/สร้าง MAINTENANCE_TYPES ใหม่ทุกครั้งที่โหลดค่าตั้งค่า
+        // เพื่อไม่ให้รายการซ้ำซ้อนเวลาต้องโหลดค่าตั้งค่าซ้ำหลายรอบ เช่น ครั้งแรกจาก localStorage แล้วค่อยทับด้วยค่าจาก Google Sheet)
+        const DEFAULT_MAINTENANCE_TYPES = MAINTENANCE_TYPES.map(t => ({ ...t }));
         const maintenanceTypeMap = {};
         MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
         const MAINT_SOON_RATIO = 0.85;
 
         // --- Maintenance Checklist Config (รายการตรวจเช็คที่เพิ่มเอง + ระยะแจ้งเตือนที่ปรับเอง) ---
-        // บันทึกไว้ที่เครื่อง (localStorage) เท่านั้น ไม่ผ่าน Google Apps Script
-        // เพื่อไม่ให้ขึ้นกับความสมบูรณ์ของฝั่งเซิร์ฟเวอร์ และใช้งานได้ทันทีแม้ออฟไลน์
+        // 🆕 ซิงก์ขึ้น Google Sheet กลาง (ผ่าน action 'saveSetting') เหมือนข้อมูลอื่นๆ ในระบบ
+        // เพื่อไม่ให้หายเวลาเปลี่ยนเครื่อง/เบราว์เซอร์ หรือล้างข้อมูลเว็บไซต์ — เก็บสำรองไว้ใน localStorage ด้วยเผื่อออฟไลน์
+        function buildMaintConfigObject() {
+            const overrides = {};
+            MAINTENANCE_TYPES.forEach(t => { if (!t.isCustom) overrides[t.key] = { km: t.km, months: t.months }; });
+            const customTypes = MAINTENANCE_TYPES.filter(t => t.isCustom).map(t => ({ key: t.key, label: t.label, icon: t.icon, km: t.km, months: t.months, tip: t.tip || '', isCustom: true }));
+            return { overrides, customTypes };
+        }
         function saveMaintConfigLocal() {
-            try {
-                const overrides = {};
-                MAINTENANCE_TYPES.forEach(t => { if (!t.isCustom) overrides[t.key] = { km: t.km, months: t.months }; });
-                const customTypes = MAINTENANCE_TYPES.filter(t => t.isCustom).map(t => ({ key: t.key, label: t.label, icon: t.icon, km: t.km, months: t.months, tip: t.tip || '', isCustom: true }));
-                localStorage.setItem('fleetMaintConfig', JSON.stringify({ overrides, customTypes }));
-            } catch (e) {}
+            try { localStorage.setItem('fleetMaintConfig', JSON.stringify(buildMaintConfigObject())); } catch (e) {}
         }
         function loadMaintConfigLocal() {
             try { return JSON.parse(localStorage.getItem('fleetMaintConfig') || 'null'); } catch (e) { return null; }
         }
-        function applyMaintConfigFromStorage() {
-            const cfg = loadMaintConfigLocal();
+        // รีเซ็ต MAINTENANCE_TYPES กลับไปเป็นค่าเริ่มต้นทุกครั้งก่อนใส่ค่า override/รายการที่เพิ่มเอง
+        // ป้องกันปัญหารายการซ้ำเวลาถูกเรียกมากกว่า 1 ครั้ง (เช่น จาก localStorage ตอนโหลดหน้า แล้วจาก Google Sheet ตอน initApp)
+        function rebuildMaintenanceTypesFromConfig(cfg) {
+            MAINTENANCE_TYPES.length = 0;
+            DEFAULT_MAINTENANCE_TYPES.forEach(t => MAINTENANCE_TYPES.push({ ...t }));
+            Object.keys(maintenanceTypeMap).forEach(k => delete maintenanceTypeMap[k]);
+            MAINTENANCE_TYPES.forEach(t => maintenanceTypeMap[t.key] = t);
+
             if (!cfg) return;
             if (cfg.overrides) {
                 MAINTENANCE_TYPES.forEach(t => {
@@ -540,7 +550,18 @@
                 });
             }
         }
-        applyMaintConfigFromStorage();
+        // ใช้ค่าที่เคยบันทึกไว้ในเครื่องนี้ไปพลางๆ ก่อน ระหว่างรอโหลดค่าจาก Google Sheet กลาง (initApp จะทับให้อีกทีถ้าออนไลน์)
+        rebuildMaintenanceTypesFromConfig(loadMaintConfigLocal());
+
+        async function saveMaintConfigRemote() {
+            const cfg = buildMaintConfigObject();
+            saveMaintConfigLocal(); // เก็บสำรองไว้ในเครื่องเสมอไม่ว่าจะส่งขึ้นเซิร์ฟเวอร์สำเร็จหรือไม่
+            const ok = await sendGasAction('saveSetting', { key: 'maintConfig', value: JSON.stringify(cfg) });
+            if (!ok) {
+                showToast('บันทึกไว้ที่เครื่องนี้แล้ว แต่ซิงก์ขึ้น Google Sheet ไม่สำเร็จ (จะไม่เห็นในเครื่อง/เบราว์เซอร์อื่น) กรุณาลองใหม่อีกครั้ง', 'error');
+            }
+            return ok;
+        }
 
         // --- Tire Config ---
         const TIRE_ROTATE_KM = 10000;
@@ -1888,33 +1909,37 @@
             window._maintConfigEditingKey = null;
             renderMaintConfigModalBody();
         };
-        window.saveMaintInterval = (key) => {
+        window.saveMaintInterval = async (key) => {
             const t = maintenanceTypeMap[key];
             if (!t) return;
             const kmVal = Number(document.getElementById('mc_edit_km')?.value || 0);
             const monthsVal = Number(document.getElementById('mc_edit_months')?.value || 0);
+            const prevKm = t.km, prevMonths = t.months;
             t.km = kmVal;
             t.months = monthsVal;
-            saveMaintConfigLocal();
+            const ok = await saveMaintConfigRemote();
+            if (!ok) { t.km = prevKm; t.months = prevMonths; } // ย้อนค่ากลับถ้าซิงก์ไม่สำเร็จ ป้องกันข้อมูลเพี้ยนจากหน้าจอกับฐานข้อมูลกลาง
             window._maintConfigEditingKey = null;
             renderMaintConfigModalBody();
             renderContent();
-            showToast('อัปเดตระยะแจ้งเตือนสำเร็จ!', 'success');
+            if (ok) showToast('อัปเดตระยะแจ้งเตือนสำเร็จ!', 'success');
         };
 
         window.deleteCustomMaintType = (key) => {
-            customConfirm("ต้องการลบรายการตรวจเช็คนี้ใช่หรือไม่? (ประวัติงานซ่อมเก่าที่เคยบันทึกด้วยรายการนี้จะยังคงอยู่ แต่จะไม่มีการแจ้งเตือนรอบถัดไปอีก)", () => {
+            customConfirm("ต้องการลบรายการตรวจเช็คนี้ใช่หรือไม่? (ประวัติงานซ่อมเก่าที่เคยบันทึกด้วยรายการนี้จะยังคงอยู่ แต่จะไม่มีการแจ้งเตือนรอบถัดไปอีก)", async () => {
                 const idx = MAINTENANCE_TYPES.findIndex(t => t.key === key);
+                const removed = idx > -1 ? MAINTENANCE_TYPES[idx] : null;
                 if (idx > -1) MAINTENANCE_TYPES.splice(idx, 1);
                 delete maintenanceTypeMap[key];
-                saveMaintConfigLocal();
+                const ok = await saveMaintConfigRemote();
+                if (!ok && removed) { MAINTENANCE_TYPES.push(removed); maintenanceTypeMap[key] = removed; } // ย้อนกลับถ้าซิงก์ไม่สำเร็จ
                 renderMaintConfigModalBody();
                 renderContent();
-                showToast('ลบรายการตรวจเช็คแล้ว', 'success');
+                if (ok) showToast('ลบรายการตรวจเช็คแล้ว', 'success');
             });
         };
 
-        window.submitNewMaintType = (e) => {
+        window.submitNewMaintType = async (e) => {
             e.preventDefault();
             const label = document.getElementById('mc_new_label').value.trim();
             const km = Number(document.getElementById('mc_new_km').value || 0);
@@ -1928,10 +1953,15 @@
             const newType = { key, label, icon: 'wrench', km, months, tip, isCustom: true };
             if (otherIdx > -1) MAINTENANCE_TYPES.splice(otherIdx, 0, newType); else MAINTENANCE_TYPES.push(newType);
             maintenanceTypeMap[key] = newType;
-            saveMaintConfigLocal();
+            const ok = await saveMaintConfigRemote();
+            if (!ok) {
+                const idx = MAINTENANCE_TYPES.findIndex(t => t.key === key);
+                if (idx > -1) MAINTENANCE_TYPES.splice(idx, 1);
+                delete maintenanceTypeMap[key];
+            }
             renderMaintConfigModalBody();
             renderContent();
-            showToast('เพิ่มรายการตรวจเช็คใหม่สำเร็จ!', 'success');
+            if (ok) showToast('เพิ่มรายการตรวจเช็คใหม่สำเร็จ!', 'success');
         };
 
         function renderMaintConfigModalBody() {
@@ -4267,6 +4297,18 @@
                     state.tires = data.tires || [];
                     if (Array.isArray(data.trailers) && data.trailers.length) state.trailers = data.trailers;
                     normalizeLoadedData();
+
+                    // 🆕 ดึงค่ารายการตรวจเช็ค/ระยะแจ้งเตือนที่ตั้งไว้จาก Google Sheet กลางมาทับค่าที่โหลดจากเครื่องนี้ไปพลางๆ ก่อน
+                    // เพื่อให้ทุกเครื่อง/ทุกเบราว์เซอร์เห็นรายการตรวจเช็คตรงกันเสมอ ไม่หายเวลาเปลี่ยนเครื่องหรือล้างข้อมูลเว็บไซต์
+                    if (data.settings && data.settings.maintConfig) {
+                        try {
+                            const remoteCfg = JSON.parse(data.settings.maintConfig);
+                            rebuildMaintenanceTypesFromConfig(remoteCfg);
+                            saveMaintConfigLocal();
+                        } catch (parseErr) {
+                            console.error('ไม่สามารถอ่านค่า maintConfig จาก Google Sheet ได้:', parseErr);
+                        }
+                    }
                 }
             } catch (e) {
                 console.error("Load error:", e);
